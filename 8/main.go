@@ -23,29 +23,32 @@ func main() {
 		log.Fatal(sc.Err())
 	}
 
-	var accum, ip int
-	seen := make(map[int]struct{})
-	for {
-		if ip < 0 || ip >= len(ins) {
-			log.Fatalf("ip %v not in [0,%v)", ip, len(ins))
-		}
+	r, accum := run(ins)
+	if r != loop {
+		log.Fatal("didn't loop")
+	}
+	println(accum)
 
-		if _, ok := seen[ip]; ok {
+	swap := func(o op) op {
+		if o == jmp {
+			return nop
+		} else if o == nop {
+			return jmp
+		}
+		return o
+	}
+
+	for i := 0; i < len(ins); i++ {
+		in := &ins[i]
+		if in.op == acc {
+			continue
+		}
+		in.op = swap(in.op) // swap jmp and nop
+		r, accum := run(ins)
+		in.op = swap(in.op) // swap back
+		if r == ok {
 			println(accum)
 			break
-		}
-		seen[ip] = struct{}{}
-
-		in := &ins[ip]
-		fmt.Printf("%d %s %d\n", ip, in.op, in.val)
-		switch in.op {
-		case acc:
-			accum += in.val
-			ip++
-		case jmp:
-			ip += in.val
-		case nop:
-			ip++
 		}
 	}
 }
@@ -99,4 +102,41 @@ func newInstr(ln string) (instr, error) {
 	}
 
 	return in, nil
+}
+
+type res int
+
+const (
+	ok res = iota
+	loop
+	segv
+)
+
+func run(ins []instr) (res, int) {
+	var accum, ip int
+	seen := make(map[int]struct{})
+	for {
+		if ip == len(ins) {
+			return ok, accum
+		} else if ip < 0 || ip > len(ins) {
+			return segv, accum
+		}
+
+		if _, ok := seen[ip]; ok {
+			return loop, accum
+		}
+		seen[ip] = struct{}{}
+
+		in := &ins[ip]
+		//fmt.Printf("%d %s %d\n", ip, in.op, in.val)
+		switch in.op {
+		case acc:
+			accum += in.val
+			ip++
+		case jmp:
+			ip += in.val
+		case nop:
+			ip++
+		}
+	}
 }
