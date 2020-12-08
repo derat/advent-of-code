@@ -5,13 +5,21 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 var re = regexp.MustCompile(`^(\d+) (.+) bag(?:s?)(?:\.?)$`)
 
+type bagInfo struct {
+	color string
+	num   int
+}
+
 func main() {
 	holders := make(map[string][]string)
+	bags := make(map[string][]bagInfo)
+
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
 		s := sc.Text()
@@ -28,8 +36,10 @@ func main() {
 			if m == nil {
 				log.Fatalf("failed parsing %q in %q", p, s)
 			}
+			cnt, _ := strconv.Atoi(m[1])
 			inner := m[2]
 			holders[inner] = append(holders[inner], outer)
+			bags[outer] = append(bags[outer], bagInfo{color: inner, num: cnt})
 		}
 	}
 	if sc.Err() != nil {
@@ -48,4 +58,14 @@ func main() {
 	}
 	add("shiny gold")
 	println(len(seen))
+
+	var count func(col string) int
+	count = func(col string) int {
+		total := 0
+		for _, b := range bags[col] {
+			total += b.num * (1 + count(b.color))
+		}
+		return total
+	}
+	println(count("shiny gold"))
 }
