@@ -9,6 +9,7 @@ import (
 
 func main() {
 	max := -1
+	seen := make(map[int]struct{})
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
 		s := sc.Text()
@@ -17,14 +18,29 @@ func main() {
 		}
 		row := find(s[:7])
 		col := find(s[7:])
-		if id := row*8 + col; id > max {
+		id := row*8 + col
+		if id > max {
 			max = id
 		}
+		seen[id] = struct{}{}
 	}
 	if sc.Err() != nil {
 		panic(sc.Err())
 	}
-	fmt.Println(max)
+	fmt.Printf("max: %d\n", max)
+
+	for i := 1; i < 8*128; i++ {
+		if _, ok := seen[i]; ok {
+			continue
+		}
+		if _, ok := seen[i-1]; !ok {
+			continue
+		}
+		if _, ok := seen[i+1]; !ok {
+			continue
+		}
+		fmt.Printf("yours: %d\n", i)
+	}
 }
 
 func find(s string) int {
