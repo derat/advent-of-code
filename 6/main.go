@@ -7,7 +7,7 @@ import (
 
 func main() {
 	sc := bufio.NewScanner(os.Stdin)
-	sum := 0
+	var sum, sum2 int
 	var grp []string
 	for sc.Scan() {
 		s := sc.Text()
@@ -15,7 +15,8 @@ func main() {
 			grp = append(grp, s)
 		} else {
 			if len(grp) > 0 {
-				sum += count(grp)
+				sum += count(grp, false)
+				sum2 += count(grp, true)
 			}
 			grp = nil
 		}
@@ -24,17 +25,27 @@ func main() {
 		panic(sc.Err())
 	}
 	if len(grp) > 0 {
-		sum += count(grp)
+		sum += count(grp, false)
+		sum2 += count(grp, true)
 	}
-	println(sum)
+	println(sum, sum2)
 }
 
-func count(grp []string) int {
-	seen := make(map[rune]struct{})
+func count(grp []string, all bool) int {
+	seen := make(map[rune]int)
 	for _, s := range grp {
 		for _, ch := range s {
-			seen[ch] = struct{}{}
+			seen[ch] += 1
 		}
+	}
+	if all {
+		sum := 0
+		for _, n := range seen {
+			if n == len(grp) {
+				sum++
+			}
+		}
+		return sum
 	}
 	return len(seen)
 }
