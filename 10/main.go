@@ -36,4 +36,10 @@ func main() {
 		last = v
 	}
 	fmt.Printf("%v * %v = %v\n", diffs[1], diffs[3], diffs[1]*diffs[3])
+
+	paths := map[int]int64{0: 1}
+	for _, v := range outs {
+		paths[v] = paths[v-3] + paths[v-2] + paths[v-1]
+	}
+	fmt.Println(paths[outs[len(outs)-1]])
 }
