@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -9,8 +10,22 @@ import (
 )
 
 func main() {
-	var x, y float64
-	head := 90 // east
+	// Part 1:
+	var ox, oy float64    // ship coords
+	var head float64 = 90 // ship heading (east)
+
+	// Part 2:
+	var sx, sy float64         // ship coords
+	var wx, wy float64 = 10, 1 // waypoint relative to ship
+
+	rotWay := func(deg float64) {
+		dist := math.Sqrt(math.Pow(wx, 2) + math.Pow(wy, 2))
+		// atan2 is needed to preserve the signs of the individual coordinates:
+		// when passing a ratio to atan, (10,1) and (-10,-1) are indistinguishable.
+		rad := math.Atan2(wx, wy) + (deg * math.Pi / 180)
+		wx = math.Sin(rad) * dist
+		wy = math.Cos(rad) * dist
+	}
 
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
@@ -20,29 +35,38 @@ func main() {
 
 		s := sc.Text()
 		op := s[0]
-		v, err := strconv.Atoi(s[1:])
+		v, err := strconv.ParseFloat(s[1:], 64)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		switch op {
 		case 'N':
-			y += float64(v)
+			oy += v
+			wy += v
 		case 'S':
-			y -= float64(v)
+			oy -= v
+			wy -= v
 		case 'E':
-			x += float64(v)
+			ox += v
+			wx += v
 		case 'W':
-			x -= float64(v)
+			ox -= v
+			wx -= v
 		case 'L':
-			head = (head - v) % 360
+			head = math.Mod(head-v, 360)
+			rotWay(-v)
 		case 'R':
-			head = (head + v) % 360
+			head = math.Mod(head+v, 360)
+			rotWay(v)
 		case 'F':
 			// Overkill: input just uses intervals of 90 degrees for rotations.
-			rad := float64(head) * math.Pi / 180
-			x += math.Sin(rad) * float64(v)
-			y += math.Cos(rad) * float64(v)
+			rad := head * math.Pi / 180
+			ox += math.Sin(rad) * v
+			oy += math.Cos(rad) * v
+
+			sx += wx * v
+			sy += wy * v
 		default:
 			log.Fatalf("invalid op %q", op)
 		}
@@ -51,5 +75,7 @@ func main() {
 		log.Fatal(sc.Err())
 	}
 
-	println(int(math.Round(math.Abs(x) + math.Abs(y))))
+	// https://en.wikipedia.org/wiki/Taxicab_geometry
+	fmt.Println(int(math.Round(math.Abs(ox) + math.Abs(oy))))
+	fmt.Println(int(math.Round(math.Abs(sx) + math.Abs(sy))))
 }
