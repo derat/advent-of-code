@@ -13,7 +13,9 @@ func main() {
 	const width = 36
 
 	var mask0, mask1 uint64
-	mem := make(map[uint64]uint64) // input addresses seem sparse
+	var fbits []int // positions of 'X' bits in mask
+	mem := make(map[uint64]uint64)
+	mem2 := make(map[uint64]uint64)
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
 		if sc.Text() == "" {
@@ -31,6 +33,7 @@ func main() {
 				log.Fatalf("invalid bitmask %q", rhs)
 			}
 			mask0, mask1 = 0, 0
+			fbits = nil
 			for i, ch := range rhs {
 				if i > 0 {
 					mask0 <<= 1
@@ -41,7 +44,8 @@ func main() {
 					mask0 |= 1
 				case '1':
 					mask1 |= 1
-				case 'X': // no-op
+				case 'X':
+					fbits = append(fbits, width-i-1)
 				default:
 					log.Fatalf("invalid bit %q", ch)
 				}
@@ -55,9 +59,23 @@ func main() {
 			if err != nil {
 				log.Fatal("bad value: ", err)
 			}
-			val |= mask1
-			val &= ^mask0
-			mem[addr] = val
+
+			// Part 1: mask applies to value: 0 unset, 1 set, X unchanged.
+			mem[addr] = (val | mask1) & ^mask0
+
+			// Part 2: mask applies to address: 0 unchanged, 1 set, X floating.
+			// Recursion would be simpler, but I wanted to write an interative solution.
+			for state := 0; state < 1<<len(fbits); state++ {
+				maddr := addr | mask1
+				for i, b := range fbits {
+					if (1<<i)&state != 0 {
+						maddr |= (1 << b)
+					} else {
+						maddr &= ^(1 << b)
+					}
+				}
+				mem2[maddr] = val
+			}
 		default:
 			log.Fatalf("invalid lhs %q", lhs)
 		}
@@ -72,4 +90,10 @@ func main() {
 		sum += val
 	}
 	fmt.Println(sum)
+
+	var sum2 uint64
+	for _, val := range mem2 {
+		sum2 += val
+	}
+	fmt.Println(sum2)
 }
