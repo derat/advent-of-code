@@ -10,7 +10,11 @@ import (
 )
 
 func main() {
-	const end = 2020
+	const (
+		end  = 2020
+		end2 = 30000000
+	)
+
 	r := bufio.NewReader(os.Stdin)
 	s, err := r.ReadString('\n')
 	if err != nil {
@@ -40,6 +44,9 @@ func main() {
 		seen[last] = turn
 
 		if turn == end {
+			fmt.Println(last)
+		}
+		if turn == end2 {
 			fmt.Println(last)
 			break
 		}
