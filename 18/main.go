@@ -10,7 +10,8 @@ import (
 )
 
 func main() {
-	sum := 0
+	var sum1, sum2 int64
+
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
 		ln := strings.TrimSpace(sc.Text())
@@ -21,33 +22,44 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		val, err := eval(tokens)
-		if err != nil {
+		// Evaluate with addition and multiplication at the same precedence.
+		if val, err := eval(tokens, func(tokens []int64) (int64, error) { return reduceExpr(tokens, false) }); err != nil {
 			log.Fatal(err)
+		} else {
+			sum1 += val
 		}
-		sum += val
+		// Evaluate with addition at a higher precedence than multiplication.
+		if val, err := eval(tokens, func(tokens []int64) (int64, error) { return reduceExpr(tokens, true) }); err != nil {
+			log.Fatal(err)
+		} else {
+			sum2 += val
+		}
 	}
 	if sc.Err() != nil {
 		log.Fatal(sc.Err())
 	}
-	fmt.Println(sum)
+
+	fmt.Println(sum1)
+	fmt.Println(sum2)
 }
 
 const (
-	plus   = -1
-	times  = -2
-	lparen = -3
-	rparen = -4
+	plus   = -1 // '+'
+	times  = -2 // '*'
+	lparen = -3 // '('
+	rparen = -4 // ')'
 )
 
-func tokenize(ln string) ([]int, error) {
-	var tokens []int
-	val := 0
+// tokenize converts the supplied string into tokens.
+// Negative values are used to represent operators and parentheses.
+func tokenize(ln string) ([]int64, error) {
+	var tokens []int64
+	var val int64
 	inVal := false
 
 	for _, ch := range ln {
 		if ch >= '0' && ch <= '9' {
-			val = val*10 + int(ch-'0')
+			val = val*10 + int64(ch-'0')
 			inVal = true
 		} else {
 			if inVal {
@@ -76,71 +88,108 @@ func tokenize(ln string) ([]int, error) {
 	return tokens, nil
 }
 
-func eval(tokens []int) (int, error) {
-	// Shifts the first token off of |tokens|, reducing parenthesized expressions.
-	shift := func() (int, error) {
-		if len(tokens) == 0 {
-			return 0, errors.New("ran out of tokens")
-		}
-		if tokens[0] != lparen {
-			v := tokens[0]
-			tokens = tokens[1:]
-			return v, nil
-		}
+// reduceFunc reduces a simple expression that doesn't contain parentheses.
+type reduceFunc func(tokens []int64) (int64, error)
 
-		ridx := -1
-		depth := 1
-		for i := 1; i < len(tokens); i++ {
-			if tokens[i] == lparen {
-				depth++
-			} else if tokens[i] == rparen {
-				depth--
-				if depth == 0 {
-					ridx = i
-					break
+// reduceExpr implements reduceFunc, reducing in left-to-right order.
+// If addFirst is true, addition has a higher precedence than multiplication;
+// otherwise they have the same precedence.
+func reduceExpr(tokens []int64, addFirst bool) (int64, error) {
+	if len(tokens) == 0 || len(tokens)%2 != 1 {
+		return 0, fmt.Errorf("invalid expr %v", tokens)
+	}
+
+	for pass := 0; len(tokens) > 1; pass++ {
+		if pass > 1 {
+			return 0, errors.New("somehow not done after two passes")
+		}
+		newTokens := make([]int64, 0, len(tokens))
+		for i := 0; i < len(tokens); i++ {
+			t := tokens[i]
+			switch {
+			case t >= 0:
+				newTokens = append(newTokens, t)
+			case t == plus:
+				newTokens[len(newTokens)-1] += tokens[i+1]
+				i++
+			case t == times:
+				if addFirst && pass == 0 {
+					newTokens = append(newTokens, t) // multiply in next pass
+				} else {
+					newTokens[len(newTokens)-1] *= tokens[i+1]
+					i++
 				}
+			default:
+				return 0, fmt.Errorf("invalid token %v", t)
 			}
 		}
-		if ridx < 0 {
-			return 0, errors.New("matching rparen not found")
-		}
-		v, err := eval(tokens[1:ridx])
-		tokens = tokens[ridx+1:]
-		return v, err
+		tokens = newTokens
 	}
+	return tokens[0], nil
+}
 
+// eval evaluates tokens to a single value, using reduce to reduce
+// expressions at the same depth.
+func eval(tokens []int64, reduce reduceFunc) (int64, error) {
 	for len(tokens) > 1 {
-		lhs, err := shift()
-		if err != nil {
-			return 0, err
+		// Find the depth of the most-nested expression(s).
+		var depth, maxDepth int
+		for _, t := range tokens {
+			if t == lparen {
+				if depth++; depth > maxDepth {
+					maxDepth = depth
+				}
+			} else if t == rparen {
+				depth--
+			}
 		}
-		op, err := shift()
-		if err != nil {
-			return 0, err
-		}
-		rhs, err := shift()
-		if err != nil {
-			return 0, err
+		if depth != 0 {
+			return 0, errors.New("unbalanced parentheses")
 		}
 
-		if lhs < 0 {
-			return 0, fmt.Errorf("invalid lhs %v", lhs)
+		// Reduce the most-nested expression(s) to single values.
+		depth = 0
+		newTokens := make([]int64, 0, len(tokens))
+		var exprTokens []int64
+		for i := 0; i < len(tokens); i++ {
+			t := tokens[i]
+
+			switch t {
+			case lparen:
+				if depth++; depth == maxDepth {
+					continue
+				}
+			case rparen:
+				if depth--; depth == maxDepth-1 {
+					// When we're exiting the max depth, reduce the expression.
+					val, err := reduce(exprTokens)
+					if err != nil {
+						return 0, err
+					}
+					newTokens = append(newTokens, val)
+					exprTokens = nil
+					continue
+				}
+			}
+
+			if depth == maxDepth {
+				exprTokens = append(exprTokens, t) // process in this pass
+			} else {
+				newTokens = append(newTokens, t) // process in later pass
+			}
 		}
-		if rhs < 0 {
-			return 0, fmt.Errorf("invalid rhs %v", rhs)
+
+		// If we ended at the max depth (i.e. 0), reduce the final expression.
+		if len(exprTokens) != 0 {
+			val, err := reduce(exprTokens)
+			if err != nil {
+				return 0, err
+			}
+			newTokens = append(newTokens, val)
 		}
-		switch op {
-		case plus:
-			tokens = append([]int{lhs + rhs}, tokens...)
-		case times:
-			tokens = append([]int{lhs * rhs}, tokens...)
-		default:
-			return 0, fmt.Errorf("invalid op %v", op)
-		}
+
+		tokens = newTokens
 	}
 
-	if tokens[0] < 0 {
-		return 0, fmt.Errorf("invalid singleton token %v", tokens[0])
-	}
 	return tokens[0], nil
 }
