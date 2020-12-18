@@ -9,7 +9,8 @@ import (
 )
 
 func main() {
-	w := newWorld()
+	s1 := newSpace()
+	s2 := newSpace()
 	var start, lines int
 	sc := bufio.NewScanner(os.Stdin)
 	for sc.Scan() {
@@ -22,7 +23,8 @@ func main() {
 		}
 		for i, ch := range ln {
 			if ch == '#' {
-				w.set(-start+i, start-lines, 0)
+				s1.set(-start+i, start-lines, 0, 0)
+				s2.set(-start+i, start-lines, 0, 0)
 			}
 		}
 		lines++
@@ -32,18 +34,20 @@ func main() {
 	}
 
 	//fmt.Println("Before any cycles:\n")
-	//w.dump()
+	//s2.dump()
 
-	count := func(x, y, z int) int {
+	count := func(s space, x, y, z, w int) int {
 		n := 0
 		for dx := -1; dx <= 1; dx++ {
 			for dy := -1; dy <= 1; dy++ {
 				for dz := -1; dz <= 1; dz++ {
-					if dx == 0 && dy == 0 && dz == 0 {
-						continue
-					}
-					if w.active(x+dx, y+dy, z+dz) {
-						n++
+					for dw := -1; dw <= 1; dw++ {
+						if dx == 0 && dy == 0 && dz == 0 && dw == 0 {
+							continue
+						}
+						if s.active(x+dx, y+dy, z+dz, w+dw) {
+							n++
+						}
 					}
 				}
 			}
@@ -52,137 +56,175 @@ func main() {
 	}
 
 	for i := 1; i <= 6; i++ {
-		w2 := newWorld()
-		w.forEach(func(x, y, z int) {
+		ns1 := newSpace()
+		ns2 := newSpace()
+
+		s1.forEach(func(x, y, z, _ int) {
 			for dx := -1; dx <= 1; dx++ {
 				for dy := -1; dy <= 1; dy++ {
 					for dz := -1; dz <= 1; dz++ {
 						x0, y0, z0 := x+dx, y+dy, z+dz
-						cnt := count(x0, y0, z0)
-						active := w.active(x0, y0, z0)
+						cnt := count(s1, x0, y0, z0, 0)
+						active := s1.active(x0, y0, z0, 0)
 						if active && (cnt == 2 || cnt == 3) {
-							w2.set(x0, y0, z0)
+							ns1.set(x0, y0, z0, 0)
 						} else if !active && cnt == 3 {
-							w2.set(x0, y0, z0)
+							ns1.set(x0, y0, z0, 0)
 						}
 					}
 				}
 			}
 		})
 
-		w = w2
+		s2.forEach(func(x, y, z, w int) {
+			for dx := -1; dx <= 1; dx++ {
+				for dy := -1; dy <= 1; dy++ {
+					for dz := -1; dz <= 1; dz++ {
+						for dw := -1; dw <= 1; dw++ {
+							x0, y0, z0, w0 := x+dx, y+dy, z+dz, w+dw
+							cnt := count(s2, x0, y0, z0, w0)
+							active := s2.active(x0, y0, z0, w0)
+							if active && (cnt == 2 || cnt == 3) {
+								ns2.set(x0, y0, z0, w0)
+							} else if !active && cnt == 3 {
+								ns2.set(x0, y0, z0, w0)
+							}
+						}
+					}
+				}
+			}
+		})
+
+		s1, s2 = ns1, ns2
 		//fmt.Printf("After %d cycle(s):\n\n", i)
-		//w.dump()
+		//s2.dump()
 	}
 
 	cnt := 0
-	w.forEach(func(x, y, z int) { cnt++ })
+	s1.forEach(func(x, y, z, _ int) { cnt++ })
+	fmt.Println(cnt)
+
+	cnt = 0
+	s2.forEach(func(x, y, z, w int) { cnt++ })
 	fmt.Println(cnt)
 }
 
-type world struct {
-	// Values represent 4x4x4 grids of active states for cubes.
-	maps [8]map[uint64]uint64
+type space struct {
+	// Values represent 2x2x2x2 grids of active states for cubes.
+	maps [16]map[uint64]uint16
 
-	xrange, yrange, zrange [2]int
+	xrange, yrange, zrange, wrange [2]int
 }
 
-func newWorld() world {
-	var w world
-	for i := range w.maps {
-		w.maps[i] = make(map[uint64]uint64)
+func newSpace() space {
+	var s space
+	for i := range s.maps {
+		s.maps[i] = make(map[uint64]uint16)
 	}
-	return w
+	return s
 }
 
-func (w *world) set(x, y, z int) {
-	midx, mkey, mask := idx(x, y, z)
-	w.maps[midx][mkey] |= mask
+func (s *space) set(x, y, z, w int) {
+	midx, mkey, mask := idx(x, y, z, w)
+	s.maps[midx][mkey] |= mask
 
-	if x < w.xrange[0] {
-		w.xrange[0] = x
-	} else if x > w.xrange[1] {
-		w.xrange[1] = x
+	if x < s.xrange[0] {
+		s.xrange[0] = x
+	} else if x > s.xrange[1] {
+		s.xrange[1] = x
 	}
-	if y < w.yrange[0] {
-		w.yrange[0] = y
-	} else if y > w.yrange[1] {
-		w.yrange[1] = y
+	if y < s.yrange[0] {
+		s.yrange[0] = y
+	} else if y > s.yrange[1] {
+		s.yrange[1] = y
 	}
-	if z < w.zrange[0] {
-		w.zrange[0] = z
-	} else if z > w.zrange[1] {
-		w.zrange[1] = z
+	if z < s.zrange[0] {
+		s.zrange[0] = z
+	} else if z > s.zrange[1] {
+		s.zrange[1] = z
+	}
+	if w < s.zrange[0] {
+		s.wrange[0] = w
+	} else if z > s.wrange[1] {
+		s.wrange[1] = w
 	}
 }
 
-func (w *world) active(x, y, z int) bool {
-	midx, mkey, mask := idx(x, y, z)
-	return w.maps[midx][mkey]&mask != 0
+func (s *space) active(x, y, z, w int) bool {
+	midx, mkey, mask := idx(x, y, z, w)
+	return s.maps[midx][mkey]&mask != 0
 }
 
 const (
-	kbits = 21
+	kbits = 16
 	kmask = (1 << kbits) - 1
 )
 
-func (w *world) forEach(f func(x, y, z int)) {
-	for mi, m := range w.maps {
+func (s *space) forEach(f func(x, y, z, w int)) {
+	for mi, m := range s.maps {
 		for mk, gr := range m {
-			for bit := 0; bit < 64; bit++ {
+			for bit := 0; bit < 16; bit++ {
 				if gr&(1<<bit) != 0 {
-					x, y, z := unIdx(mi, mk, bit)
-					f(x, y, z)
+					x, y, z, w := unIdx(mi, mk, bit)
+					f(x, y, z, w)
 				}
 			}
 		}
 	}
 }
 
-func (w *world) dump() {
-	for z := w.zrange[0]; z <= w.zrange[1]; z++ {
-		fmt.Printf("z=%d\n", z)
-		for y := w.yrange[1]; y >= w.yrange[0]; y-- {
-			for x := w.xrange[0]; x <= w.xrange[1]; x++ {
-				if w.active(x, y, z) {
-					fmt.Print("#")
-				} else {
-					fmt.Print(".")
+func (s *space) dump() {
+	for w := s.wrange[0]; w <= s.wrange[1]; w++ {
+		for z := s.zrange[0]; z <= s.zrange[1]; z++ {
+			fmt.Printf("z=%d, w=%d\n", z, w)
+			for y := s.yrange[1]; y >= s.yrange[0]; y-- {
+				for x := s.xrange[0]; x <= s.xrange[1]; x++ {
+					if s.active(x, y, z, w) {
+						fmt.Print("#")
+					} else {
+						fmt.Print(".")
+					}
 				}
+				fmt.Println()
 			}
 			fmt.Println()
 		}
-		fmt.Println()
 	}
 }
 
-func idx(x, y, z int) (mapIdx int, mapKey, mask uint64) {
-	mapIdx = (neg(x) << 2) + (neg(y) << 1) + neg(z)
-	ax, ay, az := uint64(abs(x)), uint64(abs(y)), uint64(abs(z))
-	mapKey = ((ax / 4) << (2 * kbits)) | ((ay / 4) << kbits) | (az / 4)
-	mask = 1 << ((ax%4)*16 + (ay%4)*4 + az%4)
+func idx(x, y, z, w int) (mapIdx int, mapKey uint64, mask uint16) {
+	mapIdx = (neg(x) << 3) + (neg(y) << 2) + (neg(z) << 1) + neg(w)
+	ax, ay, az, aw := uint16(abs(x)), uint16(abs(y)), uint16(abs(z)), uint16(abs(w))
+	mapKey = ((uint64(ax) / 2) << (3 * kbits)) | ((uint64(ay) / 2) << (2 * kbits)) |
+		((uint64(az) / 2) << kbits) | (uint64(aw) / 2)
+	mask = 1 << ((ax%2)*8 + (ay%2)*4 + (az%2)*2 + (aw % 2))
 	return mapIdx, mapKey, mask
 }
 
-func unIdx(mapIdx int, mapKey uint64, bit int) (x, y, z int) {
-	x = int(((mapKey >> (2 * kbits)) & kmask) * 4)
-	y = int(((mapKey >> kbits) & kmask) * 4)
-	z = int((mapKey & kmask) * 4)
+func unIdx(mapIdx int, mapKey uint64, bit int) (x, y, z, w int) {
+	x = int(((mapKey >> (3 * kbits)) & kmask) * 2)
+	y = int(((mapKey >> (2 * kbits)) & kmask) * 2)
+	z = int(((mapKey >> kbits) & kmask) * 2)
+	w = int((mapKey & kmask) * 2)
 
-	x += bit / 16
-	y += (bit % 16) / 4
-	z += bit % 4
+	x += (bit / 8) % 2
+	y += (bit / 4) % 2
+	z += (bit / 2) % 2
+	w += bit % 2
 
-	if mapIdx&4 != 0 {
+	if mapIdx&8 != 0 {
 		x = -x
 	}
-	if mapIdx&2 != 0 {
+	if mapIdx&4 != 0 {
 		y = -y
 	}
-	if mapIdx&1 != 0 {
+	if mapIdx&2 != 0 {
 		z = -z
 	}
-	return x, y, z
+	if mapIdx&1 != 0 {
+		w = -w
+	}
+	return x, y, z, w
 }
 
 // neg returns 1 if n is negative and 0 otherwise.
