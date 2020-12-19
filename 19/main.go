@@ -85,6 +85,19 @@ func main() {
 		}
 	}
 	fmt.Println(cnt)
+
+	// Part 2:
+	rules[8] = rule{opts: [][]int{{42}, {42, 8}}}
+	rules[11] = rule{opts: [][]int{{42, 31}, {42, 11, 31}}}
+	cnt = 0
+	for _, msg := range msgs {
+		if valid, err := check(msg, rules); err != nil {
+			log.Fatalf("Failed checking %q: %v", msg, err)
+		} else if valid {
+			cnt++
+		}
+	}
+	fmt.Println(cnt)
 }
 
 type rule struct {
@@ -131,6 +144,6 @@ func check(msg string, rules []rule) (bool, error) {
 		seqs = next
 	}
 
-	// We were the right length, but the last character was wrong.
+	// Almost valid, but the last character was wrong.
 	return false, nil
 }
