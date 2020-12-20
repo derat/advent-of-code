@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math"
 	"math/bits"
 	"os"
 	"regexp"
@@ -12,7 +13,7 @@ import (
 )
 
 func main() {
-	var dim int // width and height (tiles are square)
+	var dim int // width and height of each tile (tiles are square)
 	tiles := make(map[int]tile)
 	addTile := func(id int, rows []uint16) {
 		if len(rows) != dim {
@@ -74,60 +75,216 @@ func main() {
 		addTile(id, rows)
 	}
 
-	/*
-		ti := tiles[2311]
-		for _, r := range ti.rows {
-			fmt.Println(dumpRow(r, dim))
-		}
-		fmt.Println()
+	// Map from edge to tile IDs containing it.
+	edgeIds := make(map[uint16]map[int]struct{})
+	for id, ti := range tiles {
 		for _, edges := range ti.edges {
-			fmt.Println(dumpRow(edges[top], dim), " t")
-			fmt.Println(dumpRow(edges[bottom], dim), " b")
-			fmt.Println(dumpRow(edges[left], dim), " l")
-			fmt.Println(dumpRow(edges[right], dim), " r")
+			for _, edge := range edges {
+				m := edgeIds[edge]
+				if m == nil {
+					m = make(map[int]struct{})
+				}
+				m[id] = struct{}{}
+				edgeIds[edge] = m
+			}
+		}
+	}
+
+	sideLen := int(math.Sqrt(float64(len(tiles))))
+	type tileInfo struct{ id, tr int }
+	sol := make([][]tileInfo, sideLen)
+	for i := range sol {
+		sol[i] = make([]tileInfo, sideLen)
+	}
+
+	remain := make(map[int]struct{}, len(tiles))
+	for id := range tiles {
+		remain[id] = struct{}{}
+	}
+
+	var solve func(r, c int) bool
+	solve = func(r, c int) bool {
+		//fmt.Printf("Solving for %v, %v\n", r, c)
+		for id := range remain {
+			delete(remain, id) // use the tile
+			for tr, edges := range tiles[id].edges {
+				// The first/last row need unique top/bottom edges.
+				if r == 0 && len(edgeIds[edges[top]]) > 1 {
+					continue
+				} else if r == sideLen-1 && len(edgeIds[edges[bottom]]) > 1 {
+					continue
+				}
+				// The first/last column need unique left/right edges.
+				if c == 0 && len(edgeIds[edges[left]]) > 1 {
+					continue
+				} else if c == sideLen-1 && len(edgeIds[edges[right]]) > 1 {
+					continue
+				}
+				// If we've already filled in a tile above or to the left, make sure
+				// that our top/left edge matches its bottom/right edge.
+				if r > 0 {
+					if t := sol[r-1][c]; edges[top] != tiles[t.id].edges[t.tr][bottom] {
+						continue
+					}
+				}
+				if c > 0 {
+					if l := sol[r][c-1]; edges[left] != tiles[l.id].edges[l.tr][right] {
+						continue
+					}
+				}
+
+				// Fill in the tile.
+				sol[r][c] = tileInfo{id, tr}
+				var nr, nc int
+				if c < sideLen-1 {
+					nr, nc = r, c+1
+				} else if r < sideLen-1 {
+					nr, nc = r+1, 0
+				} else {
+					return true // all done!
+				}
+				if done := solve(nr, nc); done {
+					return true
+				}
+			}
+			remain[id] = struct{}{} // didn't work; put the tile back
+		}
+		return false
+	}
+
+	if !solve(0, 0) {
+		log.Fatal("Didn't find solution")
+	}
+
+	// Print solution:
+	/*
+		for srow := range sol {
+			for trow := 0; trow < dim; trow++ { // skip top and bottom rows
+				for scol := range sol[srow] {
+					info := sol[srow][scol]
+					row := tiles[info.id].rows[info.tr][trow]
+					fmt.Print(dumpRow(row, dim), " ")
+				}
+				fmt.Println()
+			}
 			fmt.Println()
 		}
 	*/
 
-	// Returns a map from ID to transformations with a matching edge on the supplied side.
-	find := func(edge uint16, side int) map[int][]int {
-		matches := make(map[int][]int)
-		for id, ti := range tiles {
-			for tr, edges := range ti.edges {
-				if edges[side] == edge {
-					matches[id] = append(matches[id], tr)
+	// Part 1:
+	var prod int64 = int64(sol[0][0].id) * int64(sol[0][sideLen-1].id) *
+		int64(sol[sideLen-1][0].id) * int64(sol[sideLen-1][sideLen-1].id)
+	fmt.Println(prod)
+
+	// Part 2:
+	tdim := dim - 2
+	idim := sideLen * tdim
+	img := make([][]byte, idim)
+	for i := range img {
+		img[i] = make([]byte, idim)
+	}
+	for srow := range sol {
+		for scol := range sol[srow] {
+			info := sol[srow][scol]
+			rows := tiles[info.id].rows[info.tr]
+			for trow := 0; trow < tdim; trow++ {
+				row := rows[trow+1] // skip first row
+				for tcol := 0; tcol < tdim; tcol++ {
+					var val byte = '.'
+					if row&(1<<(tdim-tcol)) != 0 { // skip first col
+						val = '#'
+					}
+					irow := srow*tdim + trow
+					icol := scol*tdim + tcol
+					img[irow][icol] = val
 				}
 			}
 		}
-		return matches
 	}
 
-	var corners []int
-	for id, ti := range tiles {
-		for _, edges := range ti.edges {
-			unique := func(edge uint16, side int) bool {
-				m := find(edge, side)
-				delete(m, id)
-				return len(m) == 0
-			}
-			t := unique(edges[top], bottom)
-			b := unique(edges[bottom], top)
-			l := unique(edges[right], left)
-			r := unique(edges[left], right)
-			if (t || b) && (l || r) {
-				corners = append(corners, id)
-				break
+	monster := [][]byte{
+		[]byte("                  # "),
+		[]byte("#    ##    ##    ###"),
+		[]byte(" #  #  #  #  #  #   "),
+	}
+	mwidth := len(monster[0])
+	mheight := len(monster)
+
+	for tr := 0; tr < 8; tr++ {
+		timg := make([][]byte, idim)
+		for i, r := range img {
+			timg[i] = append([]byte{}, r...)
+		}
+
+		if tr&1 == 1 { // flip Y
+			for i, j := 0, idim-1; i < j; i, j = i+1, j-1 {
+				timg[i], timg[j] = timg[j], timg[i]
 			}
 		}
+		if tr&2 != 0 { // flip X
+			for _, r := range timg {
+				for i, j := 0, len(r)-1; i < j; i, j = i+1, j-1 {
+					r[i], r[j] = r[j], r[i]
+				}
+			}
+		}
+		if tr&4 != 0 { // rotate 90 degrees clockwise
+			rimg := make([][]byte, idim)
+			for i := 0; i < idim; i++ { // iterate over dest rows
+				rimg[i] = make([]byte, idim)
+				for j := 0; j < idim; j++ { // iterate over dest cols
+					rimg[i][j] = timg[j][i]
+				}
+			}
+			timg = rimg
+		}
+
+		/*
+			// Print transformed image.
+			for _, r := range timg {
+				fmt.Println(string(r))
+			}
+			fmt.Println()
+		*/
+
+		nmon := 0
+		for row := 0; row < idim-mheight; row++ {
+			for col := 0; col < idim-mwidth; col++ {
+				match := true
+			Check:
+				for i := 0; i < mheight; i++ {
+					for j := 0; j < mwidth; j++ {
+						if monster[i][j] == '#' && timg[row+i][col+j] != '#' {
+							match = false
+							break Check
+						}
+					}
+				}
+				if match {
+					nmon++
+					for i := 0; i < mheight; i++ {
+						for j := 0; j < mwidth; j++ {
+							if monster[i][j] == '#' {
+								timg[row+i][col+j] = '.'
+							}
+						}
+					}
+				}
+			}
+		}
+		if nmon > 0 {
+			roughness := 0
+			for _, r := range timg {
+				for _, c := range r {
+					if c == '#' {
+						roughness++
+					}
+				}
+			}
+			fmt.Println(roughness)
+			break
+		}
 	}
-	if len(corners) != 4 {
-		log.Fatal("Want 4 corners; got %v", corners)
-	}
-	var prod int64 = 1
-	for _, id := range corners {
-		prod *= int64(id)
-	}
-	fmt.Println(prod)
 }
 
 const (
@@ -139,12 +296,13 @@ const (
 
 type tile struct {
 	edges [8][4]uint16 // outer is transformation, inner is edge (LSB right/bottom)
-	rows  []uint16     // LSB right
+	rows  [8][]uint16  // outer is transformation, inner is rows (LSB right)
 }
 
 func newTile(rows []uint16) tile {
 	dim := len(rows)
-	ti := tile{rows: append([]uint16{}, rows...)}
+	var ti tile
+
 	for tr := 0; tr < 8; tr++ {
 		trows := append([]uint16{}, rows...)
 		if tr&1 != 0 { // flip Y: https://stackoverflow.com/a/28058324/6882947
@@ -175,6 +333,7 @@ func newTile(rows []uint16) tile {
 			ti.edges[tr][left] = (ti.edges[tr][left] << 1) | (row >> (dim - 1))
 			ti.edges[tr][right] = (ti.edges[tr][right] << 1) | (row & 0x1)
 		}
+		ti.rows[tr] = trows
 	}
 	return ti
 }
