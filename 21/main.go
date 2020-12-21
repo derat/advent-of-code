@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -125,4 +126,14 @@ func main() {
 		}
 	}
 	fmt.Println(cnt)
+
+	// Part 2:
+	var danger []string
+	for in := range known {
+		danger = append(danger, string(in)) // sigh, go
+	}
+	sort.Slice(danger, func(i, j int) bool {
+		return known[ingred(danger[i])] < known[ingred(danger[j])]
+	})
+	fmt.Println(strings.Join([]string(danger), ","))
 }
