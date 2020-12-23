@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sort"
 	"strings"
 )
 
@@ -14,72 +13,108 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	var cups []int
-	for _, ch := range strings.TrimSpace(ln) {
-		cups = append(cups, int(ch-'0'))
-	}
-
-	// Assertion for later code: cup values should be [1, ..., n].
-	chk := append([]int{}, cups...)
-	sort.Ints(chk)
-	for i, v := range chk {
-		if v != i+1 {
-			log.Fatalf("Cups %v aren't ascending from 1", cups)
-		}
-	}
 
 	// Part 1:
-	ncups := len(cups)
-	const nmoves = 100
-	for move := 0; move < nmoves; move++ {
-		// The destination is the value of the current cup minus one.
-		dv := cups[0] - 1
-		if dv == 0 {
-			dv = ncups
-		}
-
-		// Remove the three cups after the current one and rotate so the
-		// current cup is last.
-		rem := cups[1:4]
-		cups = append(cups[4:], cups[0])
-
-		// If the destination value is on one of the removed cups,
-		// count down and wrap around to top until we find a valid dest.
-		for dv == rem[0] || dv == rem[1] || dv == rem[2] {
-			if dv--; dv == 0 {
-				dv = ncups
-			}
-		}
-
-		// Find index of cup with destination value.
-		di := -1
-		for i, v := range cups {
-			if v == dv {
-				di = i
-				break
-			}
-		}
-		if di < 0 {
-			log.Fatal("Didn't find dest cup ", dv)
-		}
-
-		// Place removed cups immediately after dest cup.
-		nc := make([]int, 0, ncups)
-		nc = append(nc, cups[:di+1]...)
-		nc = append(nc, rem...)
-		nc = append(nc, cups[di+1:]...)
-		cups = nc
+	first, last, one, _ := makeCups(ln)
+	for i := 0; i < 100; i++ {
+		first, last = move(first, last)
 	}
 
 	// Print all the cups after the one labeled 1.
-	for i, v := range cups {
-		if v == 1 {
-			for j := 1; j < len(cups); j++ {
-				v := cups[(i+j)%len(cups)]
-				fmt.Print(v)
-			}
-			fmt.Println()
-			break
+	for c := one.next; c != one; c = c.next {
+		fmt.Print(c.val)
+	}
+	fmt.Println()
+
+	// Part 2:
+	first, last, one, max := makeCups(ln)
+
+	// Add additional cups.
+	for v := max.val + 1; v <= 1000000; v++ {
+		c := &cup{val: v}
+		if v == max.val+1 {
+			c.less = max
+		} else {
+			c.less = last
+		}
+		last.next = c
+		last = c
+		one.less = c
+	}
+
+	// Run 10 million iterations and print the product of the two cups after 1.
+	for i := 0; i < 10000000; i++ {
+		first, last = move(first, last)
+	}
+	fmt.Println(int64(one.next.val) * int64(one.next.next.val))
+}
+
+type cup struct {
+	val        int32
+	next, less *cup // next (clockwise) and cup with next-lowest value
+}
+
+func makeCups(s string) (first, last, one, max *cup) {
+	for _, ch := range strings.TrimSpace(s) {
+		c := &cup{val: int32(ch - '0')}
+		if first == nil {
+			first = c
+		} else {
+			last.next = c
+		}
+		last = c
+
+		if c.val == 1 {
+			one = c
+		}
+		if max == nil || c.val > max.val {
+			max = c
 		}
 	}
+
+	// Add pointers to cups with decreased value.
+	for c := first; c != nil; c = c.next {
+		if c == one {
+			c.less = max
+		} else {
+			for o := first; o != nil; o = o.next {
+				if c.val-1 == o.val {
+					c.less = o
+					break
+				}
+			}
+		}
+	}
+
+	return
+}
+
+func move(first, last *cup) (*cup, *cup) {
+	// Remove the second, third, and fourth cups.
+	r1 := first.next
+	r2 := r1.next
+	r3 := r2.next
+	first.next = r3.next
+	r3.next = nil
+
+	// Find the cup with a value one less than the first cup,
+	// counting down further if it's one of the removed cups.
+	less := first.less
+	for less == r1 || less == r2 || less == r3 {
+		less = less.less
+	}
+
+	// Splice in the removed cups.
+	r3.next = less.next
+	less.next = r1
+	if less == last {
+		last = r3
+	}
+
+	// Move the first cup to the end of the list.
+	last.next = first
+	last = first
+	first = first.next
+
+	return first, last
 }
