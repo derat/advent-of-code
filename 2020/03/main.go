@@ -1,20 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	sc := bufio.NewScanner(os.Stdin)
-	var lines []string
-	for sc.Scan() {
-		lines = append(lines, sc.Text())
-	}
-	if sc.Err() != nil {
-		panic(sc.Err())
-	}
+	lines := lib.ReadLinesBytes('.', '#')
 	if len(lines) == 0 {
 		panic("no input")
 	}

@@ -1,24 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"log"
-	"os"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	sc := bufio.NewScanner(os.Stdin)
-	var rows [][]byte
-	for sc.Scan() {
-		if len(sc.Bytes()) == 0 {
-			continue
-		}
-		rows = append(rows, append([]byte(nil), sc.Bytes()...)) // !@#!@#@!
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
-	}
+	rows := lib.ReadLinesBytes('.', 'L')
 
 	occ := func(rows [][]byte, row, col int) int {
 		if row < 0 || col < 0 || row >= len(rows) || col >= len(rows[row]) {

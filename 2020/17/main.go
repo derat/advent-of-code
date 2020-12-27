@@ -1,36 +1,25 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	s1 := newSpace()
 	s2 := newSpace()
-	var start, lines int
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		if ln == "" {
-			continue
-		}
-		if lines == 0 {
+	var start int
+	for i, ln := range lib.ReadLinesBytes('.', '#') {
+		if i == 0 {
 			start = len(ln) / 2 // center initial state
 		}
-		for i, ch := range ln {
+		for j, ch := range ln {
 			if ch == '#' {
-				s1.set(-start+i, start-lines, 0, 0)
-				s2.set(-start+i, start-lines, 0, 0)
+				s1.set(-start+j, start-i, 0, 0)
+				s2.set(-start+j, start-i, 0, 0)
 			}
 		}
-		lines++
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
 	}
 
 	//fmt.Println("Before any cycles:\n")

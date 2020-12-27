@@ -1,18 +1,16 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"math"
-	"os"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	max := -1
 	seen := make(map[int]struct{})
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		s := sc.Text()
+	for _, s := range lib.ReadLinesBytes('F', 'B', 'R', 'L') {
 		if len(s) != 10 {
 			panic(fmt.Sprintf("bad line %q", s))
 		}
@@ -23,9 +21,6 @@ func main() {
 			max = id
 		}
 		seen[id] = struct{}{}
-	}
-	if sc.Err() != nil {
-		panic(sc.Err())
 	}
 	fmt.Printf("max: %d\n", max)
 
@@ -43,7 +38,7 @@ func main() {
 	}
 }
 
-func find(s string) int {
+func find(s []byte) int {
 	min, max := 0, int(math.Pow(2, float64(len(s)))-1)
 	for _, ch := range s {
 		half := (max-min)/2 + 1
