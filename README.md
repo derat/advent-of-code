@@ -1,6 +1,6 @@
-# advent-of-code-2020
+# advent-of-code
 
-This repository contains solutions for the [Advent of Code 2020] challenges
-written in Go.
+This repository contains solutions for [Advent of Code] challenges written in
+Go.
 
-[Advent of Code 2020]: https://adventofcode.com/2020
+[Advent of Code 2020]: https://adventofcode.com/
