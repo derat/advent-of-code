@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
-	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
@@ -15,19 +12,10 @@ func main() {
 		end2 = 30000000
 	)
 
-	r := bufio.NewReader(os.Stdin)
-	s, err := r.ReadString('\n')
-	if err != nil {
-		log.Fatal(err)
-	}
 	turn := 1
 	seen := make(map[int]int) // turn in which number last spoken
 	last := -1                // last number spoken
-	for _, ns := range strings.Split(strings.TrimSpace(s), ",") {
-		n, err := strconv.Atoi(ns)
-		if err != nil {
-			log.Fatal(err)
-		}
+	for _, n := range lib.ReadInts() {
 		last = n
 		seen[n] = turn
 		turn++

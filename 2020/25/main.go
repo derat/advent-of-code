@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	var cpub, dpub int
-	if _, err := fmt.Scan(&cpub, &dpub); err != nil {
-		log.Fatal(err)
-	}
+	vals := lib.ReadIntsN(2)
+	cpub, dpub := vals[0], vals[1]
 
 	const (
 		subj = 7

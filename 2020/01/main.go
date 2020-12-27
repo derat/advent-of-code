@@ -1,29 +1,20 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strconv"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	const total = 2020
 	seen := make(map[int]struct{})
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		n, err := strconv.Atoi(sc.Text())
-		if err != nil {
-			panic(err)
-		}
+	for _, n := range lib.ReadInts() {
 		rem := total - n
 		if _, ok := seen[rem]; ok {
 			fmt.Printf("%d + %d = %d, %d * %d = %d\n", n, rem, total, n, rem, n*rem)
 		}
 		seen[n] = struct{}{}
-	}
-	if sc.Err() != nil {
-		panic(sc.Err())
 	}
 
 	for n := range seen {

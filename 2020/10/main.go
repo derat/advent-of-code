@@ -1,27 +1,16 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
-	"os"
 	"sort"
-	"strconv"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	var outs []int
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		v, err := strconv.Atoi(sc.Text())
-		if err != nil {
-			log.Fatal(err)
-		}
-		outs = append(outs, v)
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
-	}
+	outs = lib.ReadInts()
 	sort.Ints(outs)
 	outs = append(outs, outs[len(outs)-1]+3)
 
