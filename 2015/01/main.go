@@ -7,14 +7,18 @@ import (
 )
 
 func main() {
-	floor := 0
-	for _, ch := range lib.Line('(', ')') {
+	var floor, basement int
+	for i, ch := range lib.Line('(', ')') {
 		switch ch {
 		case '(':
 			floor++
 		case ')':
 			floor--
 		}
+		if floor < 0 && basement == 0 {
+			basement = i + 1
+		}
 	}
 	fmt.Println(floor)
+	fmt.Println(basement)
 }
