@@ -1,21 +1,16 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	ln, err := bufio.NewReader(os.Stdin).ReadString('\n')
-	if err != nil {
-		log.Fatal(err)
-	}
+	vals := lib.ExtractDigits(lib.ReadLines()[0])
 
 	// Part 1:
-	first, last, one, _ := makeCups(ln)
+	first, last, one, _ := makeCups(vals)
 	for i := 0; i < 100; i++ {
 		first, last = move(first, last)
 	}
@@ -27,7 +22,7 @@ func main() {
 	fmt.Println()
 
 	// Part 2:
-	first, last, one, max := makeCups(ln)
+	first, last, one, max := makeCups(vals)
 
 	// Add additional cups.
 	for v := max.val + 1; v <= 1000000; v++ {
@@ -54,9 +49,9 @@ type cup struct {
 	next, less *cup // next (clockwise) and cup with next-lowest value
 }
 
-func makeCups(s string) (first, last, one, max *cup) {
-	for _, ch := range strings.TrimSpace(s) {
-		c := &cup{val: int32(ch - '0')}
+func makeCups(vals []int) (first, last, one, max *cup) {
+	for _, v := range vals {
+		c := &cup{val: int32(v)}
 		if first == nil {
 			first = c
 		} else {

@@ -40,6 +40,20 @@ func ExtractInt64s(s string) []int64 {
 	return vals
 }
 
+// ExtractDigits extracts individual digits from s and returns them as ints.
+func ExtractDigits(s string) []int {
+	var vals []int
+	for _, ch := range []byte(s) {
+		if ch >= '0' && ch <= '9' {
+			vals = append(vals, int(ch-'0'))
+		}
+	}
+	if len(vals) == 0 {
+		panic("No digits found")
+	}
+	return vals
+}
+
 var parseCache = make(map[string]*regexp.Regexp)
 
 // Parse executes regular expression re on s and assigns groups to dsts.

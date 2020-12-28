@@ -1,78 +1,45 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"math"
 	"math/bits"
-	"os"
-	"regexp"
-	"strconv"
-	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	var dim int // width and height of each tile (tiles are square)
 	tiles := make(map[int]tile)
-	addTile := func(id int, rows []uint16) {
-		if len(rows) != dim {
-			log.Fatalf("Tile %d has %d row(s); want %d", id, len(rows), dim)
+
+	for _, pg := range lib.ReadParagraphs() {
+		var id int
+		lib.Parse(pg[0], `^Tile (\d+):$`, &id)
+
+		var rows []uint16
+		for _, ln := range pg[1:] {
+			if dim == 0 {
+				lib.AssertLessEq(len(ln), 16)
+				dim = len(ln)
+			}
+			lib.AssertEq(len(ln), dim)
+
+			var row uint16
+			for _, ch := range ln {
+				row <<= 1
+				switch ch {
+				case '.':
+				case '#':
+					row |= 1
+				default:
+					log.Fatalf("Tile %d row %q contains bad char %q", id, ln, ch)
+				}
+			}
+			rows = append(rows, row)
 		}
+		lib.AssertEq(len(rows), dim)
 		tiles[id] = newTile(rows)
-	}
-
-	headRegexp := regexp.MustCompile(`^Tile (\d+):$`)
-	var id int
-	var rows []uint16
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		if ln == "" {
-			continue
-		}
-
-		// Start of new tile.
-		if m := headRegexp.FindStringSubmatch(ln); m != nil {
-			if id > 0 {
-				addTile(id, rows)
-				rows = make([]uint16, 0, dim)
-			}
-			var err error
-			if id, err = strconv.Atoi(m[1]); err != nil {
-				log.Fatalf("Failed to parse ID in %q: %v", ln, err)
-			}
-			continue
-		}
-
-		// Row within current tile.
-		if dim == 0 {
-			if len(ln) > 16 {
-				log.Fatalf("Tile dimension %d > 16", len(ln))
-			}
-			dim = len(ln)
-		} else if len(ln) != dim {
-			log.Fatalf("Tile %d row %q has width %d; want %d", id, ln, len(ln), dim)
-		}
-
-		var row uint16
-		for _, ch := range ln {
-			row <<= 1
-			switch ch {
-			case '.':
-			case '#':
-				row |= 1
-			default:
-				log.Fatalf("Tile %d row %q contains bad char %q", id, ln, ch)
-			}
-		}
-		rows = append(rows, row)
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
-	}
-	if id > 0 {
-		addTile(id, rows)
 	}
 
 	// Map from edge to tile IDs containing it.
