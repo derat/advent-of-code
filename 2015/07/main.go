@@ -89,22 +89,37 @@ func main() {
 		}
 	}
 
-	for len(check) > 0 {
-		newCheck := make(map[string]struct{})
-		for src := range check {
-			for _, dst := range deps[src] {
-				if _, ok := signals[dst]; ok {
-					continue // already computed it
-				}
-				in := inputs[dst]
-				if v, ok := compute(in); ok {
-					signals[dst] = v
-					newCheck[dst] = struct{}{}
+	solve := func() {
+		for len(check) > 0 {
+			newCheck := make(map[string]struct{})
+			for src := range check {
+				for _, dst := range deps[src] {
+					if _, ok := signals[dst]; ok {
+						continue // already computed it
+					}
+					in := inputs[dst]
+					if v, ok := compute(in); ok {
+						signals[dst] = v
+						newCheck[dst] = struct{}{}
+					}
 				}
 			}
+			check = newCheck
 		}
-		check = newCheck
 	}
 
+	solve()
+	a := signals["a"]
+	fmt.Println(a)
+
+	// Part 2: Reset all wires and override b to take a's old value.
+	for id := range inputs {
+		delete(signals, id)
+	}
+	signals["b"] = a
+	for id := range signals {
+		check[id] = struct{}{} // check hardcoded wires again
+	}
+	solve()
 	fmt.Println(signals["a"])
 }
