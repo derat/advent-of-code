@@ -1,23 +1,17 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"log"
-	"os"
-	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	var sum1, sum2 int64
 
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		if ln == "" {
-			continue
-		}
+	for _, ln := range lib.ReadLines() {
 		tokens, err := tokenize(ln)
 		if err != nil {
 			log.Fatal(err)
@@ -34,9 +28,6 @@ func main() {
 		} else {
 			sum2 += val
 		}
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
 	}
 
 	fmt.Println(sum1)

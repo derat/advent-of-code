@@ -1,15 +1,10 @@
 package main
 
 import (
-	"bufio"
-	"log"
-	"os"
-	"regexp"
-	"strconv"
 	"strings"
-)
 
-var re = regexp.MustCompile(`^(\d+) (.+) bag(?:s?)(?:\.?)$`)
+	"github.com/derat/advent-of-code/lib"
+)
 
 type bagInfo struct {
 	color string
@@ -20,30 +15,19 @@ func main() {
 	holders := make(map[string][]string)
 	bags := make(map[string][]bagInfo)
 
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		s := sc.Text()
-		ps := strings.Split(s, " bags contain ")
-		if len(ps) != 2 {
-			log.Fatalf("bad line %q", s)
-		}
-		outer, lst := ps[0], ps[1]
-		if lst == "no other bags." {
+	for _, ln := range lib.ReadLines() {
+		var outer, lst string
+		lib.Parse(ln, `^(.+) bags contain (.+)\.$`, &outer, &lst)
+		if lst == "no other bags" {
 			continue
 		}
 		for _, p := range strings.Split(lst, ", ") {
-			m := re.FindStringSubmatch(p)
-			if m == nil {
-				log.Fatalf("failed parsing %q in %q", p, s)
-			}
-			cnt, _ := strconv.Atoi(m[1])
-			inner := m[2]
+			var cnt int
+			var inner string
+			lib.Parse(p, `^(\d+) (.+) bags?$`, &cnt, &inner)
 			holders[inner] = append(holders[inner], outer)
 			bags[outer] = append(bags[outer], bagInfo{color: inner, num: cnt})
 		}
-	}
-	if sc.Err() != nil {
-		panic(sc.Err())
 	}
 
 	seen := make(map[string]struct{})

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 )
 
 // ReadAll reads and returns all data from stdin.
@@ -30,6 +31,17 @@ func ReadIntsN(n int) []int {
 		panic(fmt.Sprintf("Got %v int(s); want %v", len(vals), n))
 	}
 	return vals
+}
+
+// ReadLines reads and returns newline-separated lines of input from stdin.
+func ReadLines() []string {
+	var lines []string
+	for _, ln := range strings.Split(string(ReadAll()), "\n") {
+		if len(ln) > 0 {
+			lines = append(lines, ln)
+		}
+	}
+	return lines
 }
 
 // ReadLinesBytes reads and returns newline-separated lines of input from stdin.

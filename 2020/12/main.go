@@ -1,12 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"math"
-	"os"
-	"strconv"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
@@ -27,39 +26,31 @@ func main() {
 		wy = math.Cos(rad) * dist
 	}
 
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		if sc.Text() == "" {
-			continue
-		}
-
-		s := sc.Text()
-		op := s[0]
-		v, err := strconv.ParseFloat(s[1:], 64)
-		if err != nil {
-			log.Fatal(err)
-		}
+	for _, ln := range lib.ReadLines() {
+		var op string
+		var v float64
+		lib.Parse(ln, `^([NSEWLRF])(\d+)$`, &op, &v)
 
 		switch op {
-		case 'N':
+		case "N":
 			oy += v
 			wy += v
-		case 'S':
+		case "S":
 			oy -= v
 			wy -= v
-		case 'E':
+		case "E":
 			ox += v
 			wx += v
-		case 'W':
+		case "W":
 			ox -= v
 			wx -= v
-		case 'L':
+		case "L":
 			head = math.Mod(head-v, 360)
 			rotWay(-v)
-		case 'R':
+		case "R":
 			head = math.Mod(head+v, 360)
 			rotWay(v)
-		case 'F':
+		case "F":
 			// Overkill: input just uses intervals of 90 degrees for rotations.
 			rad := head * math.Pi / 180
 			ox += math.Sin(rad) * v
@@ -70,9 +61,6 @@ func main() {
 		default:
 			log.Fatalf("invalid op %q", op)
 		}
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
 	}
 
 	// https://en.wikipedia.org/wiki/Taxicab_geometry

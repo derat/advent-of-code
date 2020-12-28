@@ -1,26 +1,17 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
 	"log"
-	"os"
-	"strconv"
-	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	var ins []instr
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		in, err := newInstr(sc.Text())
-		if err != nil {
-			log.Fatalf("bad line %q: %v", sc.Text(), err)
-		}
+	for _, ln := range lib.ReadLines() {
+		var in instr
+		lib.Parse(ln, `^(acc|jmp|nop) ([-+]\d+)$`, (*string)(&in.op), &in.val)
 		ins = append(ins, in)
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
 	}
 
 	r, accum := run(ins)
@@ -53,55 +44,17 @@ func main() {
 	}
 }
 
-type op int
+type op string
 
 const (
-	acc op = iota
-	jmp
-	nop
+	acc op = "acc"
+	jmp    = "jmp"
+	nop    = "nop"
 )
-
-func (o op) String() string {
-	switch o {
-	case acc:
-		return "acc"
-	case jmp:
-		return "jmp"
-	case nop:
-		return "nop"
-	}
-	return fmt.Sprintf("[%d]", o)
-}
 
 type instr struct {
 	op  op
 	val int
-}
-
-func newInstr(ln string) (instr, error) {
-	ps := strings.Fields(ln)
-	if len(ps) != 2 {
-		return instr{}, fmt.Errorf("%v part(s) instead of 2", len(ps))
-	}
-
-	var in instr
-	switch ps[0] {
-	case "acc":
-		in.op = acc
-	case "jmp":
-		in.op = jmp
-	case "nop":
-		in.op = nop
-	default:
-		return in, fmt.Errorf("invalid op %q", ps[0])
-	}
-
-	var err error
-	if in.val, err = strconv.Atoi(ps[1]); err != nil {
-		return in, err
-	}
-
-	return in, nil
 }
 
 type res int

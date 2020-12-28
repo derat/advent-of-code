@@ -1,26 +1,18 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"regexp"
-	"strconv"
 	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	re := regexp.MustCompile(`^(\d+)-(\d+) ([a-z]): ([a-z]+)$`)
 	var valid1, valid2 int
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		m := re.FindStringSubmatch(sc.Text())
-		if m == nil {
-			panic(fmt.Sprintf("bad line %q", sc.Text()))
-		}
-		min, _ := strconv.Atoi(m[1])
-		max, _ := strconv.Atoi(m[2])
-		ch, pw := m[3], m[4]
+	for _, ln := range lib.ReadLines() {
+		var min, max int
+		var ch, pw string
+		lib.Parse(ln, `^(\d+)-(\d+) ([a-z]): ([a-z]+)$`, &min, &max, &ch, &pw)
 
 		if n := len(pw) - len(strings.ReplaceAll(pw, ch, "")); n >= min && n <= max {
 			valid1++
@@ -30,8 +22,6 @@ func main() {
 			valid2++
 		}
 	}
-	if sc.Err() != nil {
-		panic(sc.Err())
-	}
-	fmt.Println(valid1, valid2)
+	fmt.Println(valid1)
+	fmt.Println(valid2)
 }

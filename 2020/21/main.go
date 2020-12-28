@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
-	"os"
 	"sort"
 	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 type allerg string
@@ -25,41 +25,26 @@ type food struct {
 func main() {
 	var foods []food
 
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		if ln == "" {
-			continue
-		}
-
+	for _, ln := range lib.ReadLines() {
 		fd := food{make(ingredMap), make(allergMap)}
-		idx := strings.IndexRune(ln, '(')
-		if idx == -1 {
-			log.Fatalf("No left paren in %q", ln)
-		}
-		for _, f := range strings.Fields(ln[:idx]) {
+		var left, right string
+		lib.Parse(ln, `^(.+) \(contains (.+)\)$`, &left, &right)
+
+		for _, f := range strings.Fields(left) {
 			fd.ingreds[ingred(f)] = set
 		}
 		if len(fd.ingreds) == 0 {
 			log.Fatalf("No ingredients in %q", ln)
 		}
 
-		const pre, suf = "(contains ", ")"
-		rest := ln[idx:]
-		if !strings.HasPrefix(rest, pre) || !strings.HasSuffix(rest, suf) {
-			log.Fatalf("Bad allergen list in %q", ln)
-		}
-		for _, f := range strings.Split(rest[len(pre):len(rest)-len(suf)], ",") {
-			fd.allergs[allerg(strings.TrimSpace(f))] = set
+		for _, f := range strings.Split(right, ", ") {
+			fd.allergs[allerg(f)] = set
 		}
 		if len(fd.allergs) == 0 {
 			log.Fatalf("No allergens in %q", ln)
 		}
 
 		foods = append(foods, fd)
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
 	}
 
 	rules := make(map[allerg][]ingredMap) // values are ingredient lists

@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
-	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
@@ -16,25 +14,19 @@ func main() {
 	var fbits []int // positions of 'X' bits in mask
 	mem := make(map[uint64]uint64)
 	mem2 := make(map[uint64]uint64)
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		if sc.Text() == "" {
-			continue
-		}
-		parts := strings.Split(sc.Text(), "=")
-		if len(parts) != 2 {
-			log.Fatalf("bad line %q", sc.Text())
-		}
-		lhs := strings.TrimSpace(parts[0])
-		rhs := strings.TrimSpace(parts[1])
+	for _, ln := range lib.ReadLines() {
+		var mask string
+		var addr, val uint64
+		lib.Parse(ln, `^mask = (.+)|mem\[(\d+)\] = (\d+)$`, &mask, &addr, &val)
+
 		switch {
-		case lhs == "mask":
-			if len(rhs) != width {
-				log.Fatalf("invalid bitmask %q", rhs)
+		case mask != "":
+			if len(mask) != width {
+				log.Fatalf("invalid bitmask %q", mask)
 			}
 			mask0, mask1 = 0, 0
 			fbits = nil
-			for i, ch := range rhs {
+			for i, ch := range mask {
 				if i > 0 {
 					mask0 <<= 1
 					mask1 <<= 1
@@ -50,16 +42,7 @@ func main() {
 					log.Fatalf("invalid bit %q", ch)
 				}
 			}
-		case strings.HasPrefix(lhs, "mem[") && lhs[len(lhs)-1] == ']':
-			addr, err := strconv.ParseUint(lhs[4:len(lhs)-1], 10, width)
-			if err != nil {
-				log.Fatal("bad address: ", err)
-			}
-			val, err := strconv.ParseUint(rhs, 10, width)
-			if err != nil {
-				log.Fatal("bad value: ", err)
-			}
-
+		default:
 			// Part 1: mask applies to value: 0 unset, 1 set, X unchanged.
 			mem[addr] = (val | mask1) & ^mask0
 
@@ -76,13 +59,8 @@ func main() {
 				}
 				mem2[maddr] = val
 			}
-		default:
-			log.Fatalf("invalid lhs %q", lhs)
 		}
 
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
 	}
 
 	var sum uint64

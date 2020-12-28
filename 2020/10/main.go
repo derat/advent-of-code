@@ -9,8 +9,7 @@ import (
 )
 
 func main() {
-	var outs []int
-	outs = lib.ReadInts()
+	outs := lib.ReadInts()
 	sort.Ints(outs)
 	outs = append(outs, outs[len(outs)-1]+3)
 
