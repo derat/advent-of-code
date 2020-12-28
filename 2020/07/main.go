@@ -17,14 +17,14 @@ func main() {
 
 	for _, ln := range lib.InputLines("2020/7") {
 		var outer, lst string
-		lib.Parse(ln, `^(.+) bags contain (.+)\.$`, &outer, &lst)
+		lib.Extract(ln, `^(.+) bags contain (.+)\.$`, &outer, &lst)
 		if lst == "no other bags" {
 			continue
 		}
 		for _, p := range strings.Split(lst, ", ") {
 			var cnt int
 			var inner string
-			lib.Parse(p, `^(\d+) (.+) bags?$`, &cnt, &inner)
+			lib.Extract(p, `^(\d+) (.+) bags?$`, &cnt, &inner)
 			holders[inner] = append(holders[inner], outer)
 			bags[outer] = append(bags[outer], bagInfo{color: inner, num: cnt})
 		}

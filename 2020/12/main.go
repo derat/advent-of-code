@@ -29,7 +29,7 @@ func main() {
 	for _, ln := range lib.InputLines("2020/12") {
 		var op string
 		var v float64
-		lib.Parse(ln, `^([NSEWLRF])(\d+)$`, &op, &v)
+		lib.Extract(ln, `^([NSEWLRF])(\d+)$`, &op, &v)
 
 		switch op {
 		case "N":

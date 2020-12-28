@@ -15,7 +15,7 @@ func main() {
 
 	for _, pg := range lib.InputParagraphs("2020/20") {
 		var id int
-		lib.Parse(pg[0], `^Tile (\d+):$`, &id)
+		lib.Extract(pg[0], `^Tile (\d+):$`, &id)
 
 		var rows []uint16
 		for _, ln := range pg[1:] {

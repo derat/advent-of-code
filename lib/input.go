@@ -23,7 +23,7 @@ var cacheDir = path.Join(os.Getenv("HOME"), ".cache/advent-of-code")
 // read from stdin instead.
 func Input(date string) string {
 	var year, day int
-	Parse(date, `^(\d{4})/(\d{1,2})$`, &year, &day)
+	Extract(date, `^(\d{4})/(\d{1,2})$`, &year, &day)
 
 	// Read from stdin if a "-" arg was supplied.
 	if len(os.Args) == 2 && os.Args[1] == "-" {

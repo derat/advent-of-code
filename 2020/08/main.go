@@ -10,7 +10,7 @@ func main() {
 	var ins []instr
 	for _, ln := range lib.InputLines("2020/8") {
 		var in instr
-		lib.Parse(ln, `^(acc|jmp|nop) ([-+]\d+)$`, (*string)(&in.op), &in.val)
+		lib.Extract(ln, `^(acc|jmp|nop) ([-+]\d+)$`, (*string)(&in.op), &in.val)
 		ins = append(ins, in)
 	}
 

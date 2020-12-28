@@ -18,7 +18,7 @@ func main() {
 		var rl rule
 		var num int
 		var rest string
-		lib.Parse(ln, `^(\d+): (.+)$`, &num, &rest)
+		lib.Extract(ln, `^(\d+): (.+)$`, &num, &rest)
 		if len(rest) == 3 && rest[0] == '"' && rest[2] == '"' {
 			rl.ch = rune(rest[1])
 		} else {

@@ -17,7 +17,7 @@ func main() {
 	for _, ln := range lib.InputLines("2020/14") {
 		var mask string
 		var addr, val uint64
-		lib.Parse(ln, `^mask = (.+)|mem\[(\d+)\] = (\d+)$`, &mask, &addr, &val)
+		lib.Extract(ln, `^mask = (.+)|mem\[(\d+)\] = (\d+)$`, &mask, &addr, &val)
 
 		switch {
 		case mask != "":

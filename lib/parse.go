@@ -55,14 +55,14 @@ func ExtractDigits(s string) []int {
 	return vals
 }
 
-var parseCache = make(map[string]*regexp.Regexp)
+var extractCache = make(map[string]*regexp.Regexp)
 
-// Parse executes regular expression re on s and assigns groups to dsts.
-func Parse(s, re string, dsts ...interface{}) {
-	cre, ok := parseCache[re]
+// Extract executes regular expression re on s and assigns groups to dsts.
+func Extract(s, re string, dsts ...interface{}) {
+	cre, ok := extractCache[re]
 	if !ok {
 		cre = regexp.MustCompile(re)
-		parseCache[re] = cre
+		extractCache[re] = cre
 	}
 
 	ms := cre.FindStringSubmatch(s)

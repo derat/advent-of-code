@@ -16,7 +16,7 @@ func main() {
 	for _, ln := range pgs[0] {
 		var name string
 		var min1, max1, min2, max2 int
-		lib.Parse(ln, `^(.+): (\d+)-(\d+) or (\d+)-(\d+)$`,
+		lib.Extract(ln, `^(.+): (\d+)-(\d+) or (\d+)-(\d+)$`,
 			&name, &min1, &max1, &min2, &max2)
 		rules[name] = rule{[][]int{{min1, max1}, {min2, max2}}}
 	}

@@ -28,7 +28,7 @@ func main() {
 	for _, ln := range lib.InputLines("2020/21") {
 		fd := food{make(ingredMap), make(allergMap)}
 		var left, right string
-		lib.Parse(ln, `^(.+) \(contains (.+)\)$`, &left, &right)
+		lib.Extract(ln, `^(.+) \(contains (.+)\)$`, &left, &right)
 
 		for _, f := range strings.Fields(left) {
 			fd.ingreds[ingred(f)] = set
