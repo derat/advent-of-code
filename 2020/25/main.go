@@ -7,7 +7,8 @@ import (
 )
 
 func main() {
-	vals := lib.ReadIntsN(2)
+	vals := lib.ReadInts()
+	lib.Assert(len(vals), 2)
 	cpub, dpub := vals[0], vals[1]
 
 	const (

@@ -1,50 +1,29 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	sc := bufio.NewScanner(os.Stdin)
+	pgs := lib.ReadParagraphs()
+	lib.Assert(len(pgs), 2)
 
-	// Read rules.
+	// Parse rules.
 	var rules []rule
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		if ln == "" {
-			break
-		}
-
-		col := strings.IndexRune(ln, ':')
-		if col == -1 {
-			log.Fatalf("Missing colon in line %q", ln)
-		}
-
-		num, err := strconv.Atoi(ln[:col])
-		if err != nil {
-			log.Fatalf("Bad rule number in line %q: %v", ln, err)
-		}
-
+	for _, ln := range pgs[0] {
 		var rl rule
-		rest := strings.TrimSpace(ln[col+1:])
+		var num int
+		var rest string
+		lib.Parse(ln, `^(\d+): (.+)$`, &num, &rest)
 		if len(rest) == 3 && rest[0] == '"' && rest[2] == '"' {
 			rl.ch = rune(rest[1])
 		} else {
 			for _, part := range strings.Split(rest, "|") {
-				var list []int
-				for _, s := range strings.Fields(part) {
-					v, err := strconv.Atoi(s)
-					if err != nil {
-						log.Fatalf("Bad subrule number in line %q: %v", ln, err)
-					}
-					list = append(list, v)
-				}
-				rl.opts = append(rl.opts, list)
+				rl.opts = append(rl.opts, lib.ExtractInts(part))
 			}
 			if len(rl.opts) == 0 {
 				log.Fatalf("Bad subrule list in %q", ln)
@@ -58,22 +37,9 @@ func main() {
 		}
 		rules[num] = rl
 	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
-	}
 
-	// Read messages.
-	var msgs []string
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		if ln == "" {
-			continue
-		}
-		msgs = append(msgs, ln)
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
-	}
+	// The second paragraph contains messages to validate.
+	msgs := pgs[1]
 
 	// Part 1:
 	cnt := 0

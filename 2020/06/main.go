@@ -1,34 +1,17 @@
 package main
 
 import (
-	"bufio"
-	"os"
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	sc := bufio.NewScanner(os.Stdin)
 	var sum, sum2 int
-	var grp []string
-	for sc.Scan() {
-		s := sc.Text()
-		if s != "" {
-			grp = append(grp, s)
-		} else {
-			if len(grp) > 0 {
-				sum += count(grp, false)
-				sum2 += count(grp, true)
-			}
-			grp = nil
-		}
+	for _, pg := range lib.ReadParagraphs() {
+		sum += count(pg, false)
+		sum2 += count(pg, true)
 	}
-	if sc.Err() != nil {
-		panic(sc.Err())
-	}
-	if len(grp) > 0 {
-		sum += count(grp, false)
-		sum2 += count(grp, true)
-	}
-	println(sum, sum2)
+	println(sum)
+	println(sum2)
 }
 
 func count(grp []string, all bool) int {

@@ -1,39 +1,20 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
 	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	var d1, d2 []int
-	var recip *[]int
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		switch ln {
-		case "":
-		case "Player 1:":
-			recip = &d1
-		case "Player 2:":
-			recip = &d2
-		default:
-			v, err := strconv.Atoi(ln)
-			if err != nil {
-				log.Fatalf("Bad card %q: %v", ln, err)
-			} else if v > 255 { // protect optimization in state()
-				log.Fatalf("Card value %v > 255", v)
-			}
-			*recip = append(*recip, v)
-		}
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
-	}
+	pgs := lib.ReadParagraphs()
+	lib.Assert(len(pgs), 2)
+	lib.Assert(pgs[0][0], "Player 1:")
+	d1 := lib.ExtractInts(strings.Join(pgs[0][1:], " "))
+	lib.Assert(pgs[1][0], "Player 2:")
+	d2 := lib.ExtractInts(strings.Join(pgs[1][1:], " "))
+	// Technically ought to check that no cards have values above 255.
 
 	// Part 1:
 	if p1win, d1, d2 := play(d1, d2, false /* recurse */); p1win {

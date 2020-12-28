@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -24,15 +25,6 @@ func ReadInts() []int {
 	return ExtractInts(string(ReadAll()))
 }
 
-// ReadIntsN is similar to ReadInts but panics unless exactly n ints are read.
-func ReadIntsN(n int) []int {
-	vals := ReadInts()
-	if len(vals) != n {
-		panic(fmt.Sprintf("Got %v int(s); want %v", len(vals), n))
-	}
-	return vals
-}
-
 // ReadLines reads and returns newline-separated lines of input from stdin.
 func ReadLines() []string {
 	var lines []string
@@ -42,6 +34,21 @@ func ReadLines() []string {
 		}
 	}
 	return lines
+}
+
+var newlinesRegexp = regexp.MustCompile(`\n\n+`)
+
+// ReadParagraphs reads all data from stdin and splits it into paragraphs on multiple
+// newlines. Each paragraph is split further into individual lines.
+func ReadParagraphs() [][]string {
+	var pgs [][]string
+	all := strings.Trim(string(ReadAll()), "\n")
+	for _, pg := range newlinesRegexp.Split(all, -1) {
+		if len(pg) > 0 {
+			pgs = append(pgs, strings.Split(pg, "\n"))
+		}
+	}
+	return pgs
 }
 
 // ReadLinesBytes reads and returns newline-separated lines of input from stdin.

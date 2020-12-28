@@ -1,38 +1,22 @@
 package main
 
 import (
-	"bufio"
-	"os"
 	"regexp"
 	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	sc := bufio.NewScanner(os.Stdin)
 	var nvalid, nvalid2 int
-	var data string
-	for sc.Scan() {
-		if sc.Text() != "" {
-			data += " " + sc.Text()
-		} else {
-			if valid(data, false) {
-				nvalid++
-			}
-			if valid(data, true) {
-				nvalid2++
-			}
-			data = ""
-			continue
+	for _, pg := range lib.ReadParagraphs() {
+		data := strings.Join(pg, " ")
+		if valid(data, false) {
+			nvalid++
 		}
-	}
-	if sc.Err() != nil {
-		panic(sc.Err())
-	}
-	if valid(data, false) {
-		nvalid++
-	}
-	if valid(data, true) {
-		nvalid2++
+		if valid(data, true) {
+			nvalid2++
+		}
 	}
 	println(nvalid, nvalid2)
 }

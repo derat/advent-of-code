@@ -1,57 +1,34 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	rules := make(map[string]rule) // keyed by field name
-	var yours ticket
-	var nearby []ticket
+	pgs := lib.ReadParagraphs()
+	lib.Assert(len(pgs), 3)
 
-	sect := rulesSect
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		switch ln {
-		case "": // ignore blank lines
-		case "your ticket:":
-			sect = yoursSect
-		case "nearby tickets:":
-			sect = nearbySect
-		default:
-			switch sect {
-			case rulesSect:
-				parts := strings.Split(ln, ": ")
-				if len(parts) != 2 {
-					log.Fatalf("bad rules line %q", ln)
-				}
-				rule, err := newRule(parts[1])
-				if err != nil {
-					log.Fatalf("bad rule in line %q: %v", ln, err)
-				}
-				rules[parts[0]] = rule
-			case yoursSect:
-				var err error
-				if yours, err = newTicket(ln); err != nil {
-					log.Fatalf("bad ticket line %q: %v", ln, err)
-				}
-			case nearbySect:
-				if t, err := newTicket(ln); err != nil {
-					log.Fatalf("bad ticket line %q: %v", ln, err)
-				} else {
-					nearby = append(nearby, t)
-				}
-			}
-		}
+	rules := make(map[string]rule) // keyed by field name
+	for _, ln := range pgs[0] {
+		var name string
+		var min1, max1, min2, max2 int
+		lib.Parse(ln, `^(.+): (\d+)-(\d+) or (\d+)-(\d+)$`,
+			&name, &min1, &max1, &min2, &max2)
+		rules[name] = rule{[][]int{{min1, max1}, {min2, max2}}}
 	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
+
+	lib.Assert(len(pgs[1]), 2)
+	lib.Assert(pgs[1][0], "your ticket:")
+	yours := ticket{lib.ExtractInts(pgs[1][1])}
+
+	lib.Assert(pgs[2][0], "nearby tickets:")
+	var nearby []ticket
+	for _, ln := range pgs[2][1:] {
+		nearby = append(nearby, ticket{lib.ExtractInts(ln)})
 	}
 
 	errRate := 0
@@ -129,36 +106,8 @@ func main() {
 	fmt.Println(prod)
 }
 
-type sect int
-
-const (
-	rulesSect sect = iota
-	yoursSect
-	nearbySect
-)
-
 type rule struct {
 	ranges [][]int
-}
-
-func newRule(s string) (rule, error) {
-	var r rule
-	for _, p := range strings.Split(s, " or ") {
-		parts := strings.Split(p, "-")
-		if len(parts) != 2 {
-			return r, fmt.Errorf("bad range %q", p)
-		}
-		min, err := strconv.Atoi(parts[0])
-		if err != nil {
-			return r, err
-		}
-		max, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return r, err
-		}
-		r.ranges = append(r.ranges, []int{min, max})
-	}
-	return r, nil
 }
 
 func (r *rule) valid(n int) bool {
@@ -172,16 +121,4 @@ func (r *rule) valid(n int) bool {
 
 type ticket struct {
 	fields []int
-}
-
-func newTicket(s string) (ticket, error) {
-	var t ticket
-	for _, f := range strings.Split(s, ",") {
-		v, err := strconv.Atoi(f)
-		if err != nil {
-			return t, err
-		}
-		t.fields = append(t.fields, v)
-	}
-	return t, nil
 }
