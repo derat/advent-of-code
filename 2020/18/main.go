@@ -4,18 +4,31 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 
 	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	var sum1, sum2 int64
-
+	numRegexp := regexp.MustCompile(`^\d+`)
 	for _, ln := range lib.ReadLines() {
-		tokens, err := tokenize(ln)
-		if err != nil {
-			log.Fatal(err)
+		var tokens []int64
+		for _, tok := range lib.Tokenize(ln, "+", "*", "(", ")", numRegexp) {
+			switch tok {
+			case "+":
+				tokens = append(tokens, plus)
+			case "*":
+				tokens = append(tokens, times)
+			case "(":
+				tokens = append(tokens, lparen)
+			case ")":
+				tokens = append(tokens, rparen)
+			default: // number
+				tokens = append(tokens, lib.ExtractInt64s(tok)[0])
+			}
 		}
+
 		// Evaluate with addition and multiplication at the same precedence.
 		if val, err := eval(tokens, func(tokens []int64) (int64, error) { return reduceExpr(tokens, false) }); err != nil {
 			log.Fatal(err)
@@ -40,44 +53,6 @@ const (
 	lparen = -3 // '('
 	rparen = -4 // ')'
 )
-
-// tokenize converts the supplied string into tokens.
-// Negative values are used to represent operators and parentheses.
-func tokenize(ln string) ([]int64, error) {
-	var tokens []int64
-	var val int64
-	inVal := false
-
-	for _, ch := range ln {
-		if ch >= '0' && ch <= '9' {
-			val = val*10 + int64(ch-'0')
-			inVal = true
-		} else {
-			if inVal {
-				tokens = append(tokens, val)
-				val = 0
-				inVal = false
-			}
-			switch ch {
-			case '+':
-				tokens = append(tokens, plus)
-			case '*':
-				tokens = append(tokens, times)
-			case '(':
-				tokens = append(tokens, lparen)
-			case ')':
-				tokens = append(tokens, rparen)
-			case ' ':
-			default:
-				return nil, fmt.Errorf("bad char %q", ch)
-			}
-		}
-	}
-	if inVal {
-		tokens = append(tokens, val)
-	}
-	return tokens, nil
-}
 
 // reduceFunc reduces a simple expression that doesn't contain parentheses.
 type reduceFunc func(tokens []int64) (int64, error)

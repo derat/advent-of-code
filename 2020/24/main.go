@@ -1,53 +1,33 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	black := make(map[uint64]struct{})
-	sc := bufio.NewScanner(os.Stdin)
-	for sc.Scan() {
-		ln := strings.TrimSpace(sc.Text())
-		if ln == "" {
-			continue
-		}
-
+	for _, ln := range lib.ReadLines() {
 		var x, y int32
-		for i := 0; i < len(ln); i++ {
-			switch ln[i] {
-			case 'e':
+		for _, tok := range lib.Tokenize(ln, "e", "w", "ne", "nw", "se", "sw") {
+			switch tok {
+			case "e":
 				x++
-			case 'w':
+			case "w":
 				x--
-			case 'n':
-				switch ln[i+1] {
-				case 'e':
-					x += ex(y)
-				case 'w':
-					x += wx(y)
-				default:
-					log.Fatalf("Bad line %q", ln)
-				}
+			case "ne":
+				x += ex(y)
 				y++
-				i++
-			case 's':
-				switch ln[i+1] {
-				case 'e':
-					x += ex(y)
-				case 'w':
-					x += wx(y)
-				default:
-					log.Fatalf("Bad line %q", ln)
-				}
+			case "nw":
+				x += wx(y)
+				y++
+			case "se":
+				x += ex(y)
 				y--
-				i++
-			default:
-				log.Fatalf("Bad line %q", ln)
+			case "sw":
+				x += wx(y)
+				y--
 			}
 		}
 
@@ -57,9 +37,6 @@ func main() {
 		} else {
 			black[key] = struct{}{} // flip to black
 		}
-	}
-	if sc.Err() != nil {
-		log.Fatal(sc.Err())
 	}
 	fmt.Println(len(black))
 

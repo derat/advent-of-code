@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var nonDigitRegexp = regexp.MustCompile(`\D+`)
@@ -95,4 +96,38 @@ func Parse(s, re string, dsts ...interface{}) {
 			panic(fmt.Sprintf("Failed to parse group %q matched by %q: %v", m, re, err))
 		}
 	}
+}
+
+// Tokenize splits s into tokens from the supplied args (either string or *regexp.Regexp).
+// Whitespace is ignored. Regexps should be '^'-prefixed for better performance.
+func Tokenize(s string, tokens ...interface{}) []string {
+	var out []string
+	for s = strings.TrimSpace(s); len(s) > 0; s = strings.TrimSpace(s) {
+		found := false
+		for _, tok := range tokens {
+			var v string
+			switch t := tok.(type) {
+			case string:
+				if strings.HasPrefix(s, t) {
+					v = t
+				}
+			case *regexp.Regexp:
+				if loc := t.FindStringIndex(s); loc != nil && loc[0] == 0 {
+					v = s[loc[0]:loc[1]]
+				}
+			default:
+				panic(fmt.Sprintf("Invalid token %q of type %T", tok, tok))
+			}
+			if len(v) > 0 {
+				out = append(out, v)
+				s = s[len(v):]
+				found = true
+				break
+			}
+		}
+		if !found {
+			panic(fmt.Sprintf("Didn't find token at beginning of %q", s))
+		}
+	}
+	return out
 }
