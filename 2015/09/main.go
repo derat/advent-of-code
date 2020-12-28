@@ -7,7 +7,7 @@ import (
 )
 
 // Outer map is keyed by starting location ID.
-// Inner map is from bitfield of visited location IDs to minimum cost.
+// Inner map is from bitfield of visited location IDs to best cost.
 type costMap map[uint8]map[uint8]int
 
 func main() {
@@ -37,9 +37,9 @@ func main() {
 
 	costs := make(costMap)
 
-	// Returns the minimum cost to travel from start to the locations in todo.
-	var minCost func(start, todo uint8) int
-	minCost = func(start, todo uint8) int {
+	// Returns the best cost to travel from start to the locations in todo.
+	var bestCost func(start, todo uint8, max bool) int
+	bestCost = func(start, todo uint8, max bool) int {
 		// Check for already-computed cost.
 		if m, ok := costs[start]; ok {
 			if c, ok := m[todo]; ok {
@@ -60,9 +60,9 @@ func main() {
 			}
 			newTodo := todo & ^next
 			if newTodo != 0 {
-				cost += minCost(next, newTodo)
+				cost += bestCost(next, newTodo, max)
 			}
-			if best == -1 || cost < best {
+			if best == -1 || (!max && cost < best) || (max && cost > best) {
 				best = cost
 			}
 		}
@@ -81,9 +81,19 @@ func main() {
 	// Try starting from each location to find the minimum cost.
 	min := -1
 	for _, id := range ids {
-		if c := minCost(id, all & ^id); min == -1 || c < min {
+		if c := bestCost(id, all & ^id, false); min == -1 || c < min {
 			min = c
 		}
 	}
 	fmt.Println(min)
+
+	// Part 2: Maximum cost.
+	max := -1
+	costs = make(costMap)
+	for _, id := range ids {
+		if c := bestCost(id, all & ^id, true); max == -1 || c > max {
+			max = c
+		}
+	}
+	fmt.Println(max)
 }
