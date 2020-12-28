@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	rows := lib.ReadLinesBytes('.', 'L')
+	rows := lib.InputLinesBytes("2020/11", '.', 'L')
 
 	occ := func(rows [][]byte, row, col int) int {
 		if row < 0 || col < 0 || row >= len(rows) || col >= len(rows[row]) {

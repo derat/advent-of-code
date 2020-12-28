@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	vals := lib.ReadInts()
+	vals := lib.InputInts("2020/25")
 	lib.AssertEq(len(vals), 2)
 	cpub, dpub := vals[0], vals[1]
 

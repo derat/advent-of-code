@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	vals := lib.ExtractDigits(lib.ReadLines()[0])
+	vals := lib.ExtractDigits(lib.InputLines("2020/23")[0])
 
 	// Part 1:
 	first, last, one, _ := makeCups(vals)

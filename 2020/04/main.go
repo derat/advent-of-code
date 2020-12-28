@@ -9,7 +9,7 @@ import (
 
 func main() {
 	var nvalid, nvalid2 int
-	for _, pg := range lib.ReadParagraphs() {
+	for _, pg := range lib.InputParagraphs("2020/4") {
 		data := strings.Join(pg, " ")
 		if valid(data, false) {
 			nvalid++

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	pgs := lib.ReadParagraphs()
+	pgs := lib.InputParagraphs("2020/16")
 	lib.AssertEq(len(pgs), 3)
 
 	rules := make(map[string]rule) // keyed by field name

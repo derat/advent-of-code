@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	lns := lib.ReadLines()
+	lns := lib.InputLines("2020/13")
 	lib.AssertEq(len(lns), 2)
 	est := lib.ExtractInt64s(lns[0])[0]
 	var ids []int64

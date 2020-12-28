@@ -14,7 +14,7 @@ func main() {
 	lookup := make(map[int64]int8, psize)
 	var all []int64 // so much for efficiency
 
-	for _, n := range lib.ReadInt64s() {
+	for _, n := range lib.InputInt64s("2020/9") {
 		// Only look for the number once we're past the preamble.
 		if len(ring) == psize {
 			found := false

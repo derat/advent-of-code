@@ -13,7 +13,7 @@ func main() {
 	var dim int // width and height of each tile (tiles are square)
 	tiles := make(map[int]tile)
 
-	for _, pg := range lib.ReadParagraphs() {
+	for _, pg := range lib.InputParagraphs("2020/20") {
 		var id int
 		lib.Parse(pg[0], `^Tile (\d+):$`, &id)
 

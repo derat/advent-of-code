@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	pgs := lib.ReadParagraphs()
+	pgs := lib.InputParagraphs("2020/22")
 	lib.AssertEq(len(pgs), 2)
 	lib.AssertEq(pgs[0][0], "Player 1:")
 	d1 := lib.ExtractInts(strings.Join(pgs[0][1:], " "))

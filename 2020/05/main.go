@@ -10,7 +10,7 @@ import (
 func main() {
 	max := -1
 	seen := make(map[int]struct{})
-	for _, s := range lib.ReadLinesBytes('F', 'B', 'R', 'L') {
+	for _, s := range lib.InputLinesBytes("2020/5", 'F', 'B', 'R', 'L') {
 		if len(s) != 10 {
 			panic(fmt.Sprintf("bad line %q", s))
 		}

@@ -12,7 +12,7 @@ import (
 func main() {
 	var sum1, sum2 int64
 	numRegexp := regexp.MustCompile(`^\d+`)
-	for _, ln := range lib.ReadLines() {
+	for _, ln := range lib.InputLines("2020/18") {
 		var tokens []int64
 		for _, tok := range lib.Tokenize(ln, "+", "*", "(", ")", numRegexp) {
 			switch tok {

@@ -10,7 +10,7 @@ func main() {
 	s1 := newSpace()
 	s2 := newSpace()
 	var start int
-	for i, ln := range lib.ReadLinesBytes('.', '#') {
+	for i, ln := range lib.InputLinesBytes("2020/17", '.', '#') {
 		if i == 0 {
 			start = len(ln) / 2 // center initial state
 		}

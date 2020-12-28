@@ -8,7 +8,7 @@ import (
 
 func main() {
 	black := make(map[uint64]struct{})
-	for _, ln := range lib.ReadLines() {
+	for _, ln := range lib.InputLines("2020/24") {
 		var x, y int32
 		for _, tok := range lib.Tokenize(ln, "e", "w", "ne", "nw", "se", "sw") {
 			switch tok {

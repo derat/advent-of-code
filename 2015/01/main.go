@@ -8,7 +8,7 @@ import (
 
 func main() {
 	var floor, basement int
-	for i, ch := range lib.ReadLineBytes('(', ')') {
+	for i, ch := range lib.InputLinesBytes("2015/1", '(', ')')[0] {
 		switch ch {
 		case '(':
 			floor++

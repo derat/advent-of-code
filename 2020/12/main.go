@@ -26,7 +26,7 @@ func main() {
 		wy = math.Cos(rad) * dist
 	}
 
-	for _, ln := range lib.ReadLines() {
+	for _, ln := range lib.InputLines("2020/12") {
 		var op string
 		var v float64
 		lib.Parse(ln, `^([NSEWLRF])(\d+)$`, &op, &v)

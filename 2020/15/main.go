@@ -15,7 +15,7 @@ func main() {
 	turn := 1
 	seen := make(map[int]int) // turn in which number last spoken
 	last := -1                // last number spoken
-	for _, n := range lib.ReadInts() {
+	for _, n := range lib.InputInts("2020/15") {
 		last = n
 		seen[n] = turn
 		turn++

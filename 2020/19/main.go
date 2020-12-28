@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	pgs := lib.ReadParagraphs()
+	pgs := lib.InputParagraphs("2020/19")
 	lib.AssertEq(len(pgs), 2)
 
 	// Parse rules.

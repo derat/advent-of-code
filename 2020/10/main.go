@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	outs := lib.ReadInts()
+	outs := lib.InputInts("2020/10")
 	sort.Ints(outs)
 	outs = append(outs, outs[len(outs)-1]+3)
 

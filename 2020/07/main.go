@@ -15,7 +15,7 @@ func main() {
 	holders := make(map[string][]string)
 	bags := make(map[string][]bagInfo)
 
-	for _, ln := range lib.ReadLines() {
+	for _, ln := range lib.InputLines("2020/7") {
 		var outer, lst string
 		lib.Parse(ln, `^(.+) bags contain (.+)\.$`, &outer, &lst)
 		if lst == "no other bags" {

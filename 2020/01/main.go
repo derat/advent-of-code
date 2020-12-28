@@ -9,7 +9,7 @@ import (
 func main() {
 	const total = 2020
 	seen := make(map[int]struct{})
-	for _, n := range lib.ReadInts() {
+	for _, n := range lib.InputInts("2020/1") {
 		rem := total - n
 		if _, ok := seen[rem]; ok {
 			fmt.Printf("%d + %d = %d, %d * %d = %d\n", n, rem, total, n, rem, n*rem)

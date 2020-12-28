@@ -14,7 +14,7 @@ func main() {
 	var fbits []int // positions of 'X' bits in mask
 	mem := make(map[uint64]uint64)
 	mem2 := make(map[uint64]uint64)
-	for _, ln := range lib.ReadLines() {
+	for _, ln := range lib.InputLines("2020/14") {
 		var mask string
 		var addr, val uint64
 		lib.Parse(ln, `^mask = (.+)|mem\[(\d+)\] = (\d+)$`, &mask, &addr, &val)

@@ -6,7 +6,7 @@ import (
 
 func main() {
 	var sum, sum2 int
-	for _, pg := range lib.ReadParagraphs() {
+	for _, pg := range lib.InputParagraphs("2020/6") {
 		sum += count(pg, false)
 		sum2 += count(pg, true)
 	}

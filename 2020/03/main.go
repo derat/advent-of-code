@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	lines := lib.ReadLinesBytes('.', '#')
+	lines := lib.InputLinesBytes("2020/3", '.', '#')
 	if len(lines) == 0 {
 		panic("no input")
 	}
