@@ -1,39 +1,22 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"log"
-	"os"
-	"strconv"
 	"strings"
+
+	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	r := bufio.NewReader(os.Stdin)
-
-	s, err := r.ReadString('\n')
-	if err != nil {
-		log.Fatal(err)
-	}
-	est, err := strconv.ParseInt(s[:len(s)-1], 10, 64)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	lns := lib.ReadLines()
+	lib.AssertEq(len(lns), 2)
+	est := lib.ExtractInt64s(lns[0])[0]
 	var ids []int64
-	if s, err = r.ReadString('\n'); err != nil {
-		log.Fatal(err)
-	}
-	for _, p := range strings.Split(s[:len(s)-1], ",") {
-		if p == "x" {
+	for _, s := range strings.Split(lns[1], ",") {
+		if s == "x" {
 			ids = append(ids, 0)
 		} else {
-			n, err := strconv.ParseInt(p, 10, 64)
-			if err != nil {
-				log.Fatal(err)
-			}
-			ids = append(ids, n)
+			ids = append(ids, lib.ExtractInt64s(s)[0])
 		}
 	}
 

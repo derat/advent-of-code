@@ -10,7 +10,7 @@ import (
 
 func main() {
 	pgs := lib.ReadParagraphs()
-	lib.Assert(len(pgs), 3)
+	lib.AssertEq(len(pgs), 3)
 
 	rules := make(map[string]rule) // keyed by field name
 	for _, ln := range pgs[0] {
@@ -21,11 +21,11 @@ func main() {
 		rules[name] = rule{[][]int{{min1, max1}, {min2, max2}}}
 	}
 
-	lib.Assert(len(pgs[1]), 2)
-	lib.Assert(pgs[1][0], "your ticket:")
+	lib.AssertEq(len(pgs[1]), 2)
+	lib.AssertEq(pgs[1][0], "your ticket:")
 	yours := ticket{lib.ExtractInts(pgs[1][1])}
 
-	lib.Assert(pgs[2][0], "nearby tickets:")
+	lib.AssertEq(pgs[2][0], "nearby tickets:")
 	var nearby []ticket
 	for _, ln := range pgs[2][1:] {
 		nearby = append(nearby, ticket{lib.ExtractInts(ln)})

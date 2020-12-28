@@ -25,6 +25,12 @@ func ReadInts() []int {
 	return ExtractInts(string(ReadAll()))
 }
 
+// ReadInt64s reads positive 64-bit integers from stdin, ignoring non-digits.
+// See ExtractInt64s.
+func ReadInt64s() []int64 {
+	return ExtractInt64s(string(ReadAll()))
+}
+
 // ReadLines reads and returns newline-separated lines of input from stdin.
 func ReadLines() []string {
 	var lines []string
@@ -32,6 +38,9 @@ func ReadLines() []string {
 		if len(ln) > 0 {
 			lines = append(lines, ln)
 		}
+	}
+	if len(lines) == 0 {
+		panic("No lines found")
 	}
 	return lines
 }
@@ -47,6 +56,9 @@ func ReadParagraphs() [][]string {
 		if len(pg) > 0 {
 			pgs = append(pgs, strings.Split(pg, "\n"))
 		}
+	}
+	if len(pgs) == 0 {
+		panic("No paragraphs found")
 	}
 	return pgs
 }

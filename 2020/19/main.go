@@ -10,7 +10,7 @@ import (
 
 func main() {
 	pgs := lib.ReadParagraphs()
-	lib.Assert(len(pgs), 2)
+	lib.AssertEq(len(pgs), 2)
 
 	// Parse rules.
 	var rules []rule

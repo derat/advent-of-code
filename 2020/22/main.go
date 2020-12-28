@@ -9,10 +9,10 @@ import (
 
 func main() {
 	pgs := lib.ReadParagraphs()
-	lib.Assert(len(pgs), 2)
-	lib.Assert(pgs[0][0], "Player 1:")
+	lib.AssertEq(len(pgs), 2)
+	lib.AssertEq(pgs[0][0], "Player 1:")
 	d1 := lib.ExtractInts(strings.Join(pgs[0][1:], " "))
-	lib.Assert(pgs[1][0], "Player 2:")
+	lib.AssertEq(pgs[1][0], "Player 2:")
 	d2 := lib.ExtractInts(strings.Join(pgs[1][1:], " "))
 	// Technically ought to check that no cards have values above 255.
 

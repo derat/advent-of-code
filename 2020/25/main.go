@@ -8,7 +8,7 @@ import (
 
 func main() {
 	vals := lib.ReadInts()
-	lib.Assert(len(vals), 2)
+	lib.AssertEq(len(vals), 2)
 	cpub, dpub := vals[0], vals[1]
 
 	const (

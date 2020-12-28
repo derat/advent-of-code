@@ -11,14 +11,26 @@ var nonDigitRegexp = regexp.MustCompile(`\D+`)
 // ExtractInts extracts all positive integers from s.
 // Non-digits are ignored.
 func ExtractInts(s string) []int {
-	var vals []int
+	v64s := ExtractInt64s(s)
+	vals := make([]int, len(v64s))
+	for i, v64 := range v64s {
+		// TODO: Check for overflow.
+		vals[i] = int(v64)
+	}
+	return vals
+}
+
+// ExtractInt64s extracts all positive integers from s as 64-bit ints.
+// Non-digits are ignored.
+func ExtractInt64s(s string) []int64 {
+	var vals []int64
 	for _, m := range nonDigitRegexp.Split(s, -1) {
 		if m == "" {
 			continue
 		}
-		v, err := strconv.Atoi(m)
+		v, err := strconv.ParseInt(m, 10, 64)
 		if err != nil {
-			panic(fmt.Sprintf("Failed parsing %q as int: %v", m, err))
+			panic(fmt.Sprintf("Failed parsing %q as int64: %v", m, err))
 		}
 		vals = append(vals, v)
 	}
