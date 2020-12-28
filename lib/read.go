@@ -10,31 +10,31 @@ import (
 )
 
 // ReadAll reads and returns all data from stdin.
-func ReadAll() []byte {
+func ReadAll() string {
 	var b bytes.Buffer
 	_, err := io.Copy(&b, os.Stdin)
 	if err != nil {
 		panic(fmt.Sprint("Failed to read input: ", err))
 	}
-	return b.Bytes()
+	return b.String()
 }
 
 // ReadInts reads positive integers from stdin, ignoring non-digits.
 // See ExtractInts.
 func ReadInts() []int {
-	return ExtractInts(string(ReadAll()))
+	return ExtractInts(ReadAll())
 }
 
 // ReadInt64s reads positive 64-bit integers from stdin, ignoring non-digits.
 // See ExtractInt64s.
 func ReadInt64s() []int64 {
-	return ExtractInt64s(string(ReadAll()))
+	return ExtractInt64s(ReadAll())
 }
 
 // ReadLines reads and returns newline-separated lines of input from stdin.
 func ReadLines() []string {
 	var lines []string
-	for _, ln := range strings.Split(string(ReadAll()), "\n") {
+	for _, ln := range strings.Split(ReadAll(), "\n") {
 		if len(ln) > 0 {
 			lines = append(lines, ln)
 		}
@@ -51,7 +51,7 @@ var newlinesRegexp = regexp.MustCompile(`\n\n+`)
 // newlines. Each paragraph is split further into individual lines.
 func ReadParagraphs() [][]string {
 	var pgs [][]string
-	all := strings.Trim(string(ReadAll()), "\n")
+	all := strings.Trim(ReadAll(), "\n")
 	for _, pg := range newlinesRegexp.Split(all, -1) {
 		if len(pg) > 0 {
 			pgs = append(pgs, strings.Split(pg, "\n"))
@@ -67,18 +67,18 @@ func ReadParagraphs() [][]string {
 // If valid is non-empty, panics if any unlisted bytes are encountered.
 func ReadLinesBytes(valid ...byte) [][]byte {
 	var lines [][]byte
-	for i, ln := range bytes.Split(ReadAll(), []byte{'\n'}) {
+	for i, ln := range strings.Split(ReadAll(), "\n") {
 		if len(ln) == 0 {
 			continue
 		}
 		if len(valid) > 0 {
 			for j, ch := range ln {
-				if bytes.IndexByte(valid, ch) == -1 {
+				if bytes.IndexByte(valid, byte(ch)) == -1 {
 					panic(fmt.Sprintf("Invalid byte %v (%q) at position %d of line %d", ch, ch, j, i))
 				}
 			}
 		}
-		lines = append(lines, ln)
+		lines = append(lines, []byte(ln))
 	}
 	return lines
 }
