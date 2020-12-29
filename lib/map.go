@@ -12,3 +12,13 @@ func MapIntVals(m interface{}) []int {
 	}
 	return vals
 }
+
+// MapStringKeys returns string keys from the provided map.
+func MapStringKeys(m interface{}) []string {
+	mv := reflect.ValueOf(m)
+	keys := make([]string, 0, mv.Len())
+	for _, kv := range mv.MapKeys() {
+		keys = append(keys, kv.String())
+	}
+	return keys
+}
