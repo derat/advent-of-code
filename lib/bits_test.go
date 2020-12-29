@@ -25,3 +25,24 @@ func TestUnpackIntSigned(t *testing.T) {
 		}
 	}
 }
+
+func TestSetBit(t *testing.T) {
+	for _, tc := range []struct {
+		init uint64
+		idx  int
+		val  bool
+		want uint64
+	}{
+		{0, 0, true, 0x1},
+		{0, 63, true, 1 << 63},
+		{0, 0, false, 0x0},
+		{1<<64 - 1, 0, true, 1<<64 - 1},
+		{1<<64 - 1, 0, false, 1<<64 - 2},
+		{1<<64 - 1, 63, true, 1<<64 - 1},
+		{1<<64 - 1, 63, false, 0x7fffffffffffffff},
+	} {
+		if got := SetBit(tc.init, tc.idx, tc.val); got != tc.want {
+			t.Errorf("SetBit(%#x, %v, %v) = %#x; want %#x", tc.init, tc.idx, tc.val, got, tc.want)
+		}
+	}
+}

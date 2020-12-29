@@ -38,3 +38,16 @@ func UnpackIntSigned(packed uint64, bits, i int) int {
 	shift := 64 - bits
 	return int((int64(val) << shift) >> shift) // extend sign bit
 }
+
+// SetBit sets the i-th bit in field to v and returns the field.
+func SetBit(field uint64, i int, v bool) uint64 {
+	if v {
+		return field | (1 << i)
+	}
+	return field &^ (1 << i)
+}
+
+// HasBit returns true if the i-th bit in field is set.
+func HasBit(field uint64, i int) bool {
+	return field&(1<<i) != 0
+}
