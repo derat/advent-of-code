@@ -22,20 +22,52 @@ func main() {
 		"perfumes":    1,
 	}
 
-Loop:
+	// Additional stipulations given in part 2.
+	more := lib.NewSet("cats", "trees")
+	less := lib.NewSet("pomeranians", "pomeranians")
+
+	var match, match2 int
 	for _, ln := range lib.InputLines("2015/16") {
 		var id int
 		var rest string
 		lib.Extract(ln, `^Sue (\d+): (.+)$`, &id, &rest)
+		var bad, bad2 bool
 		for _, s := range strings.Split(rest, ", ") {
 			var item string
 			var cnt int
 			lib.Extract(s, `^(\w+): (\d+)$`, &item, &cnt)
-			if cnt != clues[item] {
-				continue Loop
+
+			exp := clues[item]
+
+			// Part 1 needs an exact match.
+			if cnt != exp {
+				bad = true
+			}
+
+			// Part 2 matches different items differently.
+			if _, ok := more[item]; ok {
+				if cnt <= exp {
+					bad2 = true
+				}
+			} else if _, ok := less[item]; ok {
+				if cnt >= exp {
+					bad2 = true
+				}
+			} else {
+				if cnt != exp {
+					bad2 = true
+				}
 			}
 		}
-		fmt.Println(id)
-		break
+
+		if !bad {
+			match = id
+		}
+		if !bad2 {
+			match2 = id
+		}
 	}
+
+	fmt.Println(match)
+	fmt.Println(match2)
 }
