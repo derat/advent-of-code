@@ -70,7 +70,7 @@ func Extract(s, re string, dsts ...interface{}) {
 		panic(fmt.Sprintf("%q not matched by %q", s, re))
 	}
 	if len(ms)-1 != len(dsts) {
-		panic(fmt.Sprintf("%q has %v group(s), but %v dests were supplied", re, len(ms)-1, len(dsts)))
+		panic(fmt.Sprintf("%q has %v group(s), but %v dest(s) were supplied", re, len(ms)-1, len(dsts)))
 	}
 	for i, dst := range dsts {
 		m := ms[i+1]
