@@ -29,6 +29,7 @@ func main() {
 
 	statNames := lib.MapStringKeys(statSet)
 	statBits := 64/len(statSet) - 1 // signed
+	calsIdx := lib.SliceIndexesWithVal(statNames, "calories")[0]
 
 	computeScore := func(stats uint64) int64 {
 		prod := int64(1)
@@ -46,8 +47,8 @@ func main() {
 	}
 
 	// Optimization idea: memoize combinations as we go.
-	var findRecipe func(uint64, uint64, int, int) (uint64, uint64)
-	findRecipe = func(amounts, stats uint64, idx, rem int) (topAmounts, topStats uint64) {
+	var findRecipe func(uint64, uint64, int, int, int) (uint64, uint64)
+	findRecipe = func(amounts, stats uint64, idx, rem, cals int) (topAmounts, topStats uint64) {
 		name := ingredNames[idx]
 		ingrStats, ok := ingreds[name]
 		lib.Assert(ok)
@@ -70,7 +71,11 @@ func main() {
 			}
 			// If we need to add more ingredients, recurse.
 			if amt < rem && !final {
-				newAmounts, newStats = findRecipe(newAmounts, newStats, idx+1, rem-amt)
+				newAmounts, newStats = findRecipe(newAmounts, newStats, idx+1, rem-amt, cals)
+			}
+			// Skip the recipe if it doesn't have the right number of calories.
+			if cals > 0 && lib.UnpackIntSigned(newStats, statBits, calsIdx) != cals {
+				continue
 			}
 			if score := computeScore(newStats); score > topScore {
 				topScore = score
@@ -82,7 +87,13 @@ func main() {
 		return topAmounts, topStats
 	}
 
+	// Part 1
 	const total = 100 // given in problem
-	_, topStats := findRecipe(0, 0, 0, total)
+	_, topStats := findRecipe(0, 0, 0, total, 0)
+	fmt.Println(computeScore(topStats))
+
+	// Part 2
+	const cals = 500 // given in problem
+	_, topStats = findRecipe(0, 0, 0, total, cals)
 	fmt.Println(computeScore(topStats))
 }
