@@ -22,32 +22,52 @@ func main() {
 		i++
 	}
 
+	// Remap to [0, ...].
 	for i, ch := range pw {
 		n, ok := charNum[ch]
 		lib.Assert(ok) // input doesn't seem to have invalid chars
 		pw[i] = n
 	}
 
+	// Remap back to the original chars.
+	remap := func(pw []byte) string {
+		b := make([]byte, len(pw))
+		for i, ch := range pw {
+			b[i] = numChar[ch]
+		}
+		return string(b)
+	}
+
+	// Part 1
+	findNext(pw, max)
+	fmt.Println(remap(pw))
+
+	// Part 2
+	findNext(pw, max)
+	fmt.Println(remap(pw))
+}
+
+func findNext(pw []byte, max byte) {
 	// Perform a simple increment first.
 	increment(pw, max)
 
-	for i := 0; true; i++ {
+	// Now loop until we get both a straight and pairs.
+	for {
 		if !hasStraight(pw) {
 			addStraight(pw, max)
 			continue
 		}
 		if !hasPairs(pw) {
-			// TODO: Add pairs instead of just incrementing.
-			increment(pw, max)
+			for !hasPairs(pw) {
+				// This is stupid, but I had enough trouble getting addStraight()
+				// to work and don't want to do the same thing with an addPairs()
+				// function.
+				increment(pw, max)
+			}
 			continue
 		}
-		break
+		return
 	}
-
-	for i, ch := range pw {
-		pw[i] = numChar[ch]
-	}
-	fmt.Println(string(pw))
 }
 
 // increment performs a simple increment of pw.
@@ -57,9 +77,9 @@ func increment(pw []byte, max byte) {
 			pw[i]++
 			return
 		}
-		pw[i] = 0         // carry
-		lib.Assert(i > 0) // overflow
+		pw[i] = 0 // carry
 	}
+	panic("Overflow on increment")
 }
 
 // hasStraight returns true if pw contains a 3-char ascending straight, e.g. "abc".
@@ -74,25 +94,47 @@ func hasStraight(pw []byte) bool {
 
 // addStraight inserts an ascending straight in the first possible position.
 func addStraight(pw []byte, max byte) {
-	for i := len(pw) - 3; i >= 0; i-- {
-		ch, ch1, ch2 := pw[i], pw[i+1], pw[i+2]
-
-		// If the two chars to the right are too big, increment this char.
-		if ch1 > ch+1 || ch2 > ch+2 {
-			ch++
-		}
-
-		// Assign the straight and set all the chars to the right to the lowest possible value.
-		if ch <= max-2 {
-			pw[i], pw[i+1], pw[i+2] = ch, ch+1, ch+2
-			for j := i + 3; j < len(pw); j++ {
-				pw[j] = 0
-			}
+	for {
+		// Setting the first or second char in the loop could've produced a straight
+		// further to the left.
+		if hasStraight(pw) {
 			return
 		}
-	}
 
-	panic(fmt.Sprintf("Failed to add straight to %v", pw))
+		// Consider sequences of three characters starting at the right.
+		for i := len(pw) - 3; i >= 0; i-- {
+			ch, ch1, ch2 := pw[i], pw[i+1], pw[i+2]
+
+			// Try to set the third char to make the straight.
+			if ch1 == ch+1 && ch2 < ch+2 && ch < max-1 {
+				pw[i+2] = ch + 2
+				for j := i + 3; j < len(pw); j++ {
+					pw[j] = 0
+				}
+				return
+			}
+
+			// Set the second char.
+			if ch1 < ch+1 && ch < max {
+				pw[i+1] = ch + 1
+				for j := i + 2; j < len(pw); j++ {
+					pw[j] = 0
+				}
+				break
+			}
+
+			// Increment the first char.
+			if ch1 >= ch+1 && ch < max {
+				pw[i] = ch + 1
+				for j := i + 1; j < len(pw); j++ {
+					pw[j] = 0
+				}
+				break
+			}
+
+			// Otherwise, we'll move on to the left.
+		}
+	}
 }
 
 // hasPairs returns true if pw contains at least two different, non-overlapping pairs of chars,
