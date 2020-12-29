@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/bits"
 
 	"github.com/derat/advent-of-code/lib"
 )
@@ -30,4 +31,18 @@ func main() {
 		literCombos[liters] = combos
 	}
 	fmt.Println(len(literCombos[total]))
+
+	// Part 2
+	minConts := len(conts) + 1 // min number of containers used
+	numCombos := 0             // combos using minConts
+	for combo := range literCombos[total] {
+		numConts := len(conts) - bits.OnesCount64(combo) // convert from remain to used
+		if numConts < minConts {
+			minConts = numConts
+			numCombos = 1
+		} else if numConts == minConts {
+			numCombos++
+		}
+	}
+	fmt.Println(numCombos)
 }
