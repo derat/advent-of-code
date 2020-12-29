@@ -22,3 +22,16 @@ func MapStringKeys(m interface{}) []string {
 	}
 	return keys
 }
+
+// MapStringKeysWithVal returns string keys from map m with values equal to v.
+func MapStringKeysWithVal(m, v interface{}) []string {
+	mv := reflect.ValueOf(m)
+	var keys []string
+	it := mv.MapRange()
+	for it.Next() {
+		if it.Value().Interface() == v {
+			keys = append(keys, it.Key().String())
+		}
+	}
+	return keys
+}
