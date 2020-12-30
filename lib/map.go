@@ -36,11 +36,14 @@ func MapStringKeysWithVal(m, v interface{}) []string {
 	return keys
 }
 
-// NewSet returns a string set containing the supplied values.
-func NewSet(vals ...string) map[string]struct{} {
-	m := make(map[string]struct{}, len(vals))
-	for _, v := range vals {
-		m[v] = struct{}{}
+// AddSet adds the supplied values to the supplied string set.
+// The set is returned (and should be used thereafter).
+func AddSet(s map[string]struct{}, vals ...string) map[string]struct{} {
+	if s == nil {
+		s = make(map[string]struct{}, len(vals))
 	}
-	return m
+	for _, v := range vals {
+		s[v] = struct{}{}
+	}
+	return s
 }
