@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/derat/advent-of-code/lib"
 )
@@ -11,9 +12,8 @@ func main() {
 	lib.Extract(lib.Input("2015/21"), `^Hit Points: (\d+)\nDamage: (\d+)\nArmor: (\d+)\n$`,
 		&bossHP, &bossDamage, &bossArmor)
 
-	minCost := -1
-	check := func(items ...item) {
-		var cost, damage, armor int
+	check := func(items ...item) (win bool, cost int) {
+		var damage, armor int
 		for _, it := range items {
 			cost += it.cost
 			damage += it.damage
@@ -28,24 +28,45 @@ func main() {
 
 		turns := (hp + bdam - 1) / bdam
 		bturns := (bhp + damage - 1) / damage
-		if turns >= bturns {
-			if minCost < 0 || cost < minCost {
-				minCost = cost
-			}
-		}
+
+		return turns >= bturns, cost
 	}
 
+	// Part 1: Minimum cost to win
+	minCost := math.MaxInt32
 	for _, weapon := range weapons {
 		for _, armor := range armors {
 			for r1, ring1 := range rings {
 				for _, ring2 := range rings[r1+1:] {
-					check(weapon, armor, ring1, ring2)
+					if win, cost := check(weapon, armor, ring1, ring2); win && cost < minCost {
+						minCost = cost
+					}
 				}
 			}
-			check(weapon, armor) // also check no rings
+			if win, cost := check(weapon, armor); win && cost < minCost { // no rings
+				minCost = cost
+			}
 		}
 	}
 	fmt.Println(minCost)
+
+	// Part 2: Maximum cost to lose
+	maxCost := 0
+	for _, weapon := range weapons {
+		for _, armor := range armors {
+			for r1, ring1 := range rings {
+				for _, ring2 := range rings[r1+1:] {
+					if win, cost := check(weapon, armor, ring1, ring2); !win && cost > maxCost {
+						maxCost = cost
+					}
+				}
+			}
+			if win, cost := check(weapon, armor); !win && cost > maxCost { // no rings
+				maxCost = cost
+			}
+		}
+	}
+	fmt.Println(maxCost)
 }
 
 type item struct {
