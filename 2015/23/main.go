@@ -39,37 +39,47 @@ func main() {
 		ins = append(ins, in)
 	}
 
-	var ip int
-	for ip >= 0 && ip < len(ins) {
-		in := &ins[ip]
-		switch in.op {
-		case "hlf":
-			in.reg.Div(in.reg, big.NewInt(2))
-			ip++
-		case "tpl":
-			in.reg.Mul(in.reg, big.NewInt(3))
-			ip++
-		case "inc":
-			in.reg.Add(in.reg, big.NewInt(1))
-			ip++
-		case "jmp":
-			ip += in.off
-		case "jie":
-			if in.reg.Bit(0) == 0 {
-				ip += in.off
-			} else {
+	run := func() {
+		var ip int
+		for ip >= 0 && ip < len(ins) {
+			in := &ins[ip]
+			switch in.op {
+			case "hlf":
+				in.reg.Div(in.reg, big.NewInt(2))
 				ip++
-			}
-		case "jio": // sigh: "o" is for "one", not "odd"
-			if in.reg.Cmp(big.NewInt(1)) == 0 {
-				ip += in.off
-			} else {
+			case "tpl":
+				in.reg.Mul(in.reg, big.NewInt(3))
 				ip++
+			case "inc":
+				in.reg.Add(in.reg, big.NewInt(1))
+				ip++
+			case "jmp":
+				ip += in.off
+			case "jie":
+				if in.reg.Bit(0) == 0 {
+					ip += in.off
+				} else {
+					ip++
+				}
+			case "jio": // sigh: "o" is for "one", not "odd"
+				if in.reg.Cmp(big.NewInt(1)) == 0 {
+					ip += in.off
+				} else {
+					ip++
+				}
+			default:
+				panic(fmt.Sprintf("Bad op %q", in.op))
 			}
-		default:
-			panic(fmt.Sprintf("Bad op %q", in.op))
 		}
 	}
+
+	run()
+	fmt.Println(b.String())
+
+	// Part 2: Register 'a' starts 1 instead of as 0
+	a.SetInt64(1)
+	b.SetInt64(0)
+	run()
 	fmt.Println(b.String())
 }
 
