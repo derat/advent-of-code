@@ -47,3 +47,9 @@ func AddSet(s map[string]struct{}, vals ...string) map[string]struct{} {
 	}
 	return s
 }
+
+// SetHas returns true if s contains val.
+func SetHas(s map[string]struct{}, val string) bool {
+	_, ok := s[val]
+	return ok
+}
