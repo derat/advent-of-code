@@ -27,3 +27,12 @@ func Max(vals ...int) int {
 	}
 	return max
 }
+
+// Sum returns the sum of the supplied values.
+func Sum(vals ...int) int {
+	var sum int
+	for _, v := range vals {
+		sum += v
+	}
+	return sum
+}
