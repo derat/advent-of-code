@@ -16,6 +16,12 @@ func main() {
 	var playerTurn, bossTurn func(state)
 
 	playerTurn = func(s state) {
+		// Part 2: Hard mode
+		s.hp -= s.turnDamage
+		if s.lost() {
+			return
+		}
+
 		s.update()
 		if s.won() {
 			if s.spent < best.spent {
@@ -46,12 +52,19 @@ func main() {
 
 	playerTurn(init)
 	fmt.Println(best.spent)
+
+	// Part 2: Player loses one HP at the beginning of each player turn.
+	init.turnDamage = 1
+	best = state{spent: math.MaxInt32}
+	playerTurn(init)
+	fmt.Println(best.spent)
 }
 
 type state struct {
 	hp, mana, spent          int
 	bossHP, bossDamage       int
 	shield, poison, recharge int // turns remaining for spells (0 if inactive)
+	turnDamage               int // hp lost at start of player turns (part 2)
 }
 
 func (s *state) won() bool {
