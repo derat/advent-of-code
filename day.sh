@@ -9,14 +9,15 @@ usage() {
   prog=$(basename "$0")
   cat <<EOF >&2
 Usage:
-  $prog <YEAR> <DAY>   Prints (and inits) dir for specified year and day.
-  $prog <DAY>          Prints dir for specified day in current dir's year.
-  $prog today          Prints dir for today.
-  $prog next           Prints dir for day after current dir.
-  $prog prev           Prints dir for day before current dir.
-  $prog input          Prints input for current dir.
-  $prog web            Opens webpage for current dir.
-  $prog lib            Prints library directory.
+  $prog <YEAR> <DAY>   Print (and init) dir for specified year and day.
+  $prog <DAY>          Print dir for specified day in current dir's year.
+  $prog today          Print dir for today.
+  $prog next           Print dir for day after current dir.
+  $prog prev           Print dir for day before current dir.
+  $prog input          Print input for current dir.
+  $prog web            Open webpage for current dir.
+  $prog lib            Print library directory.
+  $prog                Print repo directory.
 EOF
   exit 2
 }
@@ -49,7 +50,10 @@ check_in_day_dir() {
 year=
 day=
 
-if [ $# -eq 1 ]; then
+if [ $# -eq 0 ]; then
+  echo "$script_dir"
+  exit 0
+elif [ $# -eq 1 ]; then
   if [ "$1" = today ]; then
     [ $(date +%m) -eq 12 ] || die "Not in December"
     year=$(date +%Y)
@@ -74,8 +78,8 @@ if [ $# -eq 1 ]; then
     echo "${script_dir}/lib"
     exit 0
   else
-    if [ -z "$cur_year" ]; then die "Must be in year or year/day directory"; fi
     if ! echo "$1" | grep -E -q '^[0-9]{1,2}$'; then usage; fi
+    if [ -z "$cur_year" ]; then die "Must be in year or year/day directory"; fi
     year="$cur_year"
     day="$1"
   fi
