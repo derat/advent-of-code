@@ -41,23 +41,24 @@ func main() {
 	var bestQE int64 = math.MaxInt64
 	var bestUsed uint64
 
-	var packFirst func(int, int, int8, int64, uint64)
-	var packSecond func(int, int, uint64) bool
+	var packFirst func(int, int, int, int8, int64, uint64)
+	var packOther func(int, int, int, uint64) bool
 
 	// packFirst updates bestCnt, bestQE, and bestUsed with the combination of packages summing
 	// to remain with the lowest total count and (for tie-breaking) lowest quantum entanglement.
 	//
 	// idx is the current index into sums/cnts/qes.
 	// remain is the remaining weight that's needed.
+	// repeat specifies number of containers beyond the original 3 that need to be packed.
 	// cnt is the number of packages used so far.
 	// qe is the quantum entanglement so far.
 	// used is a bitfield specifying the packages that have been used (e.g. 0x1 is packages[0]).
-	packFirst = func(idx, remain int, cnt int8, qe int64, used uint64) {
+	packFirst = func(idx, remain, repeat int, cnt int8, qe int64, used uint64) {
 		if idx == len(sums) {
 			// If this combination has the potential to be a new winner, see if we can pack
 			// the second group.
 			if remain == 0 && (cnt < bestCnt || (cnt == bestCnt && qe < bestQE)) {
-				if packSecond(0, each, used) {
+				if packOther(0, each, repeat, used) {
 					bestCnt = cnt
 					bestQE = qe
 					bestUsed = used
@@ -68,16 +69,22 @@ func main() {
 
 		for i, w := range sums[idx] {
 			if w <= remain {
-				packFirst(idx+1, remain-w, cnt+cnts[idx][i], qe*qes[idx][i], used|(uint64(i)<<(8*idx)))
+				packFirst(idx+1, remain-w, repeat, cnt+cnts[idx][i], qe*qes[idx][i], used|(uint64(i)<<(8*idx)))
 			}
 		}
 	}
 
-	// packSecond returns true if there exists any combination of not-yet-used packages
+	// packOther returns true if there exists any combination of not-yet-used packages
 	// with weights summing to remain.
-	packSecond = func(idx, remain int, used uint64) bool {
+	packOther = func(idx, remain, repeat int, used uint64) bool {
 		if idx == len(sums) {
-			return remain == 0
+			if remain != 0 {
+				return false
+			}
+			if repeat > 0 {
+				return packOther(0, each, repeat-1, used)
+			}
+			return true
 		}
 
 		umask := used >> (8 * idx) & 0xff
@@ -86,7 +93,7 @@ func main() {
 				continue // combo uses packages that have already been used
 			}
 			if w <= remain {
-				if packSecond(idx+1, remain-w, used|(uint64(i)<<(8*idx))) {
+				if packOther(idx+1, remain-w, repeat, used|(uint64(i)<<(8*idx))) {
 					return true
 				}
 			}
@@ -94,6 +101,16 @@ func main() {
 		return false
 	}
 
-	packFirst(0, each, 0, 1, 0)
+	// Part 1: Pack 3 containers.
+	packFirst(0, each, 0, 0, 1, 0)
+	fmt.Println(bestQE)
+
+	// Part 2: Pack 4 containers.
+	lib.AssertEq(total%4, 0)
+	each = total / 4
+	bestCnt = math.MaxInt8
+	bestQE = math.MaxInt64
+	bestUsed = 0
+	packFirst(0, each, 1, 0, 1, 0)
 	fmt.Println(bestQE)
 }
