@@ -9,12 +9,14 @@ usage() {
   prog=$(basename "$0")
   cat <<EOF >&2
 Usage:
-  $prog <YEAR> <DAY>   Goes to the specified year and day.
-  $prog <DAY>          Goes to the specified day for the current dir's year.
-  $prog today          Goes to today's puzzle.
-  $prog next           Goes to the day after the current dir.
-  $prog prev           Goes to the day before the current dir.
-  $prog input          Prints input for the current dir.
+  $prog <YEAR> <DAY>   Prints (and inits) dir for specified year and day.
+  $prog <DAY>          Prints dir for specified day in current dir's year.
+  $prog today          Prints dir for today.
+  $prog next           Prints dir for day after current dir.
+  $prog prev           Prints dir for day before current dir.
+  $prog input          Prints input for current dir.
+  $prog web            Opens webpage for current dir.
+  $prog lib            Prints library directory.
 EOF
   exit 2
 }
@@ -63,6 +65,13 @@ if [ $# -eq 1 ]; then
   elif [ "$1" = input ]; then
     check_in_day_dir
     cat "$HOME/.cache/advent-of-code/$(printf "%d/%d" $cur_year $cur_day)"
+    exit 0
+  elif [ "$1" = web ]; then
+    check_in_day_dir
+    xdg-open "$(printf "https://adventofcode.com/%d/day/%d" $cur_year $cur_day)"
+    exit 0
+  elif [ "$1" = lib ]; then
+    echo "${script_dir}/lib"
     exit 0
   else
     if [ -z "$cur_year" ]; then die "Must be in year or year/day directory"; fi
