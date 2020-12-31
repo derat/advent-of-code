@@ -1,17 +1,94 @@
 #!/bin/sh -e
 
-if [ $# != 2 ] || \
-  ! echo "$1" | grep -E -q '^[0-9]{4}$' || \
-  ! echo "$2" | grep -E -q '^[0-9]{1,2}$'; then
-  echo "Usage: $0 <YEAR> <DAY>" >&2
+die() {
+  echo "$1" >&2
   exit 2
+}
+
+usage() {
+  prog=$(basename "$0")
+  cat <<EOF >&2
+Usage:
+  $prog <YEAR> <DAY>   Goes to the specified year and day.
+  $prog <DAY>          Goes to the specified day for the current dir's year.
+  $prog today          Goes to today's puzzle.
+  $prog next           Goes to the day after the current dir.
+  $prog prev           Goes to the day before the current dir.
+  $prog input          Prints input for the current dir.
+EOF
+  exit 2
+}
+
+script_dir="$(dirname "$(realpath -s "$0")")"
+
+# Figure out if we're already in a year/day or year directory.
+cur_dir=$(pwd)
+cur_year=
+cur_day=
+case "$cur_dir" in
+  ${script_dir}/[0-9][0-9][0-9][0-9]/[0-9][0-9] | ${script_dir}/[0-9][0-9][0-9][0-9]/[0-9] )
+    cur_year="$(basename "$(dirname "$cur_dir")")"
+    cur_day="$(basename "$cur_dir")"
+    break
+    ;;
+  ${script_dir}/[0-9][0-9][0-9][0-9] )
+    cur_year="$(basename "$cur_dir")"
+    break
+    ;;
+esac
+
+# Dies with an error if not already in a year/day directory.
+check_in_day_dir() {
+  if [ -z "$cur_year" ] || [ -z "$cur_day" ]; then
+    die "Must be in year/day directory"
+  fi
+}
+
+year=
+day=
+
+if [ $# -eq 1 ]; then
+  if [ "$1" = today ]; then
+    [ $(date +%m) -eq 12 ] || die "Not in December"
+    year=$(date +%Y)
+    day=$(date +%d)
+  elif [ "$1" = next ]; then
+    check_in_day_dir
+    year=$cur_year
+    day=$(($cur_day + 1))
+  elif [ "$1" = prev ]; then
+    check_in_day_dir
+    year=$cur_year
+    day=$(($cur_day - 1))
+  elif [ "$1" = input ]; then
+    check_in_day_dir
+    cat "$HOME/.cache/advent-of-code/$(printf "%d/%d" $cur_year $cur_day)"
+    exit 0
+  else
+    if [ -z "$cur_year" ]; then die "Must be in year or year/day directory"; fi
+    if ! echo "$1" | grep -E -q '^[0-9]{1,2}$'; then usage; fi
+    year="$cur_year"
+    day="$1"
+  fi
+elif [ $# -eq 2 ]; then
+  if ! echo "$1" | grep -E -q '^[0-9]{4}$' || \
+     ! echo "$2" | grep -E -q '^[0-9]{1,2}$'; then
+    usage
+  fi
+  year="$1"
+  day="$2"
+else
+  usage
+fi
+
+if [ "$day" -lt 1 ] || [ "$day" -gt 25 ]; then
+  die "Day $day not in range [1, 25]"
 fi
 
 # Remove zero-padding.
-year=$(printf "%d" $1)
-day=$(printf "%d" $2)
+year=$(printf "%d" "$year")
+day=$(printf "%d" "$day")
 
-script_dir="$(dirname "$(realpath -s "$0")")"
 dir="${script_dir}/$(printf "%04d/%02d" "$year" "$day")"
 
 if [ ! -e "$dir" ]; then
