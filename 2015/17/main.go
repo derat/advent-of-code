@@ -17,11 +17,10 @@ func main() {
 	minConts := len(conts) + 1 // min number of containers used
 	numCombos := 0             // combos using minConts
 	for _, combo := range combos {
-		numConts := len(conts) - bits.OnesCount64(combo) // convert from remain to used
-		if numConts < minConts {
-			minConts = numConts
+		if cnt := bits.OnesCount64(combo); cnt < minConts {
+			minConts = cnt
 			numCombos = 1
-		} else if numConts == minConts {
+		} else if cnt == minConts {
 			numCombos++
 		}
 	}

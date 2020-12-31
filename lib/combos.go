@@ -1,7 +1,5 @@
 package lib
 
-import "fmt"
-
 // FindCombos returns all combinations of the supplied items that sum exactly to target.
 // Initial is a bitfield specifying available items, e.g. if 0x1 is set then items[0]
 // can be used. Pass 1<<len(items)-1 to use all items.
@@ -12,24 +10,23 @@ func FindCombos(items []int, initial uint64, target int) []uint64 {
 	sumRemain[0] = set{initial: struct{}{}} // base case
 
 	for sum := 1; sum < len(sumRemain); sum++ {
-		combos := make(set)
+		rems := make(set)
 		for i, val := range items {
 			// Carry forward any earlier combos where this item was available.
 			if prev := sum - val; prev >= 0 {
 				for rem := range sumRemain[prev] {
 					if HasBit(rem, i) {
-						combos[SetBit(rem, i, false)] = struct{}{} // use the item
+						rems[SetBit(rem, i, false)] = struct{}{} // use the item
 					}
 				}
 			}
 		}
-		sumRemain[sum] = combos
-		fmt.Println(sum, len(combos))
+		sumRemain[sum] = rems
 	}
 
 	res := make([]uint64, 0, len(sumRemain[target]))
-	for s := range sumRemain[target] {
-		res = append(res, s)
+	for rem := range sumRemain[target] {
+		res = append(res, initial&^rem)
 	}
 	return res
 }
