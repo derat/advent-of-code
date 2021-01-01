@@ -28,6 +28,11 @@ func Max(vals ...int) int {
 	return max
 }
 
+// Clamp clamps val within [min, max].
+func Clamp(val, min, max int) int {
+	return Min(Max(val, min), max)
+}
+
 // Sum returns the sum of the supplied values.
 func Sum(vals ...int) int {
 	var sum int
