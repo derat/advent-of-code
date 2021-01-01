@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/derat/advent-of-code/lib"
@@ -52,6 +53,10 @@ func main() {
 	// reach an answer once that the website confirmed is the minimum, but it's not fully exploring
 	// the problem space, and it's also nondeterministic (since it iterates over a map) so it hasn't
 	// even produced any answers on other runs.
+	//
+	// Update after reading discussion at https://redd.it/3xflz8: It sounds like the "right" way
+	// to solve this one was by looking at the specific input instead of writing generalized code.
+	// I'm changing this code to return the first solution it finds and calling it a day.
 
 	backRepls := make(map[string]string)
 	backRegexps := make(map[string]*regexp.Regexp)
@@ -63,31 +68,35 @@ func main() {
 		}
 	}
 
-	minSteps := -1
+	// Iterating over a map yields (intentionally) non-deterministic behavior.
+	// Try longest strings first to avoid this.
+	backSorted := lib.MapStringKeys(backRepls)
+	sort.Slice(backSorted, func(i, j int) bool {
+		si, sj := backSorted[i], backSorted[j]
+		return len(si) > len(sj) || (len(si) == len(sj) && si < sj)
+	})
+
 	seen = make(map[string]struct{})
-	var recurse func(string, int)
-	recurse = func(mol string, steps int) {
-		for src, dst := range backRepls {
+	var recurse func(string, int) int
+	recurse = func(mol string, steps int) int {
+		if mol == "e" {
+			return steps
+		}
+
+		steps++
+		for _, src := range backSorted {
+			dst := backRepls[src]
 			for _, idxs := range backRegexps[src].FindAllStringIndex(mol, -1) {
 				newMol := mol[:idxs[0]] + dst + mol[idxs[1]:]
-				if _, ok := seen[newMol]; ok {
-					continue
-				}
-				seen[mol] = struct{}{}
-
-				newSteps := steps + 1
-				if newMol == "e" {
-					fmt.Println(newSteps, "(may not be min!)")
-					if minSteps < 0 || newSteps < minSteps {
-						minSteps = newSteps
+				if _, ok := seen[newMol]; !ok {
+					seen[mol] = struct{}{}
+					if s := recurse(newMol, steps); s != -1 {
+						return s
 					}
-					return
-				} else if minSteps < 0 || newSteps < minSteps {
-					recurse(newMol, newSteps)
 				}
 			}
 		}
+		return -1
 	}
-	recurse(target, 0)
-	println(minSteps)
+	println(recurse(target, 0))
 }
