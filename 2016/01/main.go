@@ -14,10 +14,7 @@ func main() {
 		var dir string
 		var dist int
 		lib.Extract(s, `^([LR])(\d+)$`, &dir, &dist)
-		mult := 1
-		if dir == "R" {
-			mult = -1
-		}
+		mult := lib.If(dir == "L", 1, -1)
 		if dx != 0 {
 			dy = mult * dx
 			dx = 0
