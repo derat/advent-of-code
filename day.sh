@@ -11,12 +11,14 @@ usage() {
 Usage:
   $prog <YEAR> <DAY>   Print (and init) dir for specified year and day.
   $prog <DAY>          Print dir for specified day in current dir's year.
-  $prog today          Print dir for today.
+  $prog input          Print input for current dir.
+  $prog lib            Print library directory.
   $prog next           Print dir for day after current dir.
   $prog prev           Print dir for day before current dir.
-  $prog input          Print input for current dir.
+  $prog run            Run code in current dir.
+  $prog stdin          Run code in current dir with input from stdin.
+  $prog today          Print dir for today.
   $prog web            Open webpage for current dir.
-  $prog lib            Print library directory.
   $prog                Print repo directory.
 EOF
   exit 2
@@ -29,12 +31,12 @@ cur_dir=$(pwd)
 cur_year=
 cur_day=
 case "$cur_dir" in
-  ${script_dir}/[0-9][0-9][0-9][0-9]/[0-9][0-9] | ${script_dir}/[0-9][0-9][0-9][0-9]/[0-9] )
+  ${script_dir}/20[1-9][0-9]/[0-2][0-9])
     cur_year="$(basename "$(dirname "$cur_dir")")"
     cur_day="$(basename "$cur_dir")"
     break
     ;;
-  ${script_dir}/[0-9][0-9][0-9][0-9] )
+  ${script_dir}/20[1-9][0-9])
     cur_year="$(basename "$cur_dir")"
     break
     ;;
@@ -50,52 +52,66 @@ check_in_day_dir() {
 year=
 day=
 
-if [ $# -eq 0 ]; then
-  echo "$script_dir"
-  exit 0
-elif [ $# -eq 1 ]; then
-  if [ "$1" = today ]; then
-    [ $(date +%m) -eq 12 ] || die "Not in December"
-    year=$(date +%Y)
-    day=$(date +%d)
-  elif [ "$1" = next ]; then
+[ $# -eq 0 ] && exec echo "$script_dir"
+
+case "$1" in
+  -h|--help)
+    usage
+    ;;
+  input)
+    check_in_day_dir
+    exec cat "$HOME/.cache/advent-of-code/$(printf "%d/%d" $cur_year $cur_day)"
+    ;;
+  lib)
+    exec echo "${script_dir}/lib"
+    ;;
+  next)
     check_in_day_dir
     year=$cur_year
     day=$(($cur_day + 1))
-  elif [ "$1" = prev ]; then
+    ;;
+  prev)
     check_in_day_dir
     year=$cur_year
     day=$(($cur_day - 1))
-  elif [ "$1" = input ]; then
+    ;;
+  run)
     check_in_day_dir
-    cat "$HOME/.cache/advent-of-code/$(printf "%d/%d" $cur_year $cur_day)"
-    exit 0
-  elif [ "$1" = web ]; then
+    exec go run main.go
+    ;;
+  stdin)
     check_in_day_dir
-    xdg-open "$(printf "https://adventofcode.com/%d/day/%d" $cur_year $cur_day)"
-    exit 0
-  elif [ "$1" = lib ]; then
-    echo "${script_dir}/lib"
-    exit 0
-  else
-    if ! echo "$1" | grep -E -q '^[0-9]{1,2}$'; then usage; fi
-    if [ -z "$cur_year" ]; then die "Must be in year or year/day directory"; fi
-    year="$cur_year"
-    day="$1"
-  fi
-elif [ $# -eq 2 ]; then
-  if ! echo "$1" | grep -E -q '^[0-9]{4}$' || \
-     ! echo "$2" | grep -E -q '^[0-9]{1,2}$'; then
-    usage
-  fi
-  year="$1"
-  day="$2"
-else
-  usage
-fi
+    exec go run main.go -
+    ;;
+  today)
+    [ $(date +%m) -eq 12 ] || die "Not in December"
+    year=$(date +%Y)
+    day=$(date +%d)
+    ;;
+  web)
+    check_in_day_dir
+    exec xdg-open "$(printf "https://adventofcode.com/%d/day/%d" $cur_year $cur_day)"
+    ;;
+  *)
+    if [ $# -eq 1 ]; then
+      [ -n "$cur_year" ] || die "Must be in year or year/day directory"
+      year="$cur_year"
+      day="$1"
+    elif [ $# -eq 2 ]; then
+      year="$1"
+      day="$2"
+    else
+      usage
+    fi
+    ;;
+esac
 
-if [ "$day" -lt 1 ] || [ "$day" -gt 25 ]; then
-  die "Day $day not in range [1, 25]"
+# Validate the year and day that we're using.
+if ! echo "$year" | grep -E -q '^[0-9]{4}$' || [ "$year" -lt 2015 ]; then
+  die "Year '${year}' not in range [2015, ...]"
+fi
+if ! echo "$day" | grep -E -q '^[0-9][0-9]?$' || [ "$day" -lt 1 ] || [ "$day" -gt 25 ]; then
+  die "Day '${day}' not in range [1, 25]"
 fi
 
 # Remove zero-padding.
