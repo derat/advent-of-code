@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derat/advent-of-code/lib"
 )
@@ -14,18 +15,47 @@ func main() {
 		zeros = 5 // number of leading zeros
 		pwLen = 8
 	)
+
 	pre := lib.InputLines("2016/5")[0]
 	want := make([]byte, zeros/2) // full zero bytes
+
 	var pw string
 	for i := 0; len(pw) < pwLen; i++ {
 		s := pre + strconv.Itoa(i)
 		hash := md5.Sum([]byte(s))
 		if bytes.HasPrefix(hash[:], want) && (zeros%2 == 0 || hash[zeros/2] < 16) {
-			b := lib.IfByte(zeros%2 == 0, hash[zeros/2]>>4, hash[zeros/2]) & 0xf
-			ch := fmt.Sprintf("%x", b)
+			ch := fmt.Sprintf("%x", getVal(hash, zeros))
 			pw += ch
 			fmt.Print(ch) // print a byte at a time because it looks cooler
 		}
 	}
 	fmt.Println()
+
+	// Part 2: Hash specifies position and then char
+	// It'd be more efficient to put this in the above loop, but I want cool-looking
+	// output and don't want to need to deal with printing to multiple lines.
+	pw2 := bytes.Repeat([]byte{'.'}, pwLen)
+	rem := pwLen
+	fmt.Printf("%s", pw2)
+	for i := 0; rem > 0; i++ {
+		s := pre + strconv.Itoa(i)
+		hash := md5.Sum([]byte(s))
+		if bytes.HasPrefix(hash[:], want) && (zeros%2 == 0 || hash[zeros/2] < 16) {
+			pos := getVal(hash, zeros)
+			if int(pos) >= len(pw2) || pw2[pos] != '.' {
+				continue // skip invalid or already-filled position
+			}
+
+			pw2[pos] = fmt.Sprintf("%x", getVal(hash, zeros+1))[0]
+			rem--
+			fmt.Print(strings.Repeat("\b", pwLen)) // clear partial password
+			fmt.Printf("%s", pw2)
+		}
+	}
+	fmt.Println()
+}
+
+// Returns the pos-th 4-bit value from hash.
+func getVal(hash []byte, pos int) byte {
+	return lib.IfByte(pos%2 == 0, hash[pos/2]>>4, hash[pos/2]) & 0xf
 }
