@@ -111,18 +111,7 @@ func InputLines(date string) []string {
 // InputLinesBytes returns newline-separated lines of input for the specified day.
 // If valid is non-empty, panics if any unlisted bytes are encountered.
 func InputLinesBytes(date string, valid ...byte) [][]byte {
-	var lines [][]byte
-	for i, ln := range InputLines(date) {
-		if len(valid) > 0 {
-			for j, ch := range ln {
-				if bytes.IndexByte(valid, byte(ch)) == -1 {
-					panic(fmt.Sprintf("Invalid byte %v (%q) at position %d of line %d", ch, ch, j, i))
-				}
-			}
-		}
-		lines = append(lines, []byte(ln))
-	}
-	return lines
+	return ByteLines(Input(date), valid...)
 }
 
 var newlinesRegexp = regexp.MustCompile(`\n\n+`)
