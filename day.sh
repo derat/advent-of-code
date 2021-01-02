@@ -42,6 +42,10 @@ case "$cur_dir" in
     ;;
 esac
 
+# Remove leading zeros.
+cur_year=${cur_year#0}
+cur_day=${cur_day#0}
+
 # Dies with an error if not already in a year/day directory.
 check_in_day_dir() {
   if [ -z "$cur_year" ] || [ -z "$cur_day" ]; then
@@ -114,9 +118,9 @@ if ! echo "$day" | grep -E -q '^[0-9][0-9]?$' || [ "$day" -lt 1 ] || [ "$day" -g
   die "Day '${day}' not in range [1, 25]"
 fi
 
-# Remove zero-padding.
-year=$(printf "%d" "$year")
-day=$(printf "%d" "$day")
+# Remove leading zeros.
+year=${year#0}
+day=${day#0}
 
 dir="${script_dir}/$(printf "%04d/%02d" "$year" "$day")"
 
