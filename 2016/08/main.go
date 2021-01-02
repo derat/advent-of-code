@@ -80,5 +80,5 @@ func main() {
 		cnt += bytes.Count(row[:], []byte{'#'})
 	}
 	fmt.Println(cnt)
-
+	fmt.Println(lib.OCR(screen, ' '))
 }
