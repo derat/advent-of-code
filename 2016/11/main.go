@@ -7,7 +7,7 @@ import (
 	"github.com/derat/advent-of-code/lib"
 )
 
-const bits = 6 // bits used to represent a full set of elements
+const bits = 7 // bits used to represent a full set of elements
 
 func main() {
 	// Parsing this input is painful.
@@ -39,7 +39,28 @@ func main() {
 		initial = setFloorItems(initial, floor, chips, gens)
 	}
 
-	allElements := 1<<len(elements) - 1 // all elements present
+	fmt.Println(solve(initial, floors, len(elements)))
+
+	// Part 2: Chips and generators for two more elements on first floor.
+	elerium := len(elements)
+	elements["elerium"] = elerium
+	dilithium := len(elements)
+	elements["dilithium"] = dilithium
+	updated, ok := update(initial, 0, true, thing{elerium, true}, thing{elerium, false},
+		thing{dilithium, true}, thing{dilithium, false})
+	lib.Assertf(ok, "Invalid initial state for part 2")
+	fmt.Println(solve(updated, floors, len(elements)))
+}
+
+// solve returns the number of moves necessary to get from the supplied initial
+// state to having all elements on the top floor.
+// This approach (BFS) is terrible and slow (it takes a few minutes to complete
+// for part 2), but it doesn't blow up memory so I'm running with it.
+func solve(initial uint64, floors, numElements int) int {
+	lib.AssertLessEq(numElements, bits)
+
+	// We want to get all items to the top floor.
+	targetMask := setFloorItems(0, floors-1, 1<<numElements-1, 1<<numElements-1)
 
 	seen := map[uint64]struct{}{initial: struct{}{}}
 	alreadySeen := func(st uint64) bool {
@@ -49,14 +70,13 @@ func main() {
 
 	todo := map[uint64]struct{}{initial: struct{}{}}
 	var moves int
-Loop:
 	for ; ; moves++ {
 		lib.Assertf(len(todo) != 0, "No new states to check")
 		nextTodo := make(map[uint64]struct{})
 		for st := range todo {
 			// If everything is on the top floor, we're done.
-			if c, g := getFloorItems(st, floors-1); c == allElements && g == allElements {
-				break Loop
+			if st&targetMask == targetMask {
+				return moves
 			}
 
 			floor := getFloorNum(st)
@@ -96,7 +116,7 @@ Loop:
 		}
 		todo = nextTodo
 	}
-	fmt.Println(moves)
+	return moves
 }
 
 func getFloorItems(state uint64, floor int) (chips, gens int) {
