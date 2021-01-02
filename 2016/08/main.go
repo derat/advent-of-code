@@ -4,20 +4,24 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	const (
-		rows = 6
-		cols = 50
+		rows    = 6
+		cols    = 50
+		unlit   = ' '
+		lit     = '#'
+		animate = true
 	)
 
 	var screen [rows][cols]byte
 	for r := range screen {
 		for c := range screen[r] {
-			screen[r][c] = '.'
+			screen[r][c] = ' '
 		}
 	}
 
@@ -27,6 +31,9 @@ func main() {
 		}
 	}
 
+	if animate {
+		printScreen()
+	}
 	for _, ln := range lib.InputLines("2016/8") {
 		switch {
 		case strings.Contains(ln, "rect"):
@@ -34,7 +41,7 @@ func main() {
 			lib.Extract(ln, `^rect (\d+)x(\d+)$`, &w, &h)
 			for r := 0; r < h; r++ {
 				for c := 0; c < w; c++ {
-					screen[r][c] = '#'
+					screen[r][c] = lit
 				}
 			}
 		case strings.Contains(ln, "rotate row"):
@@ -71,6 +78,16 @@ func main() {
 		default:
 			panic(fmt.Sprintf("Invalid command %q", ln))
 		}
+
+		if animate {
+			time.Sleep(100 * time.Millisecond)
+			fmt.Printf("\033[%dA", rows)
+			printScreen()
+		}
+	}
+
+	if !animate {
+		printScreen()
 	}
 
 	var cnt int
@@ -78,5 +95,5 @@ func main() {
 		cnt += bytes.Count(row[:], []byte{'#'})
 	}
 	fmt.Println(cnt)
-	printScreen()
+
 }
