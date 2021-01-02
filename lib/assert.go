@@ -9,6 +9,13 @@ func Assert(v bool) {
 	}
 }
 
+// Assertf panics if v is false.
+func Assertf(v bool, s string, args ...interface{}) {
+	if !v {
+		panic(fmt.Sprintf(s, args...))
+	}
+}
+
 // AssertEq panics if a doesn't equal b.
 func AssertEq(a, b interface{}) {
 	if a != b {

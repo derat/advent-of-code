@@ -71,4 +71,7 @@ func main() {
 		}
 		ready = newReady
 	}
+
+	// Part 2
+	fmt.Println(outs[0] * outs[1] * outs[2])
 }
