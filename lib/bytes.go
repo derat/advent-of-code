@@ -35,6 +35,15 @@ func NewBytes(r, c int, ch byte) [][]byte {
 	return g
 }
 
+// SetBytes the rectangle bounded by (r0, c0) and (r1, c1), inclusive, to ch.
+func SetBytes(b [][]byte, r0, c0, r1, c1 int, ch byte) {
+	for r := Max(r0, 0); r <= Min(r1, len(b)-1); r++ {
+		for c := Max(c0, 0); c <= Min(c1, len(b[r])-1); c++ {
+			b[r][c] = ch
+		}
+	}
+}
+
 // CountBytes returns the number of occurrences of ch in the rectangle bounded
 // by (r0, c0) and (r1, c1), inclusive. The supplied bounds are clamped.
 func CountBytes(b [][]byte, r0, c0, r1, c1 int, ch byte) int {
@@ -52,4 +61,9 @@ func CountBytes(b [][]byte, r0, c0, r1, c1 int, ch byte) int {
 // CountBytesFull calls CountBytes for the full bounds of b.
 func CountBytesFull(b [][]byte, ch byte) int {
 	return CountBytes(b, 0, 0, len(b)-1, len(b[0])-1, ch)
+}
+
+// DumpBytes returns b as a newline-separated string.
+func DumpBytes(b [][]byte) string {
+	return string(bytes.Join(b, []byte{'\n'}))
 }

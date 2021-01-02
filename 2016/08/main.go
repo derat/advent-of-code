@@ -18,32 +18,17 @@ func main() {
 		animate = true
 	)
 
-	var screen [rows][cols]byte
-	for r := range screen {
-		for c := range screen[r] {
-			screen[r][c] = ' '
-		}
-	}
-
-	printScreen := func() {
-		for _, row := range screen {
-			fmt.Println(string(row[:]))
-		}
-	}
+	screen := lib.NewBytes(rows, cols, ' ')
 
 	if animate {
-		printScreen()
+		fmt.Println(lib.DumpBytes(screen))
 	}
 	for _, ln := range lib.InputLines("2016/8") {
 		switch {
 		case strings.Contains(ln, "rect"):
 			var w, h int
 			lib.Extract(ln, `^rect (\d+)x(\d+)$`, &w, &h)
-			for r := 0; r < h; r++ {
-				for c := 0; c < w; c++ {
-					screen[r][c] = lit
-				}
-			}
+			lib.SetBytes(screen, 0, 0, h-1, w-1, lit)
 		case strings.Contains(ln, "rotate row"):
 			var r, amt int
 			lib.Extract(ln, `^rotate row y=(\d+) by (\d+)$`, &r, &amt)
@@ -82,12 +67,12 @@ func main() {
 		if animate {
 			time.Sleep(100 * time.Millisecond)
 			fmt.Printf("\033[%dA", rows)
-			printScreen()
+			fmt.Println(lib.DumpBytes(screen))
 		}
 	}
 
 	if !animate {
-		printScreen()
+		fmt.Println(lib.DumpBytes(screen))
 	}
 
 	var cnt int
