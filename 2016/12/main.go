@@ -15,7 +15,12 @@ func main() {
 		ins = append(ins, in)
 	}
 
-	a, _, _, _ := run(ins)
+	// Part 1
+	a, _, _, _ := run(ins, 0, 0, 0, 0)
+	fmt.Println(a)
+
+	// Part 2: Initialize register c to 1 instead of to 0.
+	a, _, _, _ = run(ins, 0, 0, 1, 0)
 	fmt.Println(a)
 }
 
@@ -25,7 +30,7 @@ type instr struct {
 	v1, v2 int64
 }
 
-func run(ins []instr) (a, b, c, d int64) {
+func run(ins []instr, a, b, c, d int64) (int64, int64, int64, int64) {
 	reg := func(n string) *int64 {
 		switch n {
 		case "a":
