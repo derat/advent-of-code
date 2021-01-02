@@ -56,6 +56,6 @@ func main() {
 }
 
 // Returns the pos-th 4-bit value from hash.
-func getVal(hash []byte, pos int) byte {
+func getVal(hash [16]byte, pos int) byte {
 	return lib.IfByte(pos%2 == 0, hash[pos/2]>>4, hash[pos/2]) & 0xf
 }
