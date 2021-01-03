@@ -55,3 +55,24 @@ func Abs(v int) int {
 	}
 	return v
 }
+
+// Pow returns x to the power of n.
+func Pow(x, n int) int {
+	return powInt(1, x, n)
+}
+
+// https://en.wikipedia.org/wiki/Exponentiation_by_squaring
+func powInt(y, x, n int) int {
+	switch {
+	case n < 0:
+		panic("Negative exponent")
+	case n == 0:
+		return y
+	case n == 1:
+		return x * y
+	case n%2 == 0:
+		return powInt(y, x*x, n/2)
+	default:
+		return powInt(x*y, x*x, (n-1)/2)
+	}
+}
