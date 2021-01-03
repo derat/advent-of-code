@@ -39,6 +39,16 @@ func UnpackIntSigned(packed uint64, bits, i int) int {
 	return int((int64(val) << shift) >> shift) // extend sign bit
 }
 
+// PackInt2 is a convenience wrapper around PackInt that packs a and b using 32 bits each.
+func PackInt2(a, b int) uint64 {
+	return PackInt(PackInt(0, a, 32, 0), b, 32, 1)
+}
+
+// UnpackInt2 undoes the operation performed by PackInt2.
+func UnpackInt2(p uint64) (a, b int) {
+	return UnpackInt(p, 32, 0), UnpackInt(p, 32, 1)
+}
+
 // SetBit sets the i-th bit in field to v and returns the field.
 func SetBit(field uint64, i int, v bool) uint64 {
 	if v {
@@ -50,4 +60,19 @@ func SetBit(field uint64, i int, v bool) uint64 {
 // HasBit returns true if the i-th bit in field is set.
 func HasBit(field uint64, i int) bool {
 	return field&(1<<i) != 0
+}
+
+// Hi returns the top 4 bits of b.
+func Hi(b byte) byte {
+	return (b >> 4) & 0xf
+}
+
+// Hi returns the bottom 4 bits of b.
+func Lo(b byte) byte {
+	return b & 0xf
+}
+
+// HiIsLo returns true if Hi(b) equals Lo(b).
+func HiIsLo(b byte) bool {
+	return Hi(b) == Lo(b)
 }

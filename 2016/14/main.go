@@ -69,23 +69,11 @@ func find(salt string, stretch int) []int {
 	return keys
 }
 
-func hi(b byte) byte {
-	return (b >> 4) & 0xf
-}
-
-func lo(b byte) byte {
-	return b & 0xf
-}
-
-func rep(b byte) bool {
-	return hi(b) == lo(b)
-}
-
 func three(b []byte) byte {
 	for i := range b[:len(b)-1] {
-		if (rep(b[i]) && hi(b[i]) == hi(b[i+1])) ||
-			(rep(b[i+1]) && lo(b[i]) == lo(b[i+1])) {
-			return lo(b[i])
+		if (lib.HiIsLo(b[i]) && lib.Hi(b[i]) == lib.Hi(b[i+1])) ||
+			(lib.HiIsLo(b[i+1]) && lib.Lo(b[i]) == lib.Lo(b[i+1])) {
+			return lib.Lo(b[i])
 		}
 	}
 	return noThree
@@ -94,9 +82,9 @@ func three(b []byte) byte {
 func fives(b []byte) []byte {
 	var vals []byte
 	for i := range b[:len(b)-2] {
-		if (rep(b[i]) && b[i] == b[i+1] && hi(b[i]) == hi(b[i+2])) ||
-			(rep(b[i+1]) && b[i+1] == b[i+2] && lo(b[i]) == lo(b[i+1])) {
-			vals = append(vals, lo(b[i+1]))
+		if (lib.HiIsLo(b[i]) && b[i] == b[i+1] && lib.Hi(b[i]) == lib.Hi(b[i+2])) ||
+			(lib.HiIsLo(b[i+1]) && b[i+1] == b[i+2] && lib.Lo(b[i]) == lib.Lo(b[i+1])) {
+			vals = append(vals, lib.Lo(b[i+1]))
 		}
 	}
 	return vals
