@@ -59,6 +59,31 @@ func main() {
 			costs[k] = newCost
 		}
 	}
+
+	// Part 2: Count locations reachable in at most 50 steps.
+	// Sigh, just redo the search using BFS, I guess.
+	// What was the point of optimizing the first part?
+	seen := map[uint64]struct{}{key(sx, sy): struct{}{}}
+	todo := map[uint64]struct{}{key(sx, sy): struct{}{}}
+	for i := 0; i <= 50; i++ {
+		newTodo := make(map[uint64]struct{})
+		for k := range todo {
+			seen[k] = struct{}{}
+			x, y := unkey(k)
+			for _, n := range [][2]int{{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}} {
+				nx, ny := n[0], n[1]
+				if nx < 0 || ny < 0 || wall(nx, ny) {
+					continue
+				}
+				nk := key(nx, ny)
+				if _, ok := seen[nk]; !ok {
+					newTodo[nk] = struct{}{}
+				}
+			}
+		}
+		todo = newTodo
+	}
+	fmt.Println(len(seen))
 }
 
 type node struct {
@@ -67,4 +92,9 @@ type node struct {
 
 func key(x, y int) uint64 {
 	return lib.PackInts([]int{x, y}, 32)
+}
+
+func unkey(k uint64) (x, y int) {
+	v := lib.UnpackInts(k, 32, 2)
+	return v[0], v[1]
 }
