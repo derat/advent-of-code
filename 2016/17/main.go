@@ -28,17 +28,29 @@ func main() {
 		path string
 	}
 
+	var shortest string
+	maxSteps := -1
 	todo := []state{{0, 0, ""}}
-Loop:
-	for {
-		lib.Assertf(len(todo) > 0, "No remaining paths to try")
+	for steps := 0; true; steps++ {
+		// For part 2, we need to find the longest path that reaches the exit.
+		// I don't think that there's any way to eliminate paths, since every
+		// unique path has its own unpredictable future open/closed state for
+		// doors. Just continue trying iterating until we don't have anything
+		// left to try (because all earlier paths either reached the exit or
+		// ended up in a dead-end state where all four doors are closed).
+		if len(todo) == 0 {
+			break
+		}
 		var nextTodo []state
 
 		for _, st := range todo {
 			// Check if we're done.
 			if st.r == tr && st.c == tc {
-				fmt.Println(st.path)
-				break Loop
+				if shortest == "" {
+					shortest = st.path
+				}
+				maxSteps = lib.Max(maxSteps, len(st.path))
+				continue
 			}
 
 			try := func(dr, dc int, open bool, dir rune) {
@@ -58,4 +70,7 @@ Loop:
 
 		todo = nextTodo
 	}
+
+	fmt.Println(shortest)
+	fmt.Println(maxSteps)
 }
