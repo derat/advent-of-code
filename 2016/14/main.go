@@ -2,27 +2,32 @@ package main
 
 import (
 	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
 	"github.com/derat/advent-of-code/lib"
 )
 
-const noThree = 0xff
+const (
+	noThree   = 0xff
+	lookahead = 1000
+	nkeys     = 64
+)
 
 func main() {
-	const (
-		lookahead = 1000
-		nkeys     = 64
-	)
-
 	salt := lib.InputLines("2016/14")[0]
+	fmt.Println(find(salt, 0)[nkeys-1])
+	fmt.Println(find(salt, 2016)[nkeys-1])
+}
 
-	type num struct {
-		idx   int
-		three byte
-		fives []byte
-	}
+type num struct {
+	idx   int
+	three byte
+	fives []byte
+}
+
+func find(salt string, stretch int) []int {
 	nums := make([]num, 0, lookahead)
 	numsNext := 0 // next index into nums
 
@@ -32,6 +37,9 @@ func main() {
 	for idx := 0; len(keys) < nkeys; idx++ {
 		s := salt + strconv.Itoa(idx)
 		hash := md5.Sum([]byte(s))
+		for i := 0; i < stretch; i++ {
+			hash = md5.Sum([]byte(hex.EncodeToString(hash[:])))
+		}
 
 		n := num{idx: idx, three: three(hash[:])}
 		if n.three != noThree {
@@ -58,7 +66,7 @@ func main() {
 		numsNext = (numsNext + 1) % lookahead
 	}
 
-	fmt.Println(keys[len(keys)-1])
+	return keys
 }
 
 func hi(b byte) byte {
