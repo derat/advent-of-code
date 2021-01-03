@@ -14,6 +14,18 @@ func main() {
 		discs = append(discs, d)
 	}
 
+	fmt.Println(solve(discs))
+
+	// Part 2: Add a disc with 11 positions starting at pos 0.
+	discs = append(discs, disc{11, 0})
+	fmt.Println(solve(discs))
+}
+
+type disc struct {
+	npos, initial int
+}
+
+func solve(discs []disc) int {
 	for t := 0; true; t++ {
 		var fail bool
 		for i, d := range discs {
@@ -23,12 +35,8 @@ func main() {
 			}
 		}
 		if !fail {
-			fmt.Println(t)
-			break
+			return t
 		}
 	}
-}
-
-type disc struct {
-	npos, initial int
+	panic("not reached")
 }
