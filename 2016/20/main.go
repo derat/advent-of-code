@@ -21,11 +21,17 @@ func main() {
 		return blocks[i].min < blocks[j].min
 	})
 
-	lowest := 0
+	var lowest, start, cnt int
 	for _, bl := range blocks {
 		if bl.min <= lowest && bl.max >= lowest {
 			lowest = bl.max + 1
 		}
+		if bl.min > start {
+			cnt += bl.min - start
+		}
+		start = lib.Max(bl.max+1, start)
 	}
+	cnt += lib.Max(4294967295-start, 0)
 	fmt.Println(lowest)
+	fmt.Println(cnt)
 }
