@@ -57,8 +57,9 @@ func ExtractDigits(s string) []int {
 
 var extractCache = make(map[string]*regexp.Regexp)
 
-// Extract executes regular expression re on s and assigns groups to dsts.
-func Extract(s, re string, dsts ...interface{}) {
+// ExtractMaybe executes regular expression re on s and assigns groups to dsts.
+// It returns false if re does not match s.
+func ExtractMaybe(s, re string, dsts ...interface{}) bool {
 	cre, ok := extractCache[re]
 	if !ok {
 		cre = regexp.MustCompile(re)
@@ -67,11 +68,9 @@ func Extract(s, re string, dsts ...interface{}) {
 
 	ms := cre.FindStringSubmatch(s)
 	if ms == nil {
-		panic(fmt.Sprintf("%q not matched by %q", s, re))
+		return false
 	}
-	if len(ms)-1 != len(dsts) {
-		panic(fmt.Sprintf("%q has %v group(s), but %v dest(s) were supplied", re, len(ms)-1, len(dsts)))
-	}
+	Assertf(len(ms)-1 == len(dsts), "%q has %v group(s), but %v dest(s) were supplied", re, len(ms)-1, len(dsts))
 	for i, dst := range dsts {
 		m := ms[i+1]
 		if m == "" { // skip optional groups (should maybe set dst to zero?)
@@ -79,6 +78,9 @@ func Extract(s, re string, dsts ...interface{}) {
 		}
 		var err error
 		switch t := dst.(type) {
+		case *byte:
+			Assertf(len(m) == 1, "Can't store %q in a single byte", m)
+			*t = m[0]
 		case *float64:
 			*t, err = strconv.ParseFloat(m, 64)
 		case *int:
@@ -90,12 +92,17 @@ func Extract(s, re string, dsts ...interface{}) {
 		case *uint64:
 			*t, err = strconv.ParseUint(m, 10, 64)
 		default:
-			panic(fmt.Sprintf("Unknown dest type %T for group %v of %q", t, i, re))
+			Assertf(false, "Unknown dest type %T for group %v of %q", t, i, re)
 		}
-		if err != nil {
-			panic(fmt.Sprintf("Failed to parse group %q matched by %q: %v", m, re, err))
-		}
+		Assertf(err == nil, "Failed to parse group %q matched by %q: %v", m, re, err)
 	}
+	return true
+}
+
+// Extract executes regular expression re on s and assigns groups to dsts.
+// It panics if re does not match s.
+func Extract(s, re string, dsts ...interface{}) {
+	Assertf(ExtractMaybe(s, re, dsts...), "%q not matched by %q", s, re)
 }
 
 // Tokenize splits s into tokens from the supplied args (either string or *regexp.Regexp).
@@ -116,7 +123,7 @@ func Tokenize(s string, tokens ...interface{}) []string {
 					v = s[loc[0]:loc[1]]
 				}
 			default:
-				panic(fmt.Sprintf("Invalid token %q of type %T", tok, tok))
+				Assertf(false, "Invalid token %q of type %T", tok, tok)
 			}
 			if len(v) > 0 {
 				out = append(out, v)
@@ -125,9 +132,7 @@ func Tokenize(s string, tokens ...interface{}) []string {
 				break
 			}
 		}
-		if !found {
-			panic(fmt.Sprintf("Didn't find token at beginning of %q", s))
-		}
+		Assertf(found, "Didn't find token at beginning of %q", s)
 	}
 	return out
 }
