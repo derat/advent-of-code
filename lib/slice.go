@@ -1,6 +1,8 @@
 package lib
 
-import "reflect"
+import (
+	"reflect"
+)
 
 // ReverseBytes reverses b in-place. A pointer to b is also returned.
 func ReverseBytes(b []byte) []byte {
@@ -35,4 +37,18 @@ func Rotate(first, middle, last int, swap func(i, j int)) {
 			middle = next
 		}
 	}
+}
+
+// RotateBy is a wrapper around Rotate that rotates n elements by amt.
+func RotateBy(n, amt int, swap func(i, j int)) {
+	if n == 0 || amt == 0 {
+		return
+	}
+	middle := (2*n - (amt % n)) % n
+	Rotate(0, middle, n, swap)
+}
+
+// RotateSlice is a wrapper around RotateBy that operates on a slice.
+func RotateSlice(v interface{}, amt int) {
+	RotateBy(reflect.ValueOf(v).Len(), amt, reflect.Swapper(v))
 }

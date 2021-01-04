@@ -32,15 +32,13 @@ func main() {
 		case strings.Contains(ln, "rotate row"):
 			var r, amt int
 			lib.Extract(ln, `^rotate row y=(\d+) by (\d+)$`, &r, &amt)
-			lib.AssertLess(amt, cols)
-			lib.Rotate(0, cols-amt, cols, func(i, j int) {
+			lib.RotateBy(cols, amt, func(i, j int) {
 				screen[r][i], screen[r][j] = screen[r][j], screen[r][i]
 			})
 		case strings.Contains(ln, "rotate column"):
 			var c, amt int
 			lib.Extract(ln, `^rotate column x=(\d+) by (\d+)$`, &c, &amt)
-			lib.AssertLess(amt, rows)
-			lib.Rotate(0, rows-amt, rows, func(i, j int) {
+			lib.RotateBy(rows, amt, func(i, j int) {
 				screen[i][c], screen[j][c] = screen[j][c], screen[i][c]
 			})
 		default:
