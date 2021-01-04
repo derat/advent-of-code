@@ -37,33 +37,50 @@ func main() {
 	spn.prev, spn.next = spn, spn
 	elf := 1     // current elf
 	cnt := elves // elves still in the game
-	for {
-		off := cnt / 2 // offset to elf whose presents are gonna get ganked
-		ts, te := find(spn, elf, off)
 
-		if ts.min == te {
-			ts.min++
-		} else if ts.max == te {
-			ts.max--
+	oppElf := 1 + cnt/2 // opposite elf
+	oppSpan := spn      // span that oppElf is in
+
+	for {
+		// Sigh, trivial optimization that I didn't realize until I read some discussion
+		// of the problem online: keep track of the opposite elf, which advances by either
+		// one or two (of the remaining elves) each time depending on the parity of the
+		// total number of elves.
+		nextSpan, nextElf := find(oppSpan, oppElf, lib.If((cnt-1)%2 == 0, 2, 1))
+
+		if oppSpan.min == oppElf {
+			oppSpan.min++
+		} else if oppSpan.max == oppElf {
+			oppSpan.max--
 		} else {
-			ns := &span{min: te + 1, max: ts.max, prev: ts, next: ts.next}
-			ts.max = te - 1
-			ts.next.prev = ns
-			ts.next = ns
-			if spn == ts && elf > te {
+			ns := &span{
+				min:  oppElf + 1,
+				max:  oppSpan.max,
+				prev: oppSpan,
+				next: oppSpan.next,
+			}
+			oppSpan.max = oppElf - 1
+			oppSpan.next.prev = ns
+			oppSpan.next = ns
+			if spn == oppSpan && elf > oppElf {
 				spn = ns
 			}
+			if nextSpan == oppSpan && nextElf > oppElf {
+				nextSpan = ns
+			}
 		}
-		if ts.min > ts.max {
-			ts.prev.next = ts.next
-			ts.next.prev = ts.prev
+		if oppSpan.min > oppSpan.max {
+			oppSpan.prev.next = oppSpan.next
+			oppSpan.next.prev = oppSpan.prev
 		}
 
 		cnt--
 		if cnt == 1 {
 			break
 		}
+
 		spn, elf = find(spn, elf, 1) // move to next elf
+		oppSpan, oppElf = nextSpan, nextElf
 	}
 	lib.AssertEq(spn, spn.next)
 	lib.AssertEq(spn.min, spn.max)
