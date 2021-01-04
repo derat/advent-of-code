@@ -32,3 +32,41 @@ func TestRotateSlice(t *testing.T) {
 		}
 	}
 }
+
+func TestMove(t *testing.T) {
+	for _, tc := range []struct {
+		in        string
+		s1, s2, d int
+		want      string
+	}{
+		// Move beginning.
+		{"abcdef", 0, 0, 0, "abcdef"},
+		{"abcdef", 0, 1, 0, "abcdef"},
+		{"abcdef", 0, 2, 1, "cabdef"},
+		{"abcdef", 0, 2, 2, "cdabef"},
+		{"abcdef", 0, 2, 3, "cdeabf"},
+		{"abcdef", 0, 2, 4, "cdefab"},
+		{"abcdef", 0, 5, 1, "fabcde"},
+
+		// Move end.
+		{"abcdef", 6, 6, 0, "abcdef"},
+		{"abcdef", 5, 5, 0, "abcdef"},
+		{"abcdef", 5, 6, 5, "abcdef"},
+		{"abcdef", 5, 6, 4, "abcdfe"},
+		{"abcdef", 4, 6, 3, "abcefd"},
+		{"abcdef", 1, 6, 0, "bcdefa"},
+
+		// Move middle.
+		{"abcdef", 2, 2, 0, "abcdef"},
+		{"abcdef", 2, 4, 2, "abcdef"},
+		{"abcdef", 2, 4, 1, "acdbef"},
+		{"abcdef", 2, 4, 3, "abecdf"},
+		{"abcdef", 2, 4, 0, "cdabef"},
+		{"abcdef", 2, 4, 4, "abefcd"},
+	} {
+		b := []byte(tc.in)
+		if Move(b, tc.s1, tc.s2, tc.d); string(b) != tc.want {
+			t.Errorf("Move(%q, %d, %d, %d) = %q; want %q", tc.in, tc.s1, tc.s2, tc.d, b, tc.want)
+		}
+	}
+}

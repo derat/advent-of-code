@@ -52,3 +52,19 @@ func RotateBy(n, amt int, swap func(i, j int)) {
 func RotateSlice(v interface{}, amt int) {
 	RotateBy(reflect.ValueOf(v).Len(), amt, reflect.Swapper(v))
 }
+
+// Move moves the elements in slice v's half-open range [s1,s2) to be at index d.
+// Other elements are preserved and shifted as needed.
+func Move(v interface{}, s1, s2, d int) {
+	Assertf(s2 >= s1, "Invalid range [%d,%d)", s1, s2)
+	sn := s2 - s1 // number of elements being moved
+	r := reflect.ValueOf(v)
+	Assertf(d+sn <= r.Len(), "Copying [%d,%d) to %d overflows slice of length %v", s1, s2, d, r.Len())
+
+	// The elements that need be rotated are the ones in the half-open range
+	// [min(s1,d), max(s2,d+sn)).
+	start := Min(s1, d)
+	end := Max(s2, d+sn)
+	amt := d - s1
+	RotateSlice(r.Slice(start, end).Interface(), amt)
+}
