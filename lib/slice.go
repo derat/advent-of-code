@@ -21,3 +21,18 @@ func SliceIndexesWithVal(s, v interface{}) []int {
 	}
 	return idxs
 }
+
+// Rotate rotates the elements in [first,last) such that middle becomes the new first element.
+// This comes from http://www.cplusplus.com/reference/algorithm/rotate/ .
+func Rotate(first, middle, last int, swap func(i, j int)) {
+	next := middle
+	for first != next {
+		swap(first, next)
+		first, next = first+1, next+1
+		if next == last {
+			next = middle
+		} else if first == middle {
+			middle = next
+		}
+	}
+}

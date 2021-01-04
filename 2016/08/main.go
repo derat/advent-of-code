@@ -33,33 +33,16 @@ func main() {
 			var r, amt int
 			lib.Extract(ln, `^rotate row y=(\d+) by (\d+)$`, &r, &amt)
 			lib.AssertLess(amt, cols)
-			// http://www.cplusplus.com/reference/algorithm/rotate/
-			first, middle, last := 0, cols-amt, cols
-			next := middle
-			for first != next {
-				screen[r][first], screen[r][next] = screen[r][next], screen[r][first]
-				first, next = first+1, next+1
-				if next == last {
-					next = middle
-				} else if first == middle {
-					middle = next
-				}
-			}
+			lib.Rotate(0, cols-amt, cols, func(i, j int) {
+				screen[r][i], screen[r][j] = screen[r][j], screen[r][i]
+			})
 		case strings.Contains(ln, "rotate column"):
 			var c, amt int
 			lib.Extract(ln, `^rotate column x=(\d+) by (\d+)$`, &c, &amt)
 			lib.AssertLess(amt, rows)
-			first, middle, last := 0, rows-amt, rows
-			next := middle
-			for first != next {
-				screen[first][c], screen[next][c] = screen[next][c], screen[first][c]
-				first, next = first+1, next+1
-				if next == last {
-					next = middle
-				} else if first == middle {
-					middle = next
-				}
-			}
+			lib.Rotate(0, rows-amt, rows, func(i, j int) {
+				screen[i][c], screen[j][c] = screen[j][c], screen[i][c]
+			})
 		default:
 			panic(fmt.Sprintf("Invalid command %q", ln))
 		}
