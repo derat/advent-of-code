@@ -16,6 +16,11 @@ func Assertf(v bool, s string, args ...interface{}) {
 	}
 }
 
+// Panicf panics with the supplied message.
+func Panicf(s string, args ...interface{}) {
+	Assertf(false, s, args...)
+}
+
 // AssertEq panics if a doesn't equal b.
 func AssertEq(a, b interface{}) {
 	if a != b {
