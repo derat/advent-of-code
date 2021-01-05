@@ -11,11 +11,13 @@ usage() {
 Usage:
   $prog <YEAR> <DAY>   Print (and init) dir for specified year and day.
   $prog <DAY>          Print dir for specified day in current dir's year.
+  $prog check          Run code in current dir and compare against answer.
   $prog input          Print input for current dir.
   $prog lib            Print library directory.
   $prog next           Print dir for day after current dir.
   $prog prev           Print dir for day before current dir.
   $prog run            Run code in current dir.
+  $prog save           Run code in current dir and save answer.
   $prog stdin          Run code in current dir with input from stdin.
   $prog today          Print dir for today.
   $prog web            Open webpage for current dir.
@@ -25,6 +27,7 @@ EOF
 }
 
 script_dir="$(dirname "$(realpath -s "$0")")"
+answers_dir="${script_dir}/answers"
 
 # Figure out if we're already in a year/day or year directory.
 cur_dir=$(pwd)
@@ -62,6 +65,13 @@ case "$1" in
   -h|--help)
     usage
     ;;
+  check)
+    check_in_day_dir
+    answers="${answers_dir}/$(printf "%d/%02d" $cur_year $cur_day)"
+    [ -e "$answers" ] || die "No answers for ${cur_year}/${cur_day}"
+    go run main.go | exec diff "$answers" -
+    exit 0
+    ;;
   input)
     check_in_day_dir
     exec cat "$HOME/.cache/advent-of-code/$(printf "%d/%d" $cur_year $cur_day)"
@@ -82,6 +92,12 @@ case "$1" in
   run)
     check_in_day_dir
     exec go run main.go
+    ;;
+  save)
+    check_in_day_dir
+    answers="${answers_dir}/$(printf "%d/%02d" $cur_year $cur_day)"
+    if [ -e "$answers" ]; then die "${answers} already exists"; fi
+    exec go run main.go >"$answers"
     ;;
   stdin)
     check_in_day_dir
