@@ -21,44 +21,25 @@ func main() {
 		return bits.OnesCount64(uint64(n))%2 == 1
 	}
 
-	// https://www.redblobgames.com/pathfinding/a-star/introduction.html
-	frontier := lib.NewHeap(func(a, b interface{}) bool { return a.(node).priority < b.(node).priority })
-	frontier.Insert(node{sx, sy, 0})
-	costs := map[uint64]int{lib.PackInt2(sx, sy): 0}
+	ts := lib.PackInt2(tx, ty) // target state
 
-	for frontier.Len() != 0 {
-		cur := frontier.Pop().(node)
-		cost := costs[lib.PackInt2(cur.x, cur.y)]
-
-		// Check if we're done.
-		if cur.x == tx && cur.y == ty {
-			fmt.Println(cost)
-			break
-		}
-
-		for _, next := range []node{
-			node{cur.x + 1, cur.y, 0},
-			node{cur.x, cur.y + 1, 0},
-			node{cur.x - 1, cur.y, 0},
-			node{cur.x, cur.y - 1, 0},
-		} {
-			if next.x < 0 || next.y < 0 || wall(next.x, next.y) {
-				continue
+	min := lib.AStar(
+		[]uint64{lib.PackInt2(sx, sy)},
+		func(s uint64) bool { return s == ts },
+		func(s uint64) (ns []uint64) {
+			x, y := lib.UnpackInt2(s)
+			for _, n := range [][2]int{{x + 1, y}, {x, y + 1}, {x - 1, y}, {x, y - 1}} {
+				if n[0] >= 0 && n[1] >= 0 && !wall(n[0], n[1]) {
+					ns = append(ns, lib.PackInt2(n[0], n[1]))
+				}
 			}
-
-			newCost := cost + 1
-			k := lib.PackInt2(next.x, next.y)
-			if old, ok := costs[k]; ok && old <= newCost {
-				continue // already visited with equal or lower cost
-			}
-
-			// Use the Manhattan distance to the target as a lower bound of the remaining cost.
-			est := lib.Abs(tx-next.x) + lib.Abs(tx-next.y)
-			next.priority = newCost + est
-			frontier.Insert(next)
-			costs[k] = newCost
-		}
-	}
+			return ns
+		},
+		func(s uint64) int {
+			x, y := lib.UnpackInt2(s)
+			return lib.Abs(tx-x) + lib.Abs(tx-y)
+		})
+	fmt.Println(min)
 
 	// Part 2: Count locations reachable in at most 50 steps.
 	// Sigh, just redo the search using BFS, I guess.

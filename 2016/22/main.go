@@ -80,80 +80,57 @@ func main() {
 
 	// Find nodes that are capable of holding that amount of data.
 	var maxAvail int
-	frontier := lib.NewHeap(func(a, b interface{}) bool { return a.(item).pri < b.(item).pri })
-	costs := make(map[uint64]int) // number of steps to get to state
+	var init []uint64
 	for x, ns := range nodes {
 		for y, n := range ns {
 			if n.avail >= minUsed && n.avail > maxAvail {
 				maxAvail = n.avail
-				st := pack(x, y, len(nodes)-1, 0) // data in orig position
-				frontier.Insert(item{st, 0})
-				costs[st] = 0
+				init = append(init, pack(x, y, len(nodes)-1, 0)) // data in orig position
 			}
 		}
 	}
-	lib.AssertEq(frontier.Len(), 1) // only one space
+	lib.AssertEq(len(init), 1) // only one space
 
 	nx, ny := len(nodes), len(nodes[0]) // nodes in each direction
 
-	for frontier.Len() != 0 {
-		cur := frontier.Pop().(item)
-		cost := costs[cur.state]
-		sx, sy, dx, dy := unpack(cur.state)
-
-		// Check if we're done, i.e. the data has reached (0, 0).
-		if dx == 0 && dy == 0 {
-			fmt.Println(cost)
-			break
-		}
-
-		// Try moving the space.
-		for _, pos := range [][2]int{
-			{sx - 1, sy},
-			{sx + 1, sy},
-			{sx, sy - 1},
-			{sx, sy + 1},
-		} {
-			sx0, sy0 := pos[0], pos[1]
-			if sx0 < 0 || sx0 >= nx || sy0 < 0 || sy0 >= ny {
-				continue
+	steps := lib.AStar(init,
+		func(s uint64) bool {
+			_, _, dx, dy := unpack(s)
+			return dx == 0 && dy == 0
+		},
+		func(s uint64) (ns []uint64) {
+			sx, sy, dx, dy := unpack(s)
+			for _, pos := range [][2]int{
+				{sx - 1, sy},
+				{sx + 1, sy},
+				{sx, sy - 1},
+				{sx, sy + 1},
+			} {
+				sx0, sy0 := pos[0], pos[1]
+				// Ignore nodes whose data is perpetually stuck because it's larger
+				// than the maximum amount that was initially available.
+				if sx0 >= 0 && sx0 < nx && sy0 >= 0 && sy0 < ny && nodes[sx0][sy0].used <= maxAvail {
+					// If the space moved to the position where the target data was located,
+					// the target data is now in the space's old position.
+					swapped := sx0 == dx && sy0 == dy
+					dx0, dy0 := lib.If(swapped, sx, dx), lib.If(swapped, sy, dy)
+					ns = append(ns, pack(sx0, sy0, dx0, dy0))
+				}
 			}
-
-			// Ignore nodes whose data is perpetually stuck because it's larger
-			// than the maximum amount that was initially available.
-			if nodes[sx0][sy0].used > maxAvail {
-				continue
-			}
-
-			// If the space moved to the position where the target data was located,
-			// the target data is now in the space's old position.
-			swapped := sx0 == dx && sy0 == dy
-			dx0, dy0 := lib.If(swapped, sx, dx), lib.If(swapped, sy, dy)
-
-			p := pack(sx0, sy0, dx0, dy0)
-			newCost := cost + 1
-			if old, ok := costs[p]; ok && old <= newCost {
-				continue // already in state with equal or lower cost
-			}
-
+			return ns
+		},
+		func(s uint64) int {
 			// Use the data's Manhattan distance from the space and then the space's
 			// distance from (0, 0) as a lower bound of the required moves.
-			est := lib.Abs(dx0-sx0) + lib.Abs(dy0-sy0) + sx0 + sy0
-			frontier.Insert(item{p, newCost + est})
-			costs[p] = newCost
-		}
-	}
+			sx, sy, dx, dy := unpack(s)
+			return lib.Abs(dx-sx) + lib.Abs(dy-sy) + sx + sy
+		})
+	fmt.Println(steps)
 }
 
 // node holds information provided about a node.
 type node struct {
 	size, used, avail, pct int
-}
-
-// item describes an item in the priority queue.
-type item struct {
-	state uint64
-	pri   int
 }
 
 // pack packs the location of the empty space and the data.
