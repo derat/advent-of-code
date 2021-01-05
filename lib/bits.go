@@ -1,9 +1,9 @@
 package lib
 
-// PackInts packs vals into a uint64, using the supplied number of bits for each element.
+// PackInts packs vals into a uint64, dividing the total bits evenly across the values.
 // Values must fit within the supplied bits. Use UnpackIntSigned to unpack signed ints.
-func PackInts(vals []int, bits int) uint64 {
-	AssertLessEq(len(vals)*bits, 64)
+func PackInts(vals ...int) uint64 {
+	bits := 64 / len(vals)
 	var packed uint64
 	for i, v := range vals {
 		packed = PackInt(packed, v, bits, i)
@@ -12,7 +12,8 @@ func PackInts(vals []int, bits int) uint64 {
 }
 
 // UnpackInts unpacks n unsigned values previously packed using PackInts.
-func UnpackInts(packed uint64, bits, n int) []int {
+func UnpackInts(packed uint64, n int) []int {
+	bits := 64 / n
 	vals := make([]int, n)
 	for i := range vals {
 		vals[i] = UnpackInt(packed, bits, i)

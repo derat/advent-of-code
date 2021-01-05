@@ -135,11 +135,11 @@ type node struct {
 
 // pack packs the location of the empty space and the data.
 func pack(sx, sy, dx, dy int) uint64 {
-	return lib.PackInts([]int{sx, sy, dx, dy}, 16)
+	return lib.PackInts(sx, sy, dx, dy)
 }
 
 // unpack unpacks the location of the empty space and the data.
 func unpack(p uint64) (sx, sy, dx, dy int) {
-	vals := lib.UnpackInts(p, 16, 4)
+	vals := lib.UnpackInts(p, 4)
 	return vals[0], vals[1], vals[2], vals[3]
 }

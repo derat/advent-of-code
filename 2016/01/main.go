@@ -14,7 +14,7 @@ func main() {
 	var twice bool
 	var tx, ty int
 	visited := map[uint64]struct{}{
-		lib.PackInts([]int{0, 0}, 32): struct{}{},
+		lib.PackInts(0, 0): struct{}{},
 	}
 
 	for _, s := range strings.Split(lib.InputLines("2016/1")[0], ", ") {
@@ -37,7 +37,7 @@ func main() {
 			// I was initially thrown because I thought that only ending points count as visits.
 			// The problem actually wants the first point where the path intersects itself.
 			if !twice {
-				key := lib.PackInts([]int{x, y}, 32)
+				key := lib.PackInts(x, y)
 				if _, ok := visited[key]; ok {
 					tx, ty = x, y
 					twice = true
