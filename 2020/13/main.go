@@ -25,7 +25,7 @@ Loop:
 		for _, id := range ids {
 			if id > 0 && i%id == 0 {
 				wait := i - est
-				fmt.Printf("%d * %d = %d\n", id, wait, id*wait)
+				fmt.Println(id * wait)
 				break Loop
 			}
 		}

@@ -1,16 +1,16 @@
 package lib
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-var nonDigitRegexp = regexp.MustCompile(`\D+`)
+var intRegexp = regexp.MustCompile(`-?\d+`)
+var uintRegexp = regexp.MustCompile(`\d+`)
 
-// ExtractInts extracts all positive integers from s.
-// Non-digits are ignored.
+// ExtractInts extracts all integers from s.
+// Non-digits (besides '-') are ignored.
 func ExtractInts(s string) []int {
 	v64s := ExtractInt64s(s)
 	vals := make([]int, len(v64s))
@@ -21,23 +21,29 @@ func ExtractInts(s string) []int {
 	return vals
 }
 
-// ExtractInt64s extracts all positive integers from s as 64-bit ints.
-// Non-digits are ignored.
+// ExtractInt64s extracts all integers from s as 64-bit ints.
+// Non-digits (besides '-') are ignored.
 func ExtractInt64s(s string) []int64 {
 	var vals []int64
-	for _, m := range nonDigitRegexp.Split(s, -1) {
-		if m == "" {
-			continue
-		}
-		v, err := strconv.ParseInt(m, 10, 64)
-		if err != nil {
-			panic(fmt.Sprintf("Failed parsing %q as int64: %v", m, err))
-		}
+	for _, s := range intRegexp.FindAllString(s, -1) {
+		v, err := strconv.ParseInt(s, 10, 64)
+		Assertf(err == nil, "Failed parsing %q as int64: %v", s, err)
 		vals = append(vals, v)
 	}
-	if len(vals) == 0 {
-		panic("No ints found")
+	Assertf(len(vals) > 0, "No ints found")
+	return vals
+}
+
+// ExtractUints extracts all zero or positive integers from s as ints.
+// Non-digits (including '-') are ignored.
+func ExtractUints(s string) []int {
+	var vals []int
+	for _, s := range uintRegexp.FindAllString(s, -1) {
+		v, err := strconv.Atoi(s)
+		Assertf(err == nil, "Failed parsing %q as int64: %v", s, err)
+		vals = append(vals, v)
 	}
+	Assertf(len(vals) > 0, "No ints found")
 	return vals
 }
 
@@ -49,9 +55,7 @@ func ExtractDigits(s string) []int {
 			vals = append(vals, int(ch-'0'))
 		}
 	}
-	if len(vals) == 0 {
-		panic("No digits found")
-	}
+	Assertf(len(vals) > 0, "No digits found")
 	return vals
 }
 

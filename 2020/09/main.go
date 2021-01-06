@@ -43,7 +43,7 @@ func main() {
 								max = v
 							}
 						}
-						fmt.Println(min+max, all[i:j+1])
+						fmt.Println(min + max)
 						break Find
 					case total > n && i < j-1:
 						total -= all[i]

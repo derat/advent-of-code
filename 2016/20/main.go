@@ -13,7 +13,7 @@ func main() {
 	}
 	var blocks []span
 	for _, ln := range lib.InputLines("2016/20") {
-		vals := lib.ExtractInts(ln)
+		vals := lib.ExtractUints(ln)
 		lib.AssertEq(len(vals), 2)
 		blocks = append(blocks, span{vals[0], vals[1]})
 	}

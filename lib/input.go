@@ -84,12 +84,12 @@ func Input(date string) string {
 	return string(b)
 }
 
-// InputInts extracts positive integers from the day's input. See ExtractInts.
+// InputInts extracts integers from the day's input. See ExtractInts.
 func InputInts(date string) []int {
 	return ExtractInts(Input(date))
 }
 
-// InputInt64s extracts positive 64-bit integers from the day's input. See ExtractInt64s.
+// InputInt64s extracts 64-bit integers from the day's input. See ExtractInt64s.
 func InputInt64s(date string) []int64 {
 	return ExtractInt64s(Input(date))
 }
