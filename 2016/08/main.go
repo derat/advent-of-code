@@ -9,13 +9,14 @@ import (
 	"github.com/derat/advent-of-code/lib"
 )
 
+const animate = false
+
 func main() {
 	const (
-		rows    = 6
-		cols    = 50
-		unlit   = ' '
-		lit     = '#'
-		animate = true
+		rows  = 6
+		cols  = 50
+		unlit = ' '
+		lit   = '#'
 	)
 
 	screen := lib.NewBytes(rows, cols, ' ')
@@ -50,10 +51,6 @@ func main() {
 			fmt.Printf("\033[%dA", rows)
 			fmt.Println(lib.DumpBytes(screen))
 		}
-	}
-
-	if !animate {
-		fmt.Println(lib.DumpBytes(screen))
 	}
 
 	var cnt int
