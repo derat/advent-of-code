@@ -17,7 +17,7 @@ func main() {
 	// There are 16 banks holding a total of 111 blocks in my input. Two of the banks start with 15
 	// blocks; all the others have fewer. Some banks' block counts will go above 16, so we need more
 	// than 4 bits for each (and thus can't fit the full state in 64 bits). Just use strings, I guess.
-	seen := make(map[string]struct{})
+	seen := make(map[string]int) // values are step counts when state was seen
 
 	var idx int
 	var max byte
@@ -27,14 +27,15 @@ func main() {
 		}
 	}
 
-	var steps int
+	var steps, steps2 int
 	for {
 		// Bail out if we've already seen this state.
 		st := string(banks)
 		if _, ok := seen[st]; ok {
+			steps2 = steps - seen[st]
 			break
 		}
-		seen[st] = struct{}{}
+		seen[st] = steps
 
 		// Redistribute the blocks.
 		amt := banks[idx]
@@ -56,4 +57,5 @@ func main() {
 		steps++
 	}
 	fmt.Println(steps)
+	fmt.Println(steps2)
 }
