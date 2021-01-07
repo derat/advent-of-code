@@ -7,8 +7,9 @@ import (
 )
 
 func main() {
-	var depth int // brackets
-	var score int // bracket score for part 1
+	var depth int    // brackets
+	var score int    // bracket score for part 1
+	var ngarbage int // non-canceled garbage chars for part 2
 	var garbage, escape bool
 	for i, ch := range lib.InputLines("2017/9")[0] {
 		switch {
@@ -21,6 +22,7 @@ func main() {
 			lib.Assertf(garbage, "'>' outside garbage at %d", i)
 			garbage = false
 		case garbage: // consume chars within garbage
+			ngarbage++
 		case ch == '<':
 			garbage = true
 		case ch == '{':
@@ -32,4 +34,5 @@ func main() {
 	}
 	lib.AssertEq(depth, 0)
 	fmt.Println(score)
+	fmt.Println(ngarbage)
 }
