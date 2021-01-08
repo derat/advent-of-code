@@ -1,6 +1,9 @@
 package lib
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestRotateSlice(t *testing.T) {
 	for _, tc := range []struct {
@@ -67,6 +70,23 @@ func TestMove(t *testing.T) {
 		b := []byte(tc.in)
 		if Move(b, tc.s1, tc.s2, tc.d); string(b) != tc.want {
 			t.Errorf("Move(%q, %d, %d, %d) = %q; want %q", tc.in, tc.s1, tc.s2, tc.d, b, tc.want)
+		}
+	}
+}
+
+func TestReverse(t *testing.T) {
+	for _, tc := range []struct {
+		orig, want []int
+	}{
+		{[]int{}, []int{}},
+		{[]int{1}, []int{1}},
+		{[]int{1, 2, 3, 4}, []int{4, 3, 2, 1}},
+		{[]int{1, 2, 3, 4, 5}, []int{5, 4, 3, 2, 1}},
+	} {
+		got := append([]int{}, tc.orig...)
+		Reverse(got)
+		if !reflect.DeepEqual(got, tc.want) {
+			t.Errorf("Reverse(%v) = %v; want %v", tc.orig, got, tc.want)
 		}
 	}
 }

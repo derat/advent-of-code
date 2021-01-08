@@ -68,3 +68,12 @@ func Move(v interface{}, s1, s2, d int) {
 	amt := d - s1
 	RotateSlice(r.Slice(start, end).Interface(), amt)
 }
+
+// Reverse reverses the order of the elements in the supplied slice.
+func Reverse(s interface{}) {
+	sv := reflect.ValueOf(s)
+	swap := reflect.Swapper(s)
+	for i, j := 0, sv.Len()-1; i < j; i, j = i+1, j-1 {
+		swap(i, j)
+	}
+}
