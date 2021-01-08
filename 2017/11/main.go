@@ -23,7 +23,7 @@ func main() {
 	//  r inc     \___/     q inc
 	//
 	//            r inc
-	var q, r int
+	var q, r, md int
 	for _, dir := range strings.Split(lib.InputLines("2017/11")[0], ",") {
 		switch dir {
 		case "n":
@@ -43,8 +43,13 @@ func main() {
 		default:
 			lib.Panicf("Invalid direction %q", dir)
 		}
+		md = lib.Max(md, dist(q, r))
 	}
 
-	dist := (lib.Abs(q) + lib.Abs(q+r) + lib.Abs(r)) / 2
-	fmt.Println(dist)
+	fmt.Println(dist(q, r))
+	fmt.Println(md)
+}
+
+func dist(q, r int) int {
+	return (lib.Abs(q) + lib.Abs(q+r) + lib.Abs(r)) / 2
 }
