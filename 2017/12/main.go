@@ -7,26 +7,31 @@ import (
 )
 
 func main() {
-	var progs []*prog
 	conns := make(map[int][]int)
 	for _, ln := range lib.InputLines("2017/12") {
 		var id int
 		var rest string
 		lib.Extract(ln, `^(\d+) <-> (.+)$`, &id, &rest)
-		lib.AssertEq(id, len(progs))
-		progs = append(progs, &prog{make(map[int]*prog)})
 		conns[id] = lib.ExtractInts(rest)
-	}
-	// Maybe this won't be necessary...
-	for id, others := range conns {
-		p := progs[id]
-		for _, o := range others {
-			p.conns[o] = progs[o]
-		}
 	}
 
 	// Part 1: Count programs reachable from 0.
-	todo := []int{0}
+	fmt.Println(len(find(conns, 0)))
+
+	// Part 2: Count groups.
+	var cnt int
+	for len(conns) > 0 {
+		for id := range find(conns, lib.MapSomeKey(conns).(int)) {
+			delete(conns, id)
+		}
+		cnt++
+	}
+	fmt.Println(cnt)
+}
+
+// find returns the set of nodes in conns reachable from start (including start itself).
+func find(conns map[int][]int, start int) map[int]struct{} {
+	todo := []int{start}
 	seen := map[int]struct{}{}
 	for len(todo) > 0 {
 		id := todo[0]
@@ -35,15 +40,11 @@ func main() {
 			continue
 		}
 		seen[id] = struct{}{}
-		for o := range progs[id].conns {
+		for _, o := range conns[id] {
 			if _, ok := seen[o]; !ok {
 				todo = append(todo, o)
 			}
 		}
 	}
-	fmt.Println(len(seen))
-}
-
-type prog struct {
-	conns map[int]*prog
+	return seen
 }

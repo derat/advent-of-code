@@ -36,6 +36,15 @@ func MapStringKeysWithVal(m, v interface{}) []string {
 	return keys
 }
 
+// MapSomeKey returns an arbitrary key from the supplied map.
+func MapSomeKey(m interface{}) interface{} {
+	mv := reflect.ValueOf(m)
+	for _, kv := range mv.MapKeys() {
+		return kv.Interface()
+	}
+	panic("Can't get key from empty map")
+}
+
 // AddSet adds the supplied values to the supplied string set.
 // The set is returned (and should be used thereafter).
 func AddSet(s map[string]struct{}, vals ...string) map[string]struct{} {
