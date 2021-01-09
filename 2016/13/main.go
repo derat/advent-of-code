@@ -21,16 +21,16 @@ func main() {
 		return bits.OnesCount64(uint64(n))%2 == 1
 	}
 
-	ts := lib.PackInt2(tx, ty) // target state
+	ts := lib.PackInts(tx, ty) // target state
 
 	min := lib.AStar(
-		[]uint64{lib.PackInt2(sx, sy)},
+		[]uint64{lib.PackInts(sx, sy)},
 		func(s uint64) bool { return s == ts },
 		func(s uint64) (ns []uint64) {
 			x, y := lib.UnpackInt2(s)
 			for _, n := range [][2]int{{x + 1, y}, {x, y + 1}, {x - 1, y}, {x, y - 1}} {
 				if n[0] >= 0 && n[1] >= 0 && !wall(n[0], n[1]) {
-					ns = append(ns, lib.PackInt2(n[0], n[1]))
+					ns = append(ns, lib.PackInts(n[0], n[1]))
 				}
 			}
 			return ns
@@ -44,8 +44,8 @@ func main() {
 	// Part 2: Count locations reachable in at most 50 steps.
 	// Sigh, just redo the search using BFS, I guess.
 	// What was the point of optimizing the first part?
-	seen := map[uint64]struct{}{lib.PackInt2(sx, sy): struct{}{}}
-	todo := map[uint64]struct{}{lib.PackInt2(sx, sy): struct{}{}}
+	seen := map[uint64]struct{}{lib.PackInts(sx, sy): struct{}{}}
+	todo := map[uint64]struct{}{lib.PackInts(sx, sy): struct{}{}}
 	for i := 0; i <= 50; i++ {
 		newTodo := make(map[uint64]struct{})
 		for k := range todo {
@@ -56,7 +56,7 @@ func main() {
 				if nx < 0 || ny < 0 || wall(nx, ny) {
 					continue
 				}
-				nk := lib.PackInt2(nx, ny)
+				nk := lib.PackInts(nx, ny)
 				if _, ok := seen[nk]; !ok {
 					newTodo[nk] = struct{}{}
 				}

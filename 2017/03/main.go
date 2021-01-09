@@ -85,12 +85,12 @@ func value(x, y int) int {
 }
 
 // Cached values computed by sumValue. Base case is 1 for the center.
-var sumValues = map[uint64]int{lib.PackInt2(0, 0): 1}
+var sumValues = map[uint64]int{lib.PackInts(0, 0): 1}
 
 // sumValue returns the sum of the given location's already-filled
 // neighbors (including diagonals) for part 2.
 func sumValue(x, y int) int {
-	k := lib.PackInt2(x, y)
+	k := lib.PackInts(x, y)
 	if sv, ok := sumValues[k]; ok {
 		return sv
 	}

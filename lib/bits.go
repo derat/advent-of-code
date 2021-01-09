@@ -40,12 +40,7 @@ func UnpackIntSigned(packed uint64, bits, i int) int {
 	return int((int64(val) << shift) >> shift) // extend sign bit
 }
 
-// PackInt2 is a convenience wrapper around PackInt that packs a and b using 32 bits each.
-func PackInt2(a, b int) uint64 {
-	return PackInt(PackInt(0, a, 32, 0), b, 32, 1)
-}
-
-// UnpackInt2 undoes the operation performed by PackInt2.
+// UnpackInt2 is a convenience function that unpacks two 32-bit values from p.
 func UnpackInt2(p uint64) (a, b int) {
 	return UnpackInt(p, 32, 0), UnpackInt(p, 32, 1)
 }

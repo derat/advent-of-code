@@ -20,7 +20,7 @@ func main() {
 				if id == 0 {
 					loc0 = [2]int{r, c}
 				}
-				p := lib.PackInt2(r, c)
+				p := lib.PackInts(r, c)
 				_, seen := locs[p]
 				lib.Assertf(!seen, "Duplicate ID %v", id)
 				locs[p] = id
@@ -45,7 +45,7 @@ func main() {
 						continue
 					}
 					// Check if we've reached a location.
-					if id, ok := locs[lib.PackInt2(r0, c0)]; ok {
+					if id, ok := locs[lib.PackInts(r0, c0)]; ok {
 						v0 |= 1 << id
 					}
 					ns = append(ns, pack(r0, c0, v0))
