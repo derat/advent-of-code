@@ -11,50 +11,117 @@ func main() {
 	for _, ln := range lib.InputLines("2017/18") {
 		ins = append(ins, newInstr(ln))
 	}
-	fmt.Println(run(ins))
+
+	// Part 1: Print last snd value at time of first rcv.
+	var write []int
+	vm := newVM(ins, &write, nil, -1)
+	for !vm.blocked {
+		vm.tick()
+	}
+	fmt.Println((write)[len(write)-1])
+
+	// Part 2: Run two programs in parallel until both stop
+	// and then print number of snds in program 1.
+	var q0, q1 []int // named after writer
+	vm0 := newVM(ins, &q0, &q1, 0)
+	vm1 := newVM(ins, &q1, &q0, 1)
+	for vm0.runnable() || vm1.runnable() {
+		if vm0.runnable() {
+			vm0.tick()
+		}
+		if vm1.runnable() {
+			vm1.tick()
+		}
+	}
+	fmt.Println(vm1.nsnd)
 }
 
-func run(ins []instr) int {
-	regs := make([]int, 26)
-	get := func(b int, v int) int {
-		if b >= 0 {
-			return regs[b]
-		}
-		return v
+type vm struct {
+	regs [26]int
+	ins  []instr
+	ip   int
+
+	write, read *[]int // snd and rcv queues
+
+	id      int  // program ID; -1 for part 1
+	nsnd    int  // number of snd calls
+	oob     bool // ip went out of bounds
+	blocked bool // waiting on rcv
+}
+
+func newVM(ins []instr, write, read *[]int, id int) *vm {
+	vm := &vm{
+		ins:   ins,
+		write: write,
+		read:  read,
+		id:    id,
+	}
+	if id >= 0 {
+		vm.regs['p'-'a'] = id
+	}
+	return vm
+}
+
+func (vm *vm) runnable() bool {
+	return !vm.oob && (!vm.blocked || len(*vm.read) > 0)
+}
+
+func (vm *vm) get(b int, v int) int {
+	if b >= 0 {
+		return vm.regs[b]
+	}
+	return v
+}
+
+func (vm *vm) tick() {
+	if vm.ip < 0 || vm.ip >= len(vm.ins) {
+		vm.oob = true
+		return
 	}
 
-	var ip, lastSnd int
-	for ip >= 0 && ip < len(ins) {
-		jumped := false
-		in := &ins[ip]
-		switch in.op {
-		case snd:
-			lastSnd = get(in.r1, in.v1)
-		case set:
-			regs[in.r1] = get(in.r2, in.v2)
-		case add:
-			regs[in.r1] += get(in.r2, in.v2)
-		case mul:
-			regs[in.r1] *= get(in.r2, in.v2)
-		case mod:
-			regs[in.r1] %= get(in.r2, in.v2)
-		case rcv:
-			if get(in.r1, in.v1) != 0 {
-				return lastSnd
+	var jumped bool
+
+	in := &vm.ins[vm.ip]
+	switch in.op {
+	case snd:
+		*vm.write = append(*vm.write, vm.get(in.r1, in.v1))
+		vm.nsnd++
+	case set:
+		vm.regs[in.r1] = vm.get(in.r2, in.v2)
+	case add:
+		vm.regs[in.r1] += vm.get(in.r2, in.v2)
+	case mul:
+		vm.regs[in.r1] *= vm.get(in.r2, in.v2)
+	case mod:
+		vm.regs[in.r1] %= vm.get(in.r2, in.v2)
+	case rcv:
+		if vm.id < 0 {
+			// Part 1: Just block on the first rcv with a nonzero value.
+			if vm.get(in.r1, in.v1) != 0 {
+				vm.blocked = true
+				return
 			}
-		case jgz:
-			if get(in.r1, in.v1) > 0 {
-				ip += get(in.r2, in.v2)
-				jumped = true
+		} else {
+			// Part 2: Read from the queue.
+			if len(*vm.read) == 0 {
+				vm.blocked = true
+				return
 			}
-		default:
-			lib.Panicf("Invalid op %d", in.op)
+			vm.regs[in.r1] = (*vm.read)[0]
+			*vm.read = (*vm.read)[1:]
 		}
-		if !jumped {
-			ip++
+	case jgz:
+		if vm.get(in.r1, in.v1) > 0 {
+			vm.ip += vm.get(in.r2, in.v2)
+			jumped = true
 		}
+	default:
+		lib.Panicf("Invalid op %d", in.op)
 	}
-	panic("Didn't execute rcv")
+
+	if !jumped {
+		vm.ip++
+	}
 }
 
 type op int
@@ -75,8 +142,8 @@ type instr struct {
 	v1, v2 int
 }
 
-// I'm very tired of writing code like this and should add a library function
-// the next time that this comes up.
+// I'm very tired of writing code like this and should try to add a
+// library function the next time that this comes up.
 func newInstr(ln string) instr {
 	const re = `(?:([a-z])|(-?\d+))` // matches register or constant
 
