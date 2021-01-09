@@ -13,11 +13,17 @@ func main() {
 	for i := range items {
 		items[i] = i
 	}
+
+	rev := func(pos, ln int) {
+		for i, j := pos, pos+ln-1; i < j; i, j = i+1, j-1 {
+			items[i%nitems], items[j%nitems] =
+				items[j%nitems], items[i%nitems]
+		}
+	}
+
 	var pos, skip int
 	for _, length := range lib.InputInts("2017/10") {
-		lib.RotateSlice(items, -pos)
-		lib.Reverse(items[:length])
-		lib.RotateSlice(items, pos)
+		rev(pos, length)
 		pos = (pos + length + skip) % nitems
 		skip++
 	}
@@ -34,9 +40,7 @@ func main() {
 	lengths = append(lengths, 17, 31, 73, 47, 23) // hardcoded in puzzle
 	for i := 0; i < nrounds; i++ {
 		for _, length := range lengths {
-			lib.RotateSlice(items, -pos)
-			lib.Reverse(items[:length])
-			lib.RotateSlice(items, pos)
+			rev(pos, int(length))
 			pos = (pos + int(length) + skip) % nitems
 			skip++
 		}
