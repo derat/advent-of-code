@@ -23,7 +23,47 @@ func main() {
 			}
 		}
 	}
+
+	// Part 1: Count the number of used squares.
 	fmt.Println(lib.CountBytesFull(grid, '#'))
+
+	// Part 2: Count the number of used regions.
+	// I was originally thinking about scanning the grid one row at a time, keeping
+	// track of active regions and incrementing a counter when they end. It seemed
+	// like it'd be tricky to merge regions in patterns like the following, though,
+	// so I instead just went with the approach of iterating through all blocks and
+	// performing a search whenever we see one that's used that we haven't handled yet.
+	var nregions int
+	seen := make(map[uint64]struct{})
+	for r, row := range grid {
+		for c, ch := range row {
+			k := lib.PackInts(r, c)
+			if ch != '#' || lib.SetHas64(seen, k) {
+				continue
+			}
+
+			// Search for all the used blocks in this region.
+			todo := [][2]int{[2]int{r, c}}
+			for len(todo) > 0 {
+				r, c := todo[0][0], todo[0][1]
+				todo = todo[1:]
+				for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+					r0, c0 := r+off[0], c+off[1]
+					if r0 < 0 || r0 >= nrows || c0 < 0 || c0 >= ncols || grid[r0][c0] != '#' {
+						continue
+					}
+					k := lib.PackInts(r0, c0)
+					if lib.SetHas64(seen, k) {
+						continue
+					}
+					seen[k] = struct{}{}
+					todo = append(todo, [2]int{r0, c0})
+				}
+			}
+			nregions++
+		}
+	}
+	fmt.Println(nregions)
 }
 
 // This is abstracted from 2017/10.

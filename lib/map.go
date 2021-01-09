@@ -62,3 +62,9 @@ func SetHas(s map[string]struct{}, val string) bool {
 	_, ok := s[val]
 	return ok
 }
+
+// SetHas64 returns true if s contains val.
+func SetHas64(s map[uint64]struct{}, val uint64) bool {
+	_, ok := s[val]
+	return ok
+}
