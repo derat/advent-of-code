@@ -45,6 +45,12 @@ func MapSomeKey(m interface{}) interface{} {
 	panic("Can't get key from empty map")
 }
 
+// MapHas returns true if map m contains key k.
+func MapHas(m, k interface{}) bool {
+	return reflect.ValueOf(m).MapIndex(reflect.ValueOf(k)).IsValid()
+
+}
+
 // AddSet adds the supplied values to the supplied string set.
 // The set is returned (and should be used thereafter).
 func AddSet(s map[string]struct{}, vals ...string) map[string]struct{} {
@@ -55,16 +61,4 @@ func AddSet(s map[string]struct{}, vals ...string) map[string]struct{} {
 		s[v] = struct{}{}
 	}
 	return s
-}
-
-// SetHas returns true if s contains val.
-func SetHas(s map[string]struct{}, val string) bool {
-	_, ok := s[val]
-	return ok
-}
-
-// SetHas64 returns true if s contains val.
-func SetHas64(s map[uint64]struct{}, val uint64) bool {
-	_, ok := s[val]
-	return ok
 }
