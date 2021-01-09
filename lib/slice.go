@@ -77,3 +77,19 @@ func Reverse(s interface{}) {
 		swap(i, j)
 	}
 }
+
+// SetAscInt initializes slice s to ascending signed integer values.
+func SetAscInt(s interface{}, start int64) {
+	sv := reflect.ValueOf(s)
+	for i, v := 0, start; i < sv.Len(); i, v = i+1, v+1 {
+		sv.Index(i).SetInt(v)
+	}
+}
+
+// SetAscUint initializes slice s to ascending unsigned integer values.
+func SetAscUint(s interface{}, start uint64) {
+	sv := reflect.ValueOf(s)
+	for i, v := 0, start; i < sv.Len(); i, v = i+1, v+1 {
+		sv.Index(i).SetUint(v)
+	}
+}
