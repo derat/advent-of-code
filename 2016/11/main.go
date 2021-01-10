@@ -120,14 +120,14 @@ func solve(initial uint64, floors, numElements int) int {
 }
 
 func getFloorItems(state uint64, floor int) (chips, gens int) {
-	chips = lib.UnpackInt(state, bits, floor*2+1) // bottom field is floor num
-	gens = lib.UnpackInt(state, bits, (floor+1)*2)
+	chips = lib.UnpackInt(state, bits, (floor*2+1)*bits) // bottom field is floor num
+	gens = lib.UnpackInt(state, bits, ((floor+1)*2)*bits)
 	return chips, gens
 }
 
 func setFloorItems(state uint64, floor, chips, gens int) uint64 {
-	state = lib.PackInt(state, chips, bits, floor*2+1)
-	state = lib.PackInt(state, gens, bits, (floor+1)*2)
+	state = lib.PackInt(state, chips, bits, (floor*2+1)*bits)
+	state = lib.PackInt(state, gens, bits, ((floor+1)*2)*bits)
 	return state
 }
 

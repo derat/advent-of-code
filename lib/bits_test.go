@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestPackInt_RoundTrip(t *testing.T) {
+func TestPackInts_RoundTrip(t *testing.T) {
 	const bits = 11
 	orig := []int{(1 << bits) - 1, 54, 0, 1 << (bits - 1), 85}
 	packed := PackInts(orig...)
@@ -20,8 +20,9 @@ func TestUnpackIntSigned(t *testing.T) {
 	bits := 64 / len(orig)
 	packed := PackInts(orig...)
 	for i, want := range orig {
-		if got := UnpackIntSigned(packed, bits, i); got != want {
-			t.Errorf("UnpackIntSigned(%#b, %d, %d) = %v; want %v", packed, bits, i, got, want)
+		if got := UnpackIntSigned(packed, bits, i*bits); got != want {
+			t.Errorf("UnpackIntSigned(%#b, %d, %d) = %v; want %v",
+				packed, bits, i*bits, got, want)
 		}
 	}
 }

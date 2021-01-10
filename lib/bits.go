@@ -6,7 +6,7 @@ func PackInts(vals ...int) uint64 {
 	bits := 64 / len(vals)
 	var packed uint64
 	for i, v := range vals {
-		packed = PackInt(packed, v, bits, i)
+		packed = PackInt(packed, v, bits, i*bits)
 	}
 	return packed
 }
@@ -16,27 +16,28 @@ func UnpackInts(packed uint64, n int) []int {
 	bits := 64 / n
 	vals := make([]int, n)
 	for i := range vals {
-		vals[i] = UnpackInt(packed, bits, i)
+		vals[i] = UnpackInt(packed, bits, i*bits)
 	}
 	return vals
 }
 
-// PackInt sets packed's i-th position to val.
-func PackInt(packed uint64, val, bits, i int) uint64 {
-	mask := uint64(1<<bits - 1)
-	packed &= ^(mask << (i * bits))
-	return packed | (uint64(val&int(mask)) << (i * bits))
+// PackInt sets a size-bit region at the supplied offset in packed to val.
+func PackInt(packed uint64, val, size, offset int) uint64 {
+	mask := uint64(1<<size - 1)
+	packed &= ^(mask << offset)
+	return packed | (uint64(val&int(mask)) << offset)
 }
 
-// UnpackInt unpacks and returns the unsigned value at position i.
-func UnpackInt(packed uint64, bits, i int) int {
-	return int((packed >> (i * bits)) & (1<<bits - 1))
+// UnpackInt unpacks and returns an unsigned value of size bits at the supplied
+// offset from packed.
+func UnpackInt(packed uint64, size, offset int) int {
+	return int((packed >> offset) & (1<<size - 1))
 }
 
 // UnpackIntSigned is like UnpackInt but with support for negative numbers.
-func UnpackIntSigned(packed uint64, bits, i int) int {
-	val := UnpackInt(packed, bits, i)
-	shift := 64 - bits
+func UnpackIntSigned(packed uint64, size, offset int) int {
+	val := UnpackInt(packed, size, offset)
+	shift := 64 - size
 	return int((int64(val) << shift) >> shift) // extend sign bit
 }
 
