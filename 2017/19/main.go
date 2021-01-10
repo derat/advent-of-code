@@ -34,8 +34,9 @@ func main() {
 	}
 	lib.Assert(c >= 0)
 
+	dr, dc := 1, 0 // moving down at first
 	var letters string
-	dr, dc := 1, 0
+	var steps int
 Loop:
 	for {
 		// This problem seems pretty loosely specified.
@@ -63,6 +64,7 @@ Loop:
 		}
 
 		r, c = r+dr, c+dc
+		steps++
 		ch := diag[r][c]
 		switch {
 		case ch >= 'A' && ch <= 'Z':
@@ -72,4 +74,5 @@ Loop:
 		}
 	}
 	fmt.Println(letters)
+	fmt.Println(steps)
 }
