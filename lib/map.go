@@ -55,8 +55,8 @@ func MapSomeKey(m interface{}) interface{} {
 	panic("Can't get key from empty map")
 }
 
-// MapHas returns true if map m contains key k.
-func MapHas(m, k interface{}) bool {
+// MapHasKey returns true if map m contains key k.
+func MapHasKey(m, k interface{}) bool {
 	return reflect.ValueOf(m).MapIndex(reflect.ValueOf(k)).IsValid()
 
 }

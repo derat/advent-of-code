@@ -35,6 +35,15 @@ func NewBytes(r, c int, ch byte) [][]byte {
 	return g
 }
 
+// CopyBytes returns a deep copy of the supplied 2-dimensional array.
+func CopyBytes(b [][]byte) [][]byte {
+	n := make([][]byte, len(b))
+	for r := range b {
+		n[r] = append([]byte(nil), b[r]...)
+	}
+	return n
+}
+
 // SetBytes the rectangle bounded by (r0, c0) and (r1, c1), inclusive, to ch.
 func SetBytes(b [][]byte, r0, c0, r1, c1 int, ch byte) {
 	for r := Max(r0, 0); r <= Min(r1, len(b)-1); r++ {
@@ -66,4 +75,28 @@ func CountBytesFull(b [][]byte, ch byte) int {
 // DumpBytes returns b as a newline-separated string.
 func DumpBytes(b [][]byte) string {
 	return string(bytes.Join(b, []byte{'\n'}))
+}
+
+// FlipBytesX flips the supplied grid across the X axis.
+func FlipBytesX(b [][]byte) {
+	for _, r := range b {
+		ReverseBytes(r)
+	}
+}
+
+// FlipBytesY flips the supplied grid across the Y axis.
+func FlipBytesY(b [][]byte) {
+	Reverse(b)
+}
+
+// RotateBytes returns a copy of the supplied grid rotated 90 degrees clockwise.
+func RotateBytes(b [][]byte) [][]byte {
+	rb := make([][]byte, len(b[0]))
+	for r := range rb {
+		rb[r] = make([]byte, len(b))
+		for c := range rb[r] {
+			rb[r][c] = b[len(b)-c-1][r]
+		}
+	}
+	return rb
 }

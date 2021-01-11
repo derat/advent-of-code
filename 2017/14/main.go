@@ -38,7 +38,7 @@ func main() {
 	for r, row := range grid {
 		for c, ch := range row {
 			k := lib.PackInts(r, c)
-			if ch != '#' || lib.MapHas(seen, k) {
+			if ch != '#' || lib.MapHasKey(seen, k) {
 				continue
 			}
 
@@ -53,7 +53,7 @@ func main() {
 						continue
 					}
 					k := lib.PackInts(r0, c0)
-					if lib.MapHas(seen, k) {
+					if lib.MapHasKey(seen, k) {
 						continue
 					}
 					seen[k] = struct{}{}
