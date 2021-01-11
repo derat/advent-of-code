@@ -8,18 +8,11 @@ import (
 
 func main() {
 	init := lib.InputLinesBytes("2017/22", '#', '.')
-	inf := make(map[uint64]struct{})
-	for r, row := range init {
-		for c, ch := range row {
-			if ch == '#' {
-				inf[lib.PackInts(r, c)] = struct{}{}
-			}
-		}
-	}
 
+	// Part 1:
+	inf := makeMap(init)
 	r, c := len(init)/2, len(init[0])/2
 	d := up
-
 	var cnt int
 	for t := 0; t < 10_000; t++ {
 		k := lib.PackInts(r, c)
@@ -28,12 +21,50 @@ func main() {
 			delete(inf, k)
 		} else {
 			d = d.left()
-			inf[k] = struct{}{}
+			inf[k] = '#'
 			cnt++
 		}
 		r, c = r+d.dr(), c+d.dc()
 	}
 	fmt.Println(cnt)
+
+	// Part 2:
+	inf = makeMap(init)
+	r, c = len(init)/2, len(init[0])/2
+	d = up
+	var cnt2 int
+	for t := 0; t < 10_000_000; t++ {
+		k := lib.PackInts(r, c)
+		switch inf[k] {
+		case '#': // infected
+			d = d.right()
+			inf[k] = 'F'
+		case 'W': // weakened
+			inf[k] = '#'
+			cnt2++
+		case 'F': // flagged
+			d = d.reverse()
+			delete(inf, k)
+		default: // clean
+			d = d.left()
+			inf[k] = 'W'
+		}
+
+		r, c = r+d.dr(), c+d.dc()
+	}
+	fmt.Println(cnt2)
+}
+
+func makeMap(init [][]byte) map[uint64]byte {
+	inf := make(map[uint64]byte)
+	for r, row := range init {
+		for c, ch := range row {
+			if ch == '#' {
+				inf[lib.PackInts(r, c)] = '#'
+			}
+		}
+	}
+	return inf
 }
 
 type dir int
@@ -51,6 +82,10 @@ func (d dir) left() dir {
 
 func (d dir) right() dir {
 	return dir((int(d) + 3) % 4)
+}
+
+func (d dir) reverse() dir {
+	return dir((int(d) + 2) % 4)
 }
 
 func (d dir) dr() int {
