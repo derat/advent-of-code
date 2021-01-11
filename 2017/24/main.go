@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/bits"
 
 	"github.com/derat/advent-of-code/lib"
 )
@@ -19,29 +20,55 @@ func main() {
 		bpins[c.b] = append(bpins[c.b], id)
 	}
 
-	var add func(int, int, uint64) int
-	add = func(need, strength int, used uint64) int {
-		max := strength
-		for _, id := range apins[need] {
+	// Returns true if the first set of components is better than the second.
+	type betterFunc func(uint64, uint64) bool
+
+	var add func(int, uint64, betterFunc) uint64
+	add = func(pins int, used uint64, better betterFunc) uint64 {
+		best := used
+		for _, id := range apins[pins] {
 			if used&(1<<id) == 0 {
-				max = lib.Max(max, add(comps[id].b, strength+comps[id].strength(), used|(1<<id)))
+				if u := add(comps[id].b, used|(1<<id), better); better(u, best) {
+					best = u
+				}
 			}
 		}
-		for _, id := range bpins[need] {
+		for _, id := range bpins[pins] {
 			if used&(1<<id) == 0 {
-				max = lib.Max(max, add(comps[id].a, strength+comps[id].strength(), used|(1<<id)))
+				if u := add(comps[id].a, used|(1<<id), better); better(u, best) {
+					best = u
+				}
 			}
 		}
-		return max
+		return best
 	}
 
-	fmt.Println(add(0, 0, 0))
+	strength := func(used uint64) int {
+		var sum int
+		for i := 0; used != 0; i, used = i+1, used>>1 {
+			if used&0x1 != 0 {
+				sum += comps[i].a + comps[i].b
+			}
+		}
+		return sum
+	}
+
+	// Part 1: Print strength of strongest possible bridge.
+	fmt.Println(strength(add(0, 0, func(a, b uint64) bool {
+		return strength(a) > strength(b)
+	})))
+
+	// Part 2: Print strength of longest possible bridge, using strength to break ties.
+	fmt.Println(strength(add(0, 0, func(a, b uint64) bool {
+		if la, lb := bits.OnesCount64(a), bits.OnesCount64(b); la > lb {
+			return true
+		} else if la < lb {
+			return false
+		}
+		return strength(a) > strength(b)
+	})))
 }
 
 type comp struct {
 	a, b int
-}
-
-func (c comp) strength() int {
-	return c.a + c.b
 }
