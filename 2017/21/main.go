@@ -88,6 +88,7 @@ func main() {
 		return sum
 	}
 	fmt.Println(count(init, 5))
+	fmt.Println(count(init, 18))
 }
 
 // split2 splits the supplied string into 2x2 blocks.
