@@ -1,26 +1,35 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/derat/advent-of-code/lib"
 )
 
+const (
+	acc = iota
+	jmp
+	nop
+)
+
 func main() {
-	var ins []instr
+	var ins []lib.Instr
 	for _, ln := range lib.InputLines("2020/8") {
-		var in instr
-		lib.Extract(ln, `^(acc|jmp|nop) ([-+]\d+)$`, (*string)(&in.op), &in.val)
-		ins = append(ins, in)
+		ins = append(ins, lib.NewInstr(ln, 0, 0, map[uint8]string{
+			acc: `^acc ([-+]\d+)$`,
+			jmp: `^jmp ([-+]\d+)$`,
+			nop: `^nop ([-+]\d+)$`,
+		}))
 	}
 
 	r, accum := run(ins)
 	if r != loop {
 		log.Fatal("didn't loop")
 	}
-	println(accum)
+	fmt.Println(accum)
 
-	swap := func(o op) op {
+	swap := func(o uint8) uint8 {
 		if o == jmp {
 			return nop
 		} else if o == nop {
@@ -31,30 +40,17 @@ func main() {
 
 	for i := 0; i < len(ins); i++ {
 		in := &ins[i]
-		if in.op == acc {
+		if in.Op == acc {
 			continue
 		}
-		in.op = swap(in.op) // swap jmp and nop
+		in.Op = swap(in.Op) // swap jmp and nop
 		r, accum := run(ins)
-		in.op = swap(in.op) // swap back
+		in.Op = swap(in.Op) // swap back
 		if r == ok {
-			println(accum)
+			fmt.Println(accum)
 			break
 		}
 	}
-}
-
-type op string
-
-const (
-	acc op = "acc"
-	jmp    = "jmp"
-	nop    = "nop"
-)
-
-type instr struct {
-	op  op
-	val int
 }
 
 type res int
@@ -65,8 +61,9 @@ const (
 	segv
 )
 
-func run(ins []instr) (res, int) {
-	var accum, ip int
+func run(ins []lib.Instr) (res, int64) {
+	var accum int64
+	var ip int
 	seen := make(map[int]struct{})
 	for {
 		if ip == len(ins) {
@@ -81,13 +78,12 @@ func run(ins []instr) (res, int) {
 		seen[ip] = struct{}{}
 
 		in := &ins[ip]
-		//fmt.Printf("%d %s %d\n", ip, in.op, in.val)
-		switch in.op {
+		switch in.Op {
 		case acc:
-			accum += in.val
+			accum += in.Val(0, nil)
 			ip++
 		case jmp:
-			ip += in.val
+			ip += int(in.Val(0, nil))
 		case nop:
 			ip++
 		}
