@@ -95,6 +95,7 @@ case "$1" in
     ;;
   save)
     check_in_day_dir
+    mkdir -p "${answers_dir}/${cur_year}"
     answers="${answers_dir}/$(printf "%d/%02d" $cur_year $cur_day)"
     if [ -e "$answers" ]; then die "${answers} already exists"; fi
     exec go run main.go >"$answers"
