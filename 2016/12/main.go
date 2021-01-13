@@ -7,76 +7,56 @@ import (
 )
 
 func main() {
-	var ins []instr
+	var ins []lib.Instr
 	for _, ln := range lib.InputLines("2016/12") {
-		var in instr
-		lib.Extract(ln, `^(cpy|inc|dec|jnz) (?:([a-d])|(-?\d+))(?: ([a-d])| (-?\d+))?$`,
-			&in.op, &in.r1, &in.v1, &in.r2, &in.v2)
-		ins = append(ins, in)
+		ins = append(ins, lib.NewInstr(ln, 'a', 'd', map[uint8]string{
+			cpy: `^cpy ([a-d]|-?\d+) ([a-d])$`,
+			inc: `^inc ([a-d])$`,
+			dec: `^dec ([a-d])$`,
+			jnz: `^jnz ([a-d]|-?\d+) ([a-d]|-?\d+)$`,
+		}))
 	}
 
 	// Part 1
-	a, _, _, _ := run(ins, 0, 0, 0, 0)
-	fmt.Println(a)
+	regs := make([]int64, 4)
+	run(ins, regs)
+	fmt.Println(regs[0])
 
 	// Part 2: Initialize register c to 1 instead of to 0.
-	a, _, _, _ = run(ins, 0, 0, 1, 0)
-	fmt.Println(a)
+	regs = []int64{0, 0, 1, 0}
+	run(ins, regs)
+	fmt.Println(regs[0])
 }
 
-type instr struct {
-	op     string
-	r1, r2 string
-	v1, v2 int64
-}
-
-func run(ins []instr, a, b, c, d int64) (int64, int64, int64, int64) {
-	reg := func(n string) *int64 {
-		switch n {
-		case "a":
-			return &a
-		case "b":
-			return &b
-		case "c":
-			return &c
-		case "d":
-			return &d
-		default:
-			panic(fmt.Sprintf("Invalid register %q", n))
-		}
-	}
-
+func run(ins []lib.Instr, regs []int64) {
 	var ip int64
 	for ip >= 0 && ip < int64(len(ins)) {
+		jumped := false
 		in := &ins[ip]
-		switch in.op {
-		case "cpy":
-			if in.r1 != "" {
-				*reg(in.r2) = *reg(in.r1)
-			} else {
-				*reg(in.r2) = in.v1
-			}
-			ip++
-		case "inc":
-			*reg(in.r1)++
-			ip++
-		case "dec":
-			*reg(in.r1)--
-			ip++
-		case "jnz":
-			v := in.v1
-			if in.r1 != "" {
-				v = *reg(in.r1)
-			}
-			if v != 0 {
-				ip += in.v2
-			} else {
-				ip++
+		switch in.Op {
+		case cpy:
+			*in.Ptr(1, regs) = in.Val(0, regs)
+		case inc:
+			*in.Ptr(0, regs)++
+		case dec:
+			*in.Ptr(0, regs)--
+		case jnz:
+			if in.Val(0, regs) != 0 {
+				ip += in.Val(1, regs)
+				jumped = true
 			}
 		default:
-			panic(fmt.Sprintf("Invalid op %q", in.op))
+			panic(fmt.Sprintf("Invalid op %v", in.Op))
+		}
+		if !jumped {
+			ip++
 		}
 	}
-
-	return a, b, c, d
 }
+
+const (
+	cpy = iota
+	inc
+	dec
+	jnz
+)

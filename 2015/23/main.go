@@ -2,89 +2,73 @@ package main
 
 import (
 	"fmt"
-	"math/big"
 
 	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	var a, b big.Int // registers
-	var ins []inst
-
-	reg := func(r string) *big.Int {
-		switch r {
-		case "a":
-			return &a
-		case "b":
-			return &b
-		default:
-			panic(fmt.Sprintf("Bad register %q", r))
-		}
-	}
-
+	var ins []lib.Instr
 	for _, ln := range lib.InputLines("2015/23") {
-		var in inst
-		var rest string
-		lib.Extract(ln, `^(hlf|tpl|inc|jmp|jie|jio) (.+)$`, &in.op, &rest)
-		switch in.op {
-		case "hlf", "tpl", "inc":
-			in.reg = reg(rest)
-		case "jmp":
-			lib.Extract(rest, `^([+-]\d+)$`, &in.off)
-		case "jie", "jio":
-			var r string
-			lib.Extract(rest, `^([ab]), ([+-]\d+)$`, &r, &in.off)
-			in.reg = reg(r)
-		}
-		ins = append(ins, in)
+		ins = append(ins, lib.NewInstr(ln, 'a', 'b', map[uint8]string{
+			hlf: `^hlf ([ab])$`,
+			tpl: `^tpl ([ab])$`,
+			inc: `^inc ([ab])$`,
+			jmp: `^jmp ([+-]\d+)$`,
+			jie: `^jie ([ab]), ([+-]\d+)$`,
+			jio: `^jio ([ab]), ([+-]\d+)$`,
+		}))
 	}
 
+	regs := make([]int64, 2)
 	run := func() {
 		var ip int
 		for ip >= 0 && ip < len(ins) {
 			in := &ins[ip]
-			switch in.op {
-			case "hlf":
-				in.reg.Div(in.reg, big.NewInt(2))
+			switch in.Op {
+			case hlf:
+				*in.Ptr(0, regs) /= 2
 				ip++
-			case "tpl":
-				in.reg.Mul(in.reg, big.NewInt(3))
+			case tpl:
+				*in.Ptr(0, regs) *= 3
 				ip++
-			case "inc":
-				in.reg.Add(in.reg, big.NewInt(1))
+			case inc:
+				*in.Ptr(0, regs) += 1
 				ip++
-			case "jmp":
-				ip += in.off
-			case "jie":
-				if in.reg.Bit(0) == 0 {
-					ip += in.off
+			case jmp:
+				ip += int(in.Val(0, regs))
+			case jie:
+				if in.Val(0, regs)&1 == 0 {
+					ip += int(in.Val(1, regs))
 				} else {
 					ip++
 				}
-			case "jio": // sigh: "o" is for "one", not "odd"
-				if in.reg.Cmp(big.NewInt(1)) == 0 {
-					ip += in.off
+			case jio: // sigh: "o" is for "one", not "odd"
+				if in.Val(0, regs) == 1 {
+					ip += int(in.Val(1, regs))
 				} else {
 					ip++
 				}
 			default:
-				panic(fmt.Sprintf("Bad op %q", in.op))
+				panic(fmt.Sprintf("Bad op %v", in.Op))
 			}
 		}
 	}
 
 	run()
-	fmt.Println(b.String())
+	fmt.Println(regs[1])
 
 	// Part 2: Register 'a' starts 1 instead of as 0
-	a.SetInt64(1)
-	b.SetInt64(0)
+	regs[0] = 1
+	regs[1] = 0
 	run()
-	fmt.Println(b.String())
+	fmt.Println(regs[1])
 }
 
-type inst struct {
-	op  string
-	reg *big.Int
-	off int
-}
+const (
+	hlf = iota
+	tpl
+	inc
+	jmp
+	jie
+	jio
+)

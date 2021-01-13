@@ -59,18 +59,21 @@ func ExtractDigits(s string) []int {
 	return vals
 }
 
-var extractCache = make(map[string]*regexp.Regexp)
+var regexpCache = make(map[string]*regexp.Regexp)
+
+func getRegexp(re string) *regexp.Regexp {
+	comp, ok := regexpCache[re]
+	if !ok {
+		comp = regexp.MustCompile(re)
+		regexpCache[re] = comp
+	}
+	return comp
+}
 
 // ExtractMaybe executes regular expression re on s and assigns groups to dsts.
 // It returns false if re does not match s.
 func ExtractMaybe(s, re string, dsts ...interface{}) bool {
-	cre, ok := extractCache[re]
-	if !ok {
-		cre = regexp.MustCompile(re)
-		extractCache[re] = cre
-	}
-
-	ms := cre.FindStringSubmatch(s)
+	ms := getRegexp(re).FindStringSubmatch(s)
 	if ms == nil {
 		return false
 	}
