@@ -8,9 +8,14 @@ import (
 )
 
 func main() {
-	var ins []instr
+	var ins []lib.Instr
 	for _, ln := range lib.InputLines("2017/23") {
-		ins = append(ins, newInstr(ln))
+		ins = append(ins, lib.NewInstr(ln, 'a', 'z', map[uint8]string{
+			set: `^set ([a-z]) ([a-z]|-?\d+)$`,
+			sub: `^sub ([a-z]) ([a-z]|-?\d+)$`,
+			mul: `^mul ([a-z]) ([a-z]|-?\d+)$`,
+			jnz: `^jnz ([a-z]|-?\d+) ([a-z]|-?\d+)$`,
+		}))
 	}
 
 	// Part 1:
@@ -118,9 +123,9 @@ func main() {
 	// hit instruction 8 and manually set register 'h' to 0 if 'b' is prime
 	// and to 1 otherwise.
 
-	prime := func(n int) bool {
-		root := int(math.Sqrt(float64(n)))
-		for i := 2; i <= root; i++ {
+	prime := func(n int64) bool {
+		root := int64(math.Sqrt(float64(n)))
+		for i := int64(2); i <= root; i++ {
 			if n%i == 0 {
 				return true
 			}
@@ -132,7 +137,7 @@ func main() {
 	vm.regs[0] = 1
 	for !vm.oob {
 		if vm.ip == 8 {
-			vm.regs[5] = lib.If(prime(vm.regs[1]), 0, 1)
+			vm.regs[5] = int64(lib.If(prime(vm.regs[1]), 0, 1))
 			vm.ip = 24
 			continue
 		}
@@ -143,24 +148,19 @@ func main() {
 
 // This is just a hacked-up copy of 2017/18.
 type vm struct {
-	regs [26]int
-	ins  []instr
+	regs []int64
+	ins  []lib.Instr
 	ip   int
 
 	nmul int  // number of mul calls
 	oob  bool // ip went out of bounds
 }
 
-func newVM(ins []instr) *vm {
-	vm := &vm{ins: ins}
-	return vm
-}
-
-func (vm *vm) get(b int, v int) int {
-	if b >= 0 {
-		return vm.regs[b]
+func newVM(ins []lib.Instr) *vm {
+	return &vm{
+		regs: make([]int64, 26),
+		ins:  ins,
 	}
-	return v
 }
 
 func (vm *vm) tick() {
@@ -172,21 +172,21 @@ func (vm *vm) tick() {
 	var jumped bool
 
 	in := &vm.ins[vm.ip]
-	switch in.op {
+	switch in.Op {
 	case set:
-		vm.regs[in.r1] = vm.get(in.r2, in.v2)
+		*in.Ptr(0, vm.regs) = in.Val(1, vm.regs)
 	case sub:
-		vm.regs[in.r1] -= vm.get(in.r2, in.v2)
+		*in.Ptr(0, vm.regs) -= in.Val(1, vm.regs)
 	case mul:
-		vm.regs[in.r1] *= vm.get(in.r2, in.v2)
+		*in.Ptr(0, vm.regs) *= in.Val(1, vm.regs)
 		vm.nmul++
 	case jnz:
-		if vm.get(in.r1, in.v1) != 0 {
-			vm.ip += vm.get(in.r2, in.v2)
+		if in.Val(0, vm.regs) != 0 {
+			vm.ip += int(in.Val(1, vm.regs))
 			jumped = true
 		}
 	default:
-		lib.Panicf("Invalid op %d", in.op)
+		lib.Panicf("Invalid op %d", in.Op)
 	}
 
 	if !jumped {
@@ -194,52 +194,9 @@ func (vm *vm) tick() {
 	}
 }
 
-type op int
-
 const (
-	set op = iota
+	set = iota
 	sub
 	mul
 	jnz
 )
-
-type instr struct {
-	op     op
-	r1, r2 int
-	v1, v2 int
-}
-
-func newInstr(ln string) instr {
-	const re = `(?:([a-z])|(-?\d+))` // matches register or constant
-
-	var op, r1, r2 string
-	in := instr{r1: -1, r2: -1}
-	switch {
-	case lib.ExtractMaybe(ln, `^(set|sub|mul) ([a-z]) `+re+`$`, &op, &r1, &r2, &in.v2):
-	case lib.ExtractMaybe(ln, `^(jnz) `+re+` `+re+`$`, &op, &r1, &in.v1, &r2, &in.v2):
-	default:
-		lib.Panicf("Bad instruction %q", ln)
-	}
-
-	switch op {
-	case "set":
-		in.op = set
-	case "sub":
-		in.op = sub
-	case "mul":
-		in.op = mul
-	case "jnz":
-		in.op = jnz
-	default:
-		lib.Panicf("Invalid op %q", op)
-	}
-
-	if r1 != "" {
-		in.r1 = int(r1[0] - 'a')
-	}
-	if r2 != "" {
-		in.r2 = int(r2[0] - 'a')
-	}
-
-	return in
-}
