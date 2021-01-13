@@ -58,7 +58,17 @@ func MapSomeKey(m interface{}) interface{} {
 // MapHasKey returns true if map m contains key k.
 func MapHasKey(m, k interface{}) bool {
 	return reflect.ValueOf(m).MapIndex(reflect.ValueOf(k)).IsValid()
+}
 
+// MapHasValue returns true if map m contains value v.
+func MapHasValue(m, v interface{}) bool {
+	it := reflect.ValueOf(m).MapRange()
+	for it.Next() {
+		if it.Value().Interface() == v {
+			return true
+		}
+	}
+	return false
 }
 
 // AddSet adds the supplied values to the supplied string set.
