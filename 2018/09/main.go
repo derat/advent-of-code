@@ -10,7 +10,16 @@ func main() {
 	var nplayers, maxMarble int
 	lib.Extract(lib.InputLines("2018/9")[0],
 		`^(\d+) players; last marble is worth (\d+) points$`, &nplayers, &maxMarble)
+	fmt.Println(play(nplayers, maxMarble))
+	fmt.Println(play(nplayers, maxMarble*100))
+}
 
+type marble struct {
+	val         int
+	left, right *marble // left is cw, right is ccw
+}
+
+func play(nplayers, maxMarble int) int {
 	cur := &marble{val: 0}
 	cur.left = cur
 	cur.right = cur
@@ -46,11 +55,5 @@ func main() {
 		}
 	}
 
-	// Part 1: Print winning player's score.
-	fmt.Println(lib.Max(scores...))
-}
-
-type marble struct {
-	val         int
-	left, right *marble // left is cw, right is ccw
+	return lib.Max(scores...)
 }
