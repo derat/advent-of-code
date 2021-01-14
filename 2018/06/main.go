@@ -34,14 +34,16 @@ func main() {
 		coords[r] = make([]coord, ncols)
 		for c := range coords[r] {
 			co := &coords[r][c]
-			*co = coord{math.MaxInt32, -1}
+			*co = coord{math.MaxInt32, -1, 0}
 			for id, p := range points {
-				if dist := lib.Abs(p[0]-r) + lib.Abs(p[1]-c); dist < co.min {
+				dist := lib.Abs(p[0]-r) + lib.Abs(p[1]-c)
+				if dist < co.min {
 					co.min = dist
 					co.point = id
 				} else if dist == co.min {
 					co.point = -1
 				}
+				co.dists += dist
 			}
 		}
 	}
@@ -67,9 +69,21 @@ func main() {
 		}
 	}
 	fmt.Println(max)
+
+	// Part 2: Print size of region of all locations with summed dists < 10000.
+	var cnt int
+	for _, row := range coords {
+		for _, co := range row {
+			if co.dists < 10_000 {
+				cnt++
+			}
+		}
+	}
+	fmt.Println(cnt)
 }
 
 type coord struct {
 	min   int // minimum Manhattan distance to a point
 	point int // index of point with min distance (-1 if multiple)
+	dists int // sum of dists to all points
 }
