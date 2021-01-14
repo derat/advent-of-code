@@ -30,27 +30,46 @@ func main() {
 		}
 	}
 
+	// Returns total power of square of given size and top-left 1-indexed coordinates.
+	square := func(x, y, size int) int {
+		r, c := y-1, x-1
+		sum := sums[r+size-1][c+size-1]
+		if r > 0 { // subtract cells above
+			sum -= sums[r-1][c+size-1]
+		}
+		if c > 0 { // subtract cells to left
+			sum -= sums[r+size-1][c-1]
+		}
+		if r > 0 && c > 0 { // add double-removed cells
+			sum += sums[r-1][c-1]
+		}
+		return sum
+	}
+
+	// Part 1: Print top-left X,Y of 3x3 grid with largest total power.
 	max := math.MinInt32
-	xmax, ymax := -1, -1
-	for r := 2; r < len(sums); r++ {
-		for c := 2; c < len(sums[r]); c++ {
-			sum := sums[r][c]
-			if r > 2 {
-				sum -= sums[r-3][c]
-			}
-			if c > 2 {
-				sum -= sums[r][c-3]
-			}
-			if r > 2 && c > 2 {
-				sum += sums[r-3][c-3]
-			}
-			if sum > max {
-				max = sum
-				xmax, ymax = c-1, r-1
+	var xmax, ymax int // 0-indexed
+	for x := 1; x <= dim-2; x++ {
+		for y := 1; y <= dim-2; y++ {
+			if sum := square(x, y, 3); sum > max {
+				max, xmax, ymax = sum, x, y
 			}
 		}
 	}
 	fmt.Printf("%d,%d\n", xmax, ymax)
+
+	// Part 2: Print top-left X,Y,S of grid of any size with largest total power.
+	max, xmax, ymax, smax := math.MinInt32, 0, 0, 0
+	for size := 1; size <= dim; size++ {
+		for x := 1; x <= dim-size+1; x++ {
+			for y := 1; y <= dim-size+1; y++ {
+				if sum := square(x, y, size); sum > max {
+					max, xmax, ymax, smax = sum, x, y, size
+				}
+			}
+		}
+	}
+	fmt.Printf("%d,%d,%d\n", xmax, ymax, smax)
 }
 
 func power(x, y, serial int) int {
