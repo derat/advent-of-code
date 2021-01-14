@@ -11,6 +11,7 @@ func main() {
 	root, cnt := readNode(input)
 	lib.AssertEq(cnt, len(input))
 	fmt.Println(root.metasum())
+	fmt.Println(root.value())
 }
 
 type node struct {
@@ -44,4 +45,18 @@ func (n *node) metasum() int {
 		sum += c.metasum()
 	}
 	return sum
+}
+
+func (n *node) value() int {
+	if len(n.children) == 0 {
+		return lib.Sum(n.metadata...)
+	}
+	var val int
+	for _, idx := range n.metadata {
+		idx-- // convert from 1-indexed to 0-indexed
+		if idx >= 0 && idx < len(n.children) {
+			val += n.children[idx].value()
+		}
+	}
+	return val
 }
