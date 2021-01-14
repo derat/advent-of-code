@@ -53,20 +53,36 @@ func main() {
 			maxSleep = sum
 		}
 	}
+	min, _ := worstMinute(data[worst])
+	fmt.Println(worst * min)
+
+	// Part 2: Print ID of guard most asleep in a single minute times that minute.
+	var worst2, min2, maxCnt int
+	for guard, days := range data {
+		if min, cnt := worstMinute(days); cnt > maxCnt {
+			worst2 = guard
+			min2 = min
+			maxCnt = cnt
+		}
+	}
+	fmt.Println(worst2 * min2)
+}
+
+func worstMinute(days []uint64) (min, cnt int) {
 	var mins [60]int
-	for _, day := range data[worst] {
+	for _, day := range days {
 		for i := 0; i < 60; i++ {
 			if lib.HasBit(day, i) {
 				mins[i]++
 			}
 		}
 	}
-	var min, maxCnt int
+	var max int
 	for i, cnt := range mins {
-		if cnt > maxCnt {
+		if cnt > max {
 			min = i
-			maxCnt = cnt
+			max = cnt
 		}
 	}
-	fmt.Println(worst * min)
+	return min, max
 }
