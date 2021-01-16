@@ -16,7 +16,7 @@ func TestBFS(t *testing.T) {
 			}
 		}
 		return next
-	})
+	}, nil, -1)
 	if want := map[uint64]int{
 		PackInts(0, 0): 0,
 		PackInts(1, 0): 1,

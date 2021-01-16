@@ -182,30 +182,22 @@ func (ca *cave) move(u *unit, dests []uint64) {
 	// Find the neighboring square and dest with the shortest path between them.
 	var dest, next uint64
 	min := math.MaxInt32
-	for _, n := range ca.neighbors(u.r, u.c, nil) {
-		for _, d := range dests {
-			if dist(n, d) > min {
-				continue // skip if Manhattan distance greater than shortest path
-			}
-			steps := lib.AStar([]uint64{n},
-				func(s uint64) bool { return s == d },
-				func(s uint64) []uint64 {
-					r, c := lib.UnpackInt2(s)
-					return ca.neighbors(r, c, u)
-				},
-				// I spent way too long on this problem, apparently because I wasn't
-				// finding the shortest path when I used dist(s, d) as a lower bound.
-				// I'm still not sure why this is, but the website says my answer is
-				// correct when I instead just say 0 is the lower bound. :-/
-				// It's much slower, though.
-				func(s uint64) int { return 0 })
-			if steps < 0 {
-				continue // not reachable
+	neighbors := ca.neighbors(u.r, u.c, nil)
+	for _, d := range dests {
+		// Find minimum number of steps from dest to each neighboring square.
+		costs := lib.BFS(d, func(s uint64) []uint64 {
+			r, c := lib.UnpackInt2(s)
+			return ca.neighbors(r, c, u)
+		}, neighbors, min)
+		for _, n := range neighbors {
+			cost, ok := costs[n]
+			if !ok {
+				continue
 			}
 			// Favor shortest path, then better dest, then better neighbor.
-			if steps < min ||
-				(steps == min && (cmp(d, dest) || (d == dest && cmp(n, next)))) {
-				min = steps
+			if cost < min ||
+				(cost == min && (cmp(d, dest) || (d == dest && cmp(n, next)))) {
+				min = cost
 				dest = d
 				next = n
 			}
