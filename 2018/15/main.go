@@ -17,12 +17,12 @@ const (
 
 func main() {
 	input := lib.InputLinesBytes("2018/15", '#', '.', 'G', 'E')
-	ca := newCave(input, 200, 3)
 
+	// Part 1: Print number of *full* rounds times summed HP of living units.
+	ca := newCave(input, 200, 3, 3)
 	if animate {
 		ca.dump(false)
 	}
-
 	rounds := 0
 	for {
 		if !ca.round() {
@@ -34,23 +34,40 @@ func main() {
 			time.Sleep(delay)
 		}
 	}
-
 	if animate {
 		ca.dump(true)
 	}
+	fmt.Println(score(rounds, ca))
 
-	// Part 1: Print number of *full* rounds times summed HP of living units.
+	// Part 2: Print score using minimum elf AP to not suffer any casualties.
+	// This is slow but I am so done with this problem.
+Loop:
+	for ap := 4; true; ap++ {
+		ca := newCave(input, 200, ap, 3)
+		elves := ca.left[elf]
+		rounds := 0
+		for {
+			done := !ca.round()
+			if ca.left[elf] < elves {
+				continue Loop // elves died; continue
+			}
+			if done {
+				fmt.Println(score(rounds, ca))
+				break Loop
+			}
+			rounds++
+		}
+	}
+}
+
+func score(rounds int, ca *cave) int {
 	var sum int
 	for _, u := range ca.units {
 		if u.alive() {
 			sum += u.hp
 		}
 	}
-	if animate {
-		fmt.Printf("\n%d * %d = %d\n", rounds, sum, rounds*sum)
-	} else {
-		fmt.Println(rounds * sum)
-	}
+	return rounds * sum
 }
 
 type cave struct {
@@ -60,7 +77,7 @@ type cave struct {
 	left  map[species]int  // living units per species
 }
 
-func newCave(grid [][]byte, hp, ap int) *cave {
+func newCave(grid [][]byte, hp, eap, gap int) *cave {
 	ca := &cave{
 		grid: lib.CopyBytes(grid),
 		locs: make(map[uint64]*unit),
@@ -71,8 +88,10 @@ func newCave(grid [][]byte, hp, ap int) *cave {
 		for c, ch := range row {
 			if ch == 'E' || ch == 'G' {
 				spec := elf
+				ap := eap
 				if ch == 'G' {
 					spec = goblin
+					ap = gap
 				}
 				u := &unit{spec, r, c, hp, ap}
 				ca.units = append(ca.units, u)
@@ -178,6 +197,7 @@ func (ca *cave) move(u *unit, dests []uint64) {
 				// finding the shortest path when I used dist(s, d) as a lower bound.
 				// I'm still not sure why this is, but the website says my answer is
 				// correct when I instead just say 0 is the lower bound. :-/
+				// It's much slower, though.
 				func(s uint64) int { return 0 })
 			if steps < 0 {
 				continue // not reachable
