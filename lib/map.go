@@ -23,6 +23,16 @@ func MapIntKeys(m interface{}) []int {
 	return keys
 }
 
+// MapUint64Keys returns uint64 keys from the provided map.
+func MapUint64Keys(m interface{}) []uint64 {
+	mv := reflect.ValueOf(m)
+	keys := make([]uint64, 0, mv.Len())
+	for _, kv := range mv.MapKeys() {
+		keys = append(keys, kv.Uint())
+	}
+	return keys
+}
+
 // MapStringKeys returns string keys from the provided map.
 func MapStringKeys(m interface{}) []string {
 	mv := reflect.ValueOf(m)
