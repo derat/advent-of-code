@@ -43,7 +43,7 @@ func UnpackIntSigned(packed uint64, size, offset int) int {
 
 // UnpackInt2 is a convenience function that unpacks two 32-bit values from p.
 func UnpackInt2(p uint64) (a, b int) {
-	return UnpackInt(p, 32, 0), UnpackInt(p, 32, 1)
+	return UnpackInt(p, 32, 0), UnpackInt(p, 32, 32)
 }
 
 // SetBit sets the i-th bit in field to v and returns the field.

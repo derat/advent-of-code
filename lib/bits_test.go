@@ -27,6 +27,21 @@ func TestUnpackIntSigned(t *testing.T) {
 	}
 }
 
+func TestUnpackInt2(t *testing.T) {
+	for _, vals := range [][2]int{
+		{0, 0},
+		{0, 1},
+		{1, 0},
+		{1, 1},
+		{1 << 31, 1 << 31},
+	} {
+		a, b := UnpackInt2(PackInts(vals[0], vals[1]))
+		if a != vals[0] || b != vals[1] {
+			t.Errorf("UnpackInt2() = %v, %v; want %v, %v", a, b, vals[0], vals[1])
+		}
+	}
+}
+
 func TestSetBit(t *testing.T) {
 	for _, tc := range []struct {
 		init uint64

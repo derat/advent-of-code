@@ -44,3 +44,25 @@ type asNode struct {
 	state uint64
 	pri   int // lower is better
 }
+
+// BFS returns a map of the minimum number of steps to go from start to all reachable states.
+func BFS(start uint64, next func(s uint64) []uint64) map[uint64]int {
+	queue := []uint64{start}
+	seen := map[uint64]struct{}{start: struct{}{}}
+	costs := map[uint64]int{start: 0}
+
+	for len(queue) > 0 {
+		cur := queue[0]
+		queue = queue[1:]
+		cost := costs[cur] + 1
+		for _, st := range next(cur) {
+			if _, ok := seen[st]; !ok {
+				queue = append(queue, st)
+				seen[st] = struct{}{}
+				costs[st] = cost
+			}
+		}
+	}
+
+	return costs
+}
