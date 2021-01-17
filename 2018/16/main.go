@@ -35,6 +35,60 @@ func main() {
 		}
 	}
 	fmt.Println(cnt)
+
+	// Part 2: Determine number of each op and print register 0 after executing program.
+	unk := make(map[op]map[int]struct{})  // possible opcodes for each op
+	runk := make(map[int]map[op]struct{}) // possible ops for each opcode
+	for _, sa := range samples {
+		code := sa.in.op
+		for _, o := range sa.ops() {
+			unk[o] = lib.AddSet(unk[o], code).(map[int]struct{})
+			runk[code] = lib.AddSet(runk[code], o).(map[op]struct{})
+		}
+	}
+
+	// Identify ops that start out with a single possible code.
+	var next []op
+	for o, codes := range unk {
+		if len(codes) == 1 {
+			next = append(next, o)
+		}
+	}
+
+	// Repeatedly match ops with codes until there are none left.
+	ops := make(map[int]op) // codes to ops
+	for len(next) > 0 {
+		o := next[0]
+		next = next[1:]
+
+		if _, ok := unk[o]; !ok {
+			continue // already handled
+		}
+
+		lib.AssertEq(len(unk[o]), 1)
+		code := lib.MapSomeKey(unk[o]).(int)
+		ops[code] = o
+
+		delete(unk, o)
+		for bo := range runk[code] {
+			delete(unk[bo], code)
+			if len(unk[bo]) == 1 {
+				next = append(next, bo)
+			}
+		}
+		delete(runk, code)
+	}
+	lib.AssertEq(len(ops), nops)
+
+	// Run the program.
+	var regs [4]int
+	reg := func(i int) int { return regs[i] }
+	for _, in := range prog {
+		op, ok := ops[in.op]
+		lib.Assertf(ok, "Invalid opcode %d", in.op)
+		regs[in.c] = op.run(in.a, in.b, reg)
+	}
+	fmt.Println(regs[0])
 }
 
 type instr struct {
@@ -66,7 +120,50 @@ const (
 	eqir
 	eqri
 	eqrr
+
+	nops = int(eqrr) + 1
 )
+
+// run returns the value to store in c when o is called
+// with the supplied a and b values and register state.
+func (o op) run(va, vb int, reg func(int) int) int {
+	switch o {
+	case addr:
+		return reg(va) + reg(vb)
+	case addi:
+		return reg(va) + vb
+	case mulr:
+		return reg(va) * reg(vb)
+	case muli:
+		return reg(va) * vb
+	case banr:
+		return reg(va) & reg(vb)
+	case bani:
+		return reg(va) & vb
+	case borr:
+		return reg(va) | reg(vb)
+	case bori:
+		return reg(va) | vb
+	case setr:
+		return reg(va)
+	case seti:
+		return va
+	case gtir:
+		return lib.If(va > reg(vb), 1, 0)
+	case gtri:
+		return lib.If(reg(va) > vb, 1, 0)
+	case gtrr:
+		return lib.If(reg(va) > reg(vb), 1, 0)
+	case eqir:
+		return lib.If(va == reg(vb), 1, 0)
+	case eqri:
+		return lib.If(reg(va) == vb, 1, 0)
+	case eqrr:
+		return lib.If(reg(va) == reg(vb), 1, 0)
+	default:
+		panic(fmt.Sprintf("Invalid opcode %d", o))
+	}
+}
 
 type sample struct {
 	before, after [4]int
@@ -74,39 +171,19 @@ type sample struct {
 }
 
 func (s *sample) ops() []op {
-	va, vb := s.in.a, s.in.b
 	reg := func(idx int) int {
 		if idx < 0 || idx >= len(s.before) {
-			panic(0)
+			panic(fmt.Sprintf("Invalid register access %d", idx))
 		}
 		return s.before[idx]
 	}
 
-	// I couldn't think of a more concise way to do this.
-	// Each computation happens within a function so we
-	// can recover from panics in the case of an invalid register reference.
 	var ops []op
-	for op, fc := range map[op]func() int{
-		addr: func() int { return reg(va) + reg(vb) },
-		addi: func() int { return reg(va) + vb },
-		mulr: func() int { return reg(va) * reg(vb) },
-		muli: func() int { return reg(va) * vb },
-		banr: func() int { return reg(va) & reg(vb) },
-		bani: func() int { return reg(va) & vb },
-		borr: func() int { return reg(va) | reg(vb) },
-		bori: func() int { return reg(va) | vb },
-		setr: func() int { return reg(va) },
-		seti: func() int { return va },
-		gtir: func() int { return lib.If(va > reg(vb), 1, 0) },
-		gtri: func() int { return lib.If(reg(va) > vb, 1, 0) },
-		gtrr: func() int { return lib.If(reg(va) > reg(vb), 1, 0) },
-		eqir: func() int { return lib.If(va == reg(vb), 1, 0) },
-		eqri: func() int { return lib.If(reg(va) == vb, 1, 0) },
-		eqrr: func() int { return lib.If(reg(va) == reg(vb), 1, 0) },
-	} {
+	for i := 0; i < int(nops); i++ {
+		op := op(i)
 		func() {
 			defer recover()
-			c := fc() // panics on invalid register access
+			c := op.run(s.in.a, s.in.b, reg) // panics on invalid register access
 
 			for i, v := range s.after {
 				if (i == s.in.c && v != c) || (i != s.in.c && v != s.before[i]) {
