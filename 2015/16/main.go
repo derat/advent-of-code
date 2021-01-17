@@ -23,8 +23,8 @@ func main() {
 	}
 
 	// Additional stipulations given in part 2.
-	more := lib.AddSet(nil, "cats", "trees")
-	less := lib.AddSet(nil, "pomeranians", "pomeranians")
+	more := lib.AddStringSet(nil, "cats", "trees")
+	less := lib.AddStringSet(nil, "pomeranians", "pomeranians")
 
 	var match, match2 int
 	for _, ln := range lib.InputLines("2015/16") {

@@ -81,14 +81,24 @@ func MapHasValue(m, v interface{}) bool {
 	return false
 }
 
-// AddSet adds the supplied values to the supplied string set.
+// AddSet adds the supplied as keys in the supplied (possibly-nil) map to struct{}.
 // The set is returned (and should be used thereafter).
-func AddSet(s map[string]struct{}, vals ...string) map[string]struct{} {
-	if s == nil {
-		s = make(map[string]struct{}, len(vals))
+func AddSet(s interface{}, vals ...interface{}) interface{} {
+	sv := reflect.ValueOf(s)
+	if sv.IsNil() {
+		sv = reflect.MakeMapWithSize(sv.Type(), len(vals))
 	}
 	for _, v := range vals {
-		s[v] = struct{}{}
+		sv.SetMapIndex(reflect.ValueOf(v), reflect.ValueOf(struct{}{}))
 	}
-	return s
+	return sv.Interface()
+}
+
+// AddStringSet is a wrapper around AddSet for string keys.
+func AddStringSet(s map[string]struct{}, vals ...string) map[string]struct{} {
+	ivals := make([]interface{}, len(vals))
+	for i := range vals {
+		ivals[i] = vals[i]
+	}
+	return AddSet(s, ivals...).(map[string]struct{})
 }
