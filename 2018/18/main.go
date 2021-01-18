@@ -1,17 +1,41 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
-	grid := lib.InputLinesBytes("2018/18", '.', '#', '|')
+	init := lib.InputLinesBytes("2018/18", '.', '#', '|')
+
+	// Part 1: Print resource score after 10 minutes.
+	grid := lib.CopyBytes(init)
 	for i := 0; i < 10; i++ {
 		grid = update(grid)
 	}
-	fmt.Println(lib.CountBytesFull(grid, '|') * lib.CountBytesFull(grid, '#'))
+	fmt.Println(score(grid))
+
+	// Part 2: Print resource score after 1000000000 minutes.
+	const need = 1_000_000_000
+	join := func(b [][]byte) string { return string(bytes.Join(b, []byte{'\n'})) }
+	grid = lib.CopyBytes(init)
+	seen := map[string]int{join(grid): 0}
+	for min := 1; true; min++ {
+		grid = update(grid)
+		state := join(grid)
+		if m, ok := seen[state]; ok {
+			dist := min - m
+			rem := (need - min) % dist
+			for i := 0; i < rem; i++ {
+				grid = update(grid)
+			}
+			fmt.Println(score(grid))
+			break
+		}
+		seen[state] = min
+	}
 }
 
 func update(grid [][]byte) [][]byte {
@@ -44,4 +68,8 @@ func update(grid [][]byte) [][]byte {
 		}
 	}
 	return next
+}
+
+func score(grid [][]byte) int {
+	return lib.CountBytesFull(grid, '|') * lib.CountBytesFull(grid, '#')
 }
