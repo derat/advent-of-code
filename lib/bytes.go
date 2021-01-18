@@ -53,14 +53,17 @@ func SetBytes(b [][]byte, r0, c0, r1, c1 int, ch byte) {
 	}
 }
 
-// CountBytes returns the number of occurrences of ch in the rectangle bounded
+// CountBytes returns the number of occurrences of chars in the rectangle bounded
 // by (r0, c0) and (r1, c1), inclusive. The supplied bounds are clamped.
-func CountBytes(b [][]byte, r0, c0, r1, c1 int, ch byte) int {
+func CountBytes(b [][]byte, r0, c0, r1, c1 int, chars ...byte) int {
 	cnt := 0
 	for r := Max(r0, 0); r <= Min(r1, len(b)-1); r++ {
 		for c := Max(c0, 0); c <= Min(c1, len(b[r])-1); c++ {
-			if b[r][c] == ch {
-				cnt++
+			for _, ch := range chars {
+				if b[r][c] == ch {
+					cnt++
+					break
+				}
 			}
 		}
 	}
