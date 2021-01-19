@@ -24,6 +24,17 @@ func Max(vals ...int) int {
 	return max
 }
 
+// AtLeast returns the number of values greater than or equal to n.
+func AtLeast(n int, vals ...int) int {
+	var cnt int
+	for _, v := range vals {
+		if v >= n {
+			cnt++
+		}
+	}
+	return cnt
+}
+
 // Clamp clamps val within [min, max].
 func Clamp(val, min, max int) int {
 	return Min(Max(val, min), max)

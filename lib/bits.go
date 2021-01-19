@@ -46,6 +46,11 @@ func UnpackInt2(p uint64) (a, b int) {
 	return UnpackInt(p, 32, 0), UnpackInt(p, 32, 32)
 }
 
+// UnpackIntSigned2 is like UnpackInt2 but for signed ints.
+func UnpackIntSigned2(p uint64) (a, b int) {
+	return UnpackIntSigned(p, 32, 0), UnpackIntSigned(p, 32, 32)
+}
+
 // SetBit sets the i-th bit in field to v and returns the field.
 func SetBit(field uint64, i int, v bool) uint64 {
 	if v {
