@@ -1,13 +1,14 @@
 package lib
 
-// AStar uses the A* algorithm to find the minimum number of steps from the initial
+// AStarVarCost uses the A* algorithm to find the minimum number of steps from the initial
 // state(s) to a state where the done function returns true. The next function should
-// return all states reachable in a single step from the state passed to it, and the
-// estimate function should return a lower bound on the number of steps to reach
-// a target state. See https://www.redblobgames.com/pathfinding/a-star/introduction.html.
-func AStar(initial []uint64,
+// return all states reachable in a single step from the state passed to it along with the
+// corresponding cost, and the estimate function should return a lower bound on the remaining
+// cost to reach a target state.
+// See https://www.redblobgames.com/pathfinding/a-star/introduction.html.
+func AStarVarCost(initial []uint64,
 	done func(uint64) bool,
-	next func(uint64) []uint64,
+	next func(uint64) map[uint64]int,
 	estimate func(uint64) int) int {
 	// TODO: Add some way to track the path if needed.
 	frontier := NewHeap(func(a, b interface{}) bool { return a.(asNode).pri < b.(asNode).pri })
@@ -26,18 +27,34 @@ func AStar(initial []uint64,
 			return cost
 		}
 
-		for _, next := range next(cur) {
-			newCost := cost + 1
-			if old, ok := costs[next]; ok && old <= newCost {
+		for ns, nc := range next(cur) {
+			newCost := cost + nc
+			if oldCost, ok := costs[ns]; ok && oldCost <= newCost {
 				continue // already visited with equal or lower cost
 			}
-			pri := newCost + estimate(next)
-			frontier.Insert(asNode{next, pri})
-			costs[next] = newCost
+			pri := newCost + estimate(ns)
+			frontier.Insert(asNode{ns, pri})
+			costs[ns] = newCost
 		}
 	}
 
 	return -1
+}
+
+// AStar is a simplified version of AStarVarCost that adapts the supplied next function
+// to report a cost of 1 to move to each next state.
+func AStar(initial []uint64,
+	done func(uint64) bool,
+	next func(uint64) []uint64,
+	estimate func(uint64) int) int {
+	return AStarVarCost(initial, done, func(s uint64) map[uint64]int {
+		ns := next(s)
+		nm := make(map[uint64]int, len(ns))
+		for _, n := range ns {
+			nm[n] = 1
+		}
+		return nm
+	}, estimate)
 }
 
 type asNode struct {

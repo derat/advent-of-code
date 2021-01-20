@@ -55,7 +55,10 @@ func main() {
 			func(s uint64) int {
 				r, c, vis := unpack(s)
 				if vis == 1<<len(locs)-1 {
-					return 0
+					if part == 1 {
+						return 0
+					}
+					return r + c // need to get back to start
 				}
 				// Use the distance to the unvisited location farthest from the robot's
 				// location as a lower bound for the number of additional steps needed.
@@ -71,11 +74,13 @@ func main() {
 						fd = lib.Max(fd, ld)
 					}
 				}
-				// For part 2, I tried including the travel distance back to location 0
-				// in this lower bound, but it again resulted in a too-high answer, so
-				// presumably I'm missing something. The search still runs quickly when
-				// we just reuse the same estimate from part 1, luckily.
-				return fd
+				if part == 1 {
+					// TODO: There's some bug here that I don't understand.
+					// Now that AStar() randomizes the order of "next" steps
+					// internally, I sometimes get a too-high answer for part 1.
+					return fd
+				}
+				return lib.Min(fd, r+c)
 			})
 		fmt.Println(steps)
 	}

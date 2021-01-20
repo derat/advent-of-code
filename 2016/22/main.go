@@ -120,10 +120,10 @@ func main() {
 			return ns
 		},
 		func(s uint64) int {
-			// Use the data's Manhattan distance from the space and then the space's
-			// distance from (0, 0) as a lower bound of the required moves.
+			// Use the max of the data's Manhattan distance from the space and the space's distance
+			// from (0, 0) as a lower bound of the required moves.
 			sx, sy, dx, dy := unpack(s)
-			return lib.Abs(dx-sx) + lib.Abs(dy-sy) + sx + sy
+			return lib.Max(lib.Abs(dx-sx)+lib.Abs(dy-sy), sx+sy)
 		})
 	fmt.Println(steps)
 }
