@@ -102,3 +102,47 @@ func AddStringSet(s map[string]struct{}, vals ...string) map[string]struct{} {
 	}
 	return AddSet(s, ivals...).(map[string]struct{})
 }
+
+// Union returns a new map with the union of keys from a and b.
+func Union(a, b interface{}) interface{} {
+	av := reflect.ValueOf(a)
+	bv := reflect.ValueOf(b)
+	AssertEq(av.Type(), bv.Type())
+	cv := reflect.MakeMapWithSize(av.Type(), Max(av.Len(), bv.Len()))
+
+	ai := av.MapRange()
+	for ai.Next() {
+		cv.SetMapIndex(ai.Key(), ai.Value())
+	}
+	bi := bv.MapRange()
+	for bi.Next() {
+		cv.SetMapIndex(bi.Key(), bi.Value())
+	}
+
+	return cv.Interface()
+}
+
+// Intersect returns a new map with the intersection of keys from a and b.
+func Intersect(a, b interface{}) interface{} {
+	av := reflect.ValueOf(a)
+	bv := reflect.ValueOf(b)
+	AssertEq(av.Type(), bv.Type())
+	cv := reflect.MakeMap(av.Type())
+
+	var it *reflect.MapIter
+	var ov reflect.Value
+	if av.Len() < bv.Len() {
+		it = av.MapRange()
+		ov = bv
+	} else {
+		it = bv.MapRange()
+		ov = av
+	}
+	for it.Next() {
+		if ov.MapIndex(it.Key()).IsValid() {
+			cv.SetMapIndex(it.Key(), it.Value())
+		}
+	}
+
+	return cv.Interface()
+}
