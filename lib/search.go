@@ -29,12 +29,11 @@ func AStarVarCost(initial []uint64,
 
 		for ns, nc := range next(cur) {
 			newCost := cost + nc
-			if oldCost, ok := costs[ns]; ok && oldCost <= newCost {
-				continue // already visited with equal or lower cost
+			if oldCost, ok := costs[ns]; !ok || newCost < oldCost {
+				costs[ns] = newCost
+				pri := newCost + estimate(ns)
+				frontier.Insert(asNode{ns, pri})
 			}
-			pri := newCost + estimate(ns)
-			frontier.Insert(asNode{ns, pri})
-			costs[ns] = newCost
 		}
 	}
 

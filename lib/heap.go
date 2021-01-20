@@ -1,9 +1,12 @@
 package lib
 
 // Heap implements a binary heap.
-// See https://www.cs.princeton.edu/~wayne/cs423/lectures/heaps-4up.pdf.
+// See https://runestone.academy/runestone/books/published/pythonds/Trees/BinaryHeapImplementation.html.
+// (I originally used the description from https://www.cs.princeton.edu/~wayne/cs423/lectures/heaps-4up.pdf
+// but I ended up with buggy code; probably I messed up while writing it.)
 type Heap struct {
 	items  []interface{}
+	size   int
 	before HeapFunc
 }
 
@@ -11,58 +14,55 @@ type Heap struct {
 type HeapFunc func(a, b interface{}) bool
 
 func NewHeap(before HeapFunc) *Heap {
-	return &Heap{before: before}
+	return &Heap{
+		items:  []interface{}{nil}, // first item is unused but makes code simpler
+		before: before,
+	}
 }
 
 func (h *Heap) Len() int {
-	return len(h.items)
+	return h.size
 }
 
 func (h *Heap) Insert(x interface{}) {
 	// Add new item as rightmost leaf.
 	h.items = append(h.items, x)
+	h.size++
 
 	// Bubble item up.
-	for i := len(h.items) - 1; i > 0; i /= 2 {
-		parent := (i+1)/2 - 1
-		if !h.before(x, h.items[parent]) {
-			break
+	for i := h.size; i/2 > 0; i /= 2 {
+		parent := i / 2
+		if h.before(x, h.items[parent]) {
+			h.items[i], h.items[parent] = h.items[parent], h.items[i]
 		}
-		h.items[i], h.items[parent] = h.items[parent], h.items[i]
 	}
 }
 
 func (h *Heap) Pop() interface{} {
-	if len(h.items) == 0 {
+	if h.size == 0 {
 		panic("Heap is empty")
 	}
 
-	v := h.items[0]
+	v := h.items[1]
 
 	// Promote rightmost leaf to root.
-	h.items[0] = h.items[len(h.items)-1]
+	h.items[1] = h.items[h.size]
 	h.items = h.items[:len(h.items)-1]
+	h.size--
 
 	// Bubble root down.
-	i := 0
-	for 2*(i+1)-1 < len(h.items) {
-		left := 2*(i+1) - 1
-		right := 2 * (i + 1)
-		if right >= len(h.items) || h.before(h.items[left], h.items[right]) {
-			if h.before(h.items[left], h.items[i]) {
-				h.items[left], h.items[i] = h.items[i], h.items[left]
-				i = left
-			} else {
-				break
-			}
-		} else if right < len(h.items) {
-			if h.before(h.items[right], h.items[i]) {
-				h.items[right], h.items[i] = h.items[i], h.items[right]
-				i = right
-			} else {
-				break
-			}
+	i := 1
+	for i*2 <= h.size {
+		var mc int
+		if i*2+1 > h.size || h.before(h.items[i*2], h.items[i*2+1]) {
+			mc = i * 2
+		} else {
+			mc = i*2 + 1
 		}
+		if h.before(h.items[mc], h.items[i]) {
+			h.items[mc], h.items[i] = h.items[i], h.items[mc]
+		}
+		i = mc
 	}
 
 	return v
