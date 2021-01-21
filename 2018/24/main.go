@@ -230,6 +230,10 @@ func (g *group) target(grps []*group, sel map[*group]struct{}) (*group, int) {
 		}
 		return a.init > b.init
 	})
+	// "If it cannot deal any defending groups damage, it does not choose a target."
+	if dam[ret[0]] == 0 {
+		return nil, 0
+	}
 	return ret[0], dam[ret[0]]
 }
 
