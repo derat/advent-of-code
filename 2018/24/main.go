@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/derat/advent-of-code/lib"
@@ -24,7 +25,7 @@ func main() {
 			var attrs string // e.g. "weak to bludgeoning; immune to slashing, cold"
 			lib.Extract(ln, `^(\d+) units each with (\d+) hit points(?: \((.+)\))? `+
 				`with an attack that does (\d+) ([a-z]+) damage at initiative (\d+)$`,
-				&grp.units, &grp.hp, &attrs, &grp.dp, &grp.dt, &grp.init)
+				&grp.full, &grp.hp, &attrs, &grp.dp, &grp.dt, &grp.init)
 			if attrs != "" {
 				for _, p := range strings.Split(attrs, "; ") {
 					var prop, types string
@@ -42,9 +43,47 @@ func main() {
 		}
 	}
 
-	var rounds int
+	// Part 1: Print number of units belonging to winning army.
+	_, units, _ := run(grps, 0)
+	fmt.Println(units)
+
+	// Part 2: Print minimum boost to immune system in order for it to win.
+	// I originally thought about performing a binary search or at least stepping
+	// up by e.g. 10 to find a lower bound, but due to the complexity of the targeting
+	// algorithm, I wasn't convinced that it would be safe to assume that intermediate
+	// boosts can be safely skipped. Incrementing by 1 is safer and still runs pretty
+	// quickly.
+	for boost := 1; true; boost++ {
+		team, units, ok := run(grps, boost)
+		if ok && team == immune {
+			fmt.Println(units)
+			break
+		}
+	}
+}
+
+// run performs combat until only one team is left.
+// It returns the winning team and number of alive units.
+// The final return value is false if a stalemate was reached.
+func run(grps []*group, boost int) (team, int, bool) {
+	// Restore initial number of units to each group.
+	for _, g := range grps {
+		g.reset(lib.If(g.team == immune, boost, 0))
+	}
+
+	seen := make(map[string]struct{}) // keyed by comma-separated group unit counts
+
 	for {
-		rounds++
+		// Detect deadlocks.
+		units := make([]string, len(grps))
+		for i, g := range grps {
+			units[i] = strconv.Itoa(g.units)
+		}
+		key := strings.Join(units, ",")
+		if _, ok := seen[key]; ok {
+			return "", 0, false
+		}
+		seen[key] = struct{}{}
 
 		// Check if a team has been wiped out.
 		var done bool
@@ -125,14 +164,16 @@ func main() {
 		}
 	}
 
-	// Part 1: Print number of units belonging to winning army.
-	var cnt int
+	var winner team
+	var units int
 	for _, g := range grps {
 		if g.alive() {
-			cnt += g.units
+			lib.Assert(winner == "" || winner == g.team)
+			winner = g.team
+			units += g.units
 		}
 	}
-	fmt.Println(cnt)
+	return winner, units, true
 }
 
 type team string
@@ -156,23 +197,31 @@ func (t *team) opp() team {
 type group struct {
 	team  team
 	id    int
-	units int
+	full  int    // initial units
+	units int    // living units
 	hp    int    // per unit
 	init  int    // initiative
 	dt    string // damage type, e.g. "fire"
 	dp    int    // damage points
 
 	weak, immune map[string]struct{}
+
+	boost int // attack damage boost (part 2)
 }
 
 func (g *group) alive() bool {
 	return g.units > 0
 }
 
+func (g *group) reset(boost int) {
+	g.units = g.full
+	g.boost = boost
+}
+
 func (g *group) ep() int {
 	// "Each group also has an effective power: the number of units in that group multiplied by
 	// their attack damage."
-	return g.units * g.dp
+	return g.units * (g.dp + g.boost)
 }
 
 func (g *group) damageAgainst(def *group) int {
