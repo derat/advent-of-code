@@ -1,5 +1,8 @@
 language: go
-
 go:
   - 1.x
   - master
+notifications:
+  email:
+    on_success: never
+    on_failure: always
