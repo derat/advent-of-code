@@ -18,7 +18,7 @@ func main() {
 
 func run(input, vals []int, feedback bool) int {
 	pch := make(chan []int)
-	go perms(vals, pch)
+	go lib.Perms(vals, pch)
 
 	// The problem just calls for running each amplifier in parallel
 	// and manually copying values, but this is Go, so why not use
@@ -69,31 +69,6 @@ func run(input, vals []int, feedback bool) int {
 		}
 	}
 	return max
-}
-
-// perms sends all permutations of vals to ch and closes it.
-// This is the non-recursive version of https://en.wikipedia.org/wiki/Heap%27s_algorithm.
-func perms(vals []int, ch chan<- []int) {
-	send := func(s []int) { ch <- append([]int(nil), s...) }
-	state := make([]int, len(vals))
-	send(vals)
-	var i int
-	for i < len(vals) {
-		if state[i] < i {
-			if i%2 == 0 {
-				vals[0], vals[i] = vals[i], vals[0]
-			} else {
-				vals[state[i]], vals[i] = vals[i], vals[state[i]]
-			}
-			send(vals)
-			state[i]++
-			i = 0
-		} else {
-			state[i] = 0
-			i++
-		}
-	}
-	close(ch)
 }
 
 type vm struct {

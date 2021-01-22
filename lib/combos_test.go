@@ -27,3 +27,23 @@ func TestFindCombos(t *testing.T) {
 		}
 	}
 }
+
+func TestPerms(t *testing.T) {
+	ch := make(chan []byte)
+	go Perms([]byte("abcd"), ch)
+	var got []string
+	for b := range ch {
+		got = append(got, string(b))
+	}
+	sort.Strings(got)
+
+	want := []string{
+		"abcd", "abdc", "acbd", "acdb", "adbc", "adcb",
+		"bacd", "badc", "bcad", "bcda", "bdac", "bdca",
+		"cabd", "cadb", "cbad", "cbda", "cdab", "cdba",
+		"dabc", "dacb", "dbac", "dbca", "dcab", "dcba",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf(`Perms("abcd") = %v; want %v`, got, want)
+	}
+}
