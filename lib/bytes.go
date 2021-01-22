@@ -37,9 +37,23 @@ func NewBytes(r, c int, ch byte) [][]byte {
 
 // CopyBytes returns a deep copy of the supplied 2-dimensional array.
 func CopyBytes(b [][]byte) [][]byte {
-	n := make([][]byte, len(b))
-	for r := range b {
-		n[r] = append([]byte(nil), b[r]...)
+	return CopyBytesRegion(b, 0, 0, len(b)-1, len(b[0])-1)
+}
+
+// CopyBytesRegion returns a copy of the region bounded by (r0, c0) and (r1, c1), inclusive.
+func CopyBytesRegion(b [][]byte, r0, c0, r1, c1 int) [][]byte {
+	r0 = Max(r0, 0)
+	c0 = Max(c0, 0)
+	r1 = Min(r1, len(b)-1)
+	c1 = Min(c1, len(b[0])-1)
+
+	AssertLessEq(r0, r1)
+	AssertLessEq(c0, c1)
+
+	n := make([][]byte, r1-r0+1)
+	for r := range n {
+		n[r] = make([]byte, c1-c0+1)
+		copy(n[r], b[r0+r][c0:])
 	}
 	return n
 }
