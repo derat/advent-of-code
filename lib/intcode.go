@@ -2,20 +2,20 @@ package lib
 
 // Intcode runs Intcode instructions.
 type Intcode struct {
-	Mem     map[int]int
-	In, Out chan int
+	Mem     map[int64]int64
+	In, Out chan int64
 	done    chan bool
 }
 
 // NewIntcode returns a new Intcode VM with a copy of the supplied initial memory.
-func NewIntcode(init []int) *Intcode {
+func NewIntcode(init []int64) *Intcode {
 	vm := &Intcode{
-		Mem: make(map[int]int, len(init)),
-		In:  make(chan int, 1),
-		Out: make(chan int, 1),
+		Mem: make(map[int64]int64, len(init)),
+		In:  make(chan int64, 1),
+		Out: make(chan int64, 1),
 	}
 	for addr, val := range init {
-		vm.Mem[addr] = val
+		vm.Mem[int64(addr)] = val
 	}
 	return vm
 }
@@ -49,18 +49,18 @@ func (vm *Intcode) Run() (halted bool) {
 		close(vm.Out)
 	}()
 
-	var modeDiv = []int{100, 1000, 10000}
+	var modeDiv = []int64{100, 1000, 10000}
 
-	var ip int // instruction start index
-	var op int // opcode (including mode)
-	var sz int // instruction size (including opcode)
+	var ip int64 // instruction start index
+	var op int64 // opcode (including mode)
+	var sz int   // instruction size (including opcode)
 
 	// Gets the (mode-appropriate) 1-indexed argument.
-	get := func(arg int) int {
+	get := func(arg int) int64 {
 		Assert(arg > 0)
 		sz = Max(arg+1, sz)
-		v, ok := vm.Mem[ip+arg]
-		Assertf(ok, "Bad read %v", ip+arg)
+		v, ok := vm.Mem[ip+int64(arg)]
+		Assertf(ok, "Bad read %v", ip+int64(arg))
 
 		mode := (op / modeDiv[arg-1]) % 10
 		switch mode {
@@ -77,11 +77,11 @@ func (vm *Intcode) Run() (halted bool) {
 	}
 
 	// Sets the 1-indexed argument to the supplied value.
-	set := func(arg, val int) {
+	set := func(arg int, val int64) {
 		Assert(arg > 0)
 		sz = Max(arg+1, sz)
-		addr, ok := vm.Mem[ip+arg] // always treated as an address
-		Assertf(ok, "Bad read %v", ip+arg)
+		addr, ok := vm.Mem[ip+int64(arg)] // always treated as an address
+		Assertf(ok, "Bad read %v", ip+int64(arg))
 		vm.Mem[addr] = val
 	}
 
@@ -111,15 +111,15 @@ func (vm *Intcode) Run() (halted bool) {
 				sz = 0 // don't advance ip
 			}
 		case 7: // store 1 in third arg if first is less than second
-			set(3, If(get(1) < get(2), 1, 0))
+			set(3, int64(If(get(1) < get(2), 1, 0)))
 		case 8: // store 1 in third arg if first is equal to second
-			set(3, If(get(1) == get(2), 1, 0))
+			set(3, int64(If(get(1) == get(2), 1, 0)))
 		case 99: // halt the program
 			return
 		default:
 			Panicf("Invalid op %d", op%modeDiv[0])
 		}
 
-		ip += sz
+		ip += int64(sz)
 	}
 }

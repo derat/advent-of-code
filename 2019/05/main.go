@@ -7,14 +7,14 @@ import (
 )
 
 func main() {
-	input := lib.InputInts("2019/5")
+	input := lib.InputInt64s("2019/5")
 
 	// Part 1: Run diagnostic program with input of 1 and print diagnostic code
 	// (the final output after a stream of 0s).
 	vm := lib.NewIntcode(input)
 	vm.In <- 1
 	vm.Start()
-	var last int
+	var last int64
 	for v := range vm.Out {
 		last = v
 	}

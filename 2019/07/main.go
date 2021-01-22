@@ -7,23 +7,23 @@ import (
 )
 
 func main() {
-	input := lib.InputInts("2019/7")
+	input := lib.InputInt64s("2019/7")
 
 	// Part 1: Find maximum output signal.
-	fmt.Println(run(input, []int{0, 1, 2, 3, 4}, false))
+	fmt.Println(run(input, []int64{0, 1, 2, 3, 4}, false))
 
 	// Part 2: Feed e's output into a's input.
-	fmt.Println(run(input, []int{5, 6, 7, 8, 9}, true))
+	fmt.Println(run(input, []int64{5, 6, 7, 8, 9}, true))
 }
 
-func run(input, vals []int, feedback bool) int {
-	pch := make(chan []int)
+func run(input, vals []int64, feedback bool) int64 {
+	pch := make(chan []int64)
 	go lib.Perms(vals, pch)
 
 	// The problem just calls for running each amplifier in parallel
 	// and manually copying values, but this is Go, so why not use
 	// goroutines and channels?
-	var max int
+	var max int64
 	for phases := range pch {
 		// Create the amplifiers and wire them up.
 		amps := make([]*lib.Intcode, len(phases))

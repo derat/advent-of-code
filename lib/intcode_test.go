@@ -52,17 +52,17 @@ func TestIntcode_Basic(t *testing.T) {
 			`1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,` +
 			`999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99`, "", "9", "1001"},
 	} {
-		prog := ExtractInts(tc.prog)
+		prog := ExtractInt64s(tc.prog)
 		vm := NewIntcode(prog)
 		vm.Start()
 		if tc.in != "" {
-			for _, v := range ExtractInts(tc.in) {
+			for _, v := range ExtractInt64s(tc.in) {
 				vm.In <- v
 			}
 		}
 		var out []string
 		for v := range vm.Out {
-			out = append(out, strconv.Itoa(v))
+			out = append(out, strconv.FormatInt(v, 10))
 		}
 		if !vm.Wait() {
 			t.Errorf("%q with input %q failed", tc.prog, tc.in)
@@ -72,7 +72,7 @@ func TestIntcode_Basic(t *testing.T) {
 		if tc.mem != "" {
 			mem := make([]string, len(prog))
 			for i := range mem {
-				mem[i] = strconv.Itoa(vm.Mem[i])
+				mem[i] = strconv.FormatInt(vm.Mem[int64(i)], 10)
 			}
 			if got := strings.Join(mem, ","); got != tc.mem {
 				t.Errorf("%q with input %q produced %q; want %q", tc.prog, tc.in, got, tc.mem)
@@ -88,7 +88,7 @@ func TestIntcode_Parallel(t *testing.T) {
 	for _, tc := range []struct {
 		prog, ins string
 		feedback  bool
-		want      int
+		want      int64
 	}{
 		// Day 7 examples:
 		{"3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0", "4,3,2,1,0", false, 43210},
@@ -103,8 +103,8 @@ func TestIntcode_Parallel(t *testing.T) {
 			`53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10`, "9,7,8,5,6", true, 18216},
 	} {
 		// Create the VMs and wire them together.
-		prog := ExtractInts(tc.prog)
-		ins := ExtractInts(tc.ins)
+		prog := ExtractInt64s(tc.prog)
+		ins := ExtractInt64s(tc.ins)
 		vms := make([]*Intcode, len(ins))
 		for i := range ins {
 			vms[i] = NewIntcode(prog)
