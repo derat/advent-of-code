@@ -23,6 +23,12 @@ func main() {
 	}
 	lib.Assert(<-ch)
 	fmt.Println(last)
+
+	// Part 2: Provide 5 as input and print diagnostic code (only output).
+	vm = newVM(input)
+	vm.in <- 5
+	lib.Assert(vm.run())
+	fmt.Println(<-vm.out)
 }
 
 type vm struct {
@@ -72,13 +78,17 @@ func (vm *vm) run() (halted bool) {
 		close(vm.out)
 	}()
 
-	var ip int
+	var ip int // index of current instruction
 	var sz int // size of current instruction (including op)
 
 	// These functions read the specified number of parameters following ip.
 	params1 := func() int {
 		sz = 2
 		return vm.get(ip+1, pos)
+	}
+	params2 := func() (int, int) {
+		sz = 3
+		return vm.get(ip+1, pos), vm.get(ip+2, pos)
 	}
 	params3 := func() (int, int, int) {
 		sz = 4
@@ -89,7 +99,7 @@ func (vm *vm) run() (halted bool) {
 		sz = 1 // number of consumed ints (including op)
 		in := vm.get(ip, pos)
 		op := in % 100
-		modes := []int{
+		m := []int{ // mode for first, second, third arg
 			(in / 100) % 10,
 			(in / 1000) % 10,
 			(in / 10000) % 10,
@@ -98,14 +108,34 @@ func (vm *vm) run() (halted bool) {
 		switch op {
 		case add:
 			a0, a1, a2 := params3()
-			vm.set(a2, vm.get(a0, modes[0])+vm.get(a1, modes[1]))
+			vm.set(a2, vm.get(a0, m[0])+vm.get(a1, m[1]))
 		case mul:
 			a0, a1, a2 := params3()
-			vm.set(a2, vm.get(a0, modes[0])*vm.get(a1, modes[1]))
+			vm.set(a2, vm.get(a0, m[0])*vm.get(a1, m[1]))
 		case inp:
 			vm.set(params1(), <-vm.in)
 		case out:
-			vm.out <- vm.get(params1(), modes[0])
+			vm.out <- vm.get(params1(), m[0])
+		case jit:
+			a0, a1 := params2()
+			if v := vm.get(a0, m[0]); v != 0 {
+				ip = vm.get(a1, m[1])
+				sz = 0
+			}
+		case jif:
+			a0, a1 := params2()
+			if v := vm.get(a0, m[0]); v == 0 {
+				ip = vm.get(a1, m[1])
+				sz = 0
+			}
+		case slt:
+			a0, a1, a2 := params3()
+			val := lib.If(vm.get(a0, m[0]) < vm.get(a1, m[1]), 1, 0)
+			vm.set(a2, val)
+		case seq:
+			a0, a1, a2 := params3()
+			val := lib.If(vm.get(a0, m[0]) == vm.get(a1, m[1]), 1, 0)
+			vm.set(a2, val)
 		case hlt:
 			return
 		default:
@@ -116,14 +146,18 @@ func (vm *vm) run() (halted bool) {
 }
 
 const (
-	add = 1
-	mul = 2
-	inp = 3
-	out = 4
-	hlt = 99
+	add = 1  // add two args and save to third arg
+	mul = 2  // multiply two args and save to third
+	inp = 3  // read input and save to arg
+	out = 4  // write arg to output
+	jit = 5  // if first arg is non-zero, set ip to second arg
+	jif = 6  // if first arg is zero, set ip to second arg
+	slt = 7  // if first arg is less than second, store 1 in third; otherwise 0
+	seq = 8  // if first arg is equal to second, store 1 in third; otherwise 0
+	hlt = 99 // stop the program
 )
 
 const (
-	pos = 0
-	imm = 1
+	pos = 0 // position mode
+	imm = 1 // immediate mode
 )
