@@ -10,14 +10,19 @@ func main() {
 	input := lib.InputInts("2019/7")
 
 	// Part 1: Find maximum output signal.
+	fmt.Println(run(input, []int{0, 1, 2, 3, 4}, false))
+
+	// Part 2: Feed e's output into a's input.
+	fmt.Println(run(input, []int{5, 6, 7, 8, 9}, true))
+}
+
+func run(input, vals []int, feedback bool) int {
+	pch := make(chan []int)
+	go perms(vals, pch)
+
 	// The problem just calls for running each amplifier in parallel
 	// and manually copying values, but this is Go, so why not use
 	// goroutines and channels?
-
-	// Generate all permutations of the phases.
-	pch := make(chan []int)
-	go perms([]int{0, 1, 2, 3, 4}, pch)
-
 	var max int
 	for phases := range pch {
 		a := newVM(input)
@@ -32,6 +37,11 @@ func main() {
 		d.in = c.out
 		e.in = d.out
 
+		// Part 2.
+		if feedback {
+			a.in = e.out
+		}
+
 		// Each amplifier's first input is its phase signal.
 		a.in <- phases[0]
 		b.in <- phases[1]
@@ -44,15 +54,21 @@ func main() {
 		go b.run()
 		go c.run()
 		go d.run()
-		go e.run()
+
+		// Use a channel to signal e's completion for feedback mode.
+		done := make(chan bool)
+		go func() {
+			done <- e.run()
+		}()
 
 		// Send the input signal to a and read the output from e.
 		a.in <- 0
+		lib.Assert(<-done)
 		if out := <-e.out; out > max {
 			max = out
 		}
 	}
-	fmt.Println(max)
+	return max
 }
 
 // perms sends all permutations of vals to ch and closes it.
