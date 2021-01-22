@@ -25,46 +25,32 @@ func run(input, vals []int, feedback bool) int {
 	// goroutines and channels?
 	var max int
 	for phases := range pch {
-		a := newVM(input)
-		b := newVM(input)
-		c := newVM(input)
-		d := newVM(input)
-		e := newVM(input)
-
-		// Wire up the amplifiers.
-		b.in = a.out
-		c.in = b.out
-		d.in = c.out
-		e.in = d.out
-
-		// Part 2.
-		if feedback {
-			a.in = e.out
+		amps := make([]*vm, len(phases))
+		for i := range amps {
+			amps[i] = newVM(input)
 		}
 
-		// Each amplifier's first input is its phase signal.
-		a.in <- phases[0]
-		b.in <- phases[1]
-		c.in <- phases[2]
-		d.in <- phases[3]
-		e.in <- phases[4]
+		// Wire up the amplifiers.
+		for i, a := range amps {
+			if i == 0 {
+				if feedback {
+					a.in = amps[len(amps)-1].out
+				}
+			} else {
+				a.in = amps[i-1].out
+			}
+		}
 
-		// Start the amplifiers.
-		go a.run()
-		go b.run()
-		go c.run()
-		go d.run()
+		// Start the amplifiers and feed them their phase signals.
+		for i, a := range amps {
+			a.start()
+			a.in <- phases[i]
+		}
 
-		// Use a channel to signal e's completion for feedback mode.
-		done := make(chan bool)
-		go func() {
-			done <- e.run()
-		}()
-
-		// Send the input signal to a and read the output from e.
-		a.in <- 0
-		lib.Assert(<-done)
-		if out := <-e.out; out > max {
+		// Send the input signal to the first and read the output from the last.
+		amps[0].in <- 0
+		lib.Assert(amps[0].wait())
+		if out := <-amps[len(amps)-1].out; out > max {
 			max = out
 		}
 	}
@@ -74,6 +60,7 @@ func run(input, vals []int, feedback bool) int {
 type vm struct {
 	mem     map[int]int
 	in, out chan int
+	done    chan bool
 }
 
 func newVM(init []int) *vm {
@@ -107,9 +94,27 @@ func (vm *vm) set(addr, val int) {
 	vm.mem[addr] = val
 }
 
-// run runs the VM to completion. It returns true if hlt was executed
-// and false if the VM crashed due to an invalid opcode or bad memory
-// access.
+// start starts the VM in a goroutine.
+// wait can be used to wait for the VM to halt.
+func (vm *vm) start() {
+	lib.Assertf(vm.done == nil, "Already running")
+	vm.done = make(chan bool, 1)
+	go func() {
+		vm.done <- vm.run()
+		close(vm.done)
+	}()
+}
+
+// wait waits for the previously-started VM to halt.
+// Its return value is the same as that of run.
+func (vm *vm) wait() bool {
+	lib.Assertf(vm.done != nil, "Not started")
+	return <-vm.done
+}
+
+// run synchronously runs the VM to completion.
+// It returns true if hlt was executed and false if the VM crashed due
+// to an invalid opcode or bad memory access.
 func (vm *vm) run() (halted bool) {
 	defer func() {
 		if r := recover(); r == nil {
