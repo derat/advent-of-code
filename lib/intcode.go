@@ -52,6 +52,7 @@ func (vm *Intcode) Run() (halted bool) {
 	var modeDiv = []int64{100, 1000, 10000}
 
 	var ip int64 // instruction start index
+	var rb int64 // relative base
 	var op int64 // opcode (including mode)
 	var sz int   // instruction size (including opcode)
 
@@ -59,17 +60,21 @@ func (vm *Intcode) Run() (halted bool) {
 	get := func(arg int) int64 {
 		Assert(arg > 0)
 		sz = Max(arg+1, sz)
-		v, ok := vm.Mem[ip+int64(arg)]
-		Assertf(ok, "Bad read %v", ip+int64(arg))
+		addr := ip + int64(arg)
+		Assertf(addr >= 0, "Bad arg addr %v (ip %v)", addr, ip)
+		v := vm.Mem[addr]
 
 		mode := (op / modeDiv[arg-1]) % 10
 		switch mode {
 		case 0: // position mode: address
-			vp, ok := vm.Mem[v]
-			Assertf(ok, "Bad read %v", v)
-			return vp
+			Assertf(v >= 0, "Bad pos read addr %v", v)
+			return vm.Mem[v]
 		case 1: // immediate mode: literal value
 			return v
+		case 2: // relative mode: offset from relative base
+			addr := rb + v
+			Assertf(addr >= 0, "Bad rel read addr %v (base %v, offset %v)", addr, rb, v)
+			return vm.Mem[addr]
 		default:
 			Panicf("Invalid mode %d", mode)
 		}
@@ -80,15 +85,26 @@ func (vm *Intcode) Run() (halted bool) {
 	set := func(arg int, val int64) {
 		Assert(arg > 0)
 		sz = Max(arg+1, sz)
-		addr, ok := vm.Mem[ip+int64(arg)] // always treated as an address
-		Assertf(ok, "Bad read %v", ip+int64(arg))
-		vm.Mem[addr] = val
+		aaddr := ip + int64(arg)
+		Assertf(aaddr >= 0, "Bad arg addr %v (ip %v)", aaddr, ip)
+		saddr := vm.Mem[aaddr]
+
+		mode := (op / modeDiv[arg-1]) % 10
+		switch mode {
+		case 0: // position mode: address
+		case 2: // relative mode: offset from relative base
+			saddr += rb
+		default:
+			Panicf("Invalid mode %d", mode)
+		}
+
+		Assertf(saddr >= 0, "Bad set addr %v (ip %v)", saddr, ip)
+		vm.Mem[saddr] = val
 	}
 
 	for {
-		var ok bool
-		op, ok = vm.Mem[ip]
-		Assertf(ok, "Bad ip %v", ip)
+		Assertf(ip >= 0, "Bad ip %v", ip)
+		op = vm.Mem[ip]
 		sz = 1
 
 		switch op % modeDiv[0] {
@@ -114,6 +130,8 @@ func (vm *Intcode) Run() (halted bool) {
 			set(3, int64(If(get(1) < get(2), 1, 0)))
 		case 8: // store 1 in third arg if first is equal to second
 			set(3, int64(If(get(1) == get(2), 1, 0)))
+		case 9: // adjust relative base by first arg
+			rb += get(1)
 		case 99: // halt the program
 			return
 		default:
