@@ -204,7 +204,7 @@ func main() {
 	}
 
 	for i := range inc {
-		lib.Assertf(bots[i].check(bestPoint), "%v not in range of bot %d (%v)", bestPoint, i)
+		lib.Assertf(bots[i].check(bestPoint), "%v not in range of bot %d (%v)", bestPoint, i, bots[i])
 	}
 	fmt.Println(bestDist)
 }

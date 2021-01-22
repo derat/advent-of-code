@@ -39,12 +39,11 @@ func main() {
 
 	var bestCnt int8 = math.MaxInt8
 	var bestQE int64 = math.MaxInt64
-	var bestUsed uint64
 
 	var packFirst func(int, int, int, int8, int64, uint64)
 	var packOther func(int, int, int, uint64) bool
 
-	// packFirst updates bestCnt, bestQE, and bestUsed with the combination of packages summing
+	// packFirst updates bestCnt and bestQE with the combination of packages summing
 	// to remain with the lowest total count and (for tie-breaking) lowest quantum entanglement.
 	//
 	// idx is the current index into sums/cnts/qes.
@@ -61,7 +60,6 @@ func main() {
 				if packOther(0, each, repeat, used) {
 					bestCnt = cnt
 					bestQE = qe
-					bestUsed = used
 				}
 			}
 			return
@@ -110,7 +108,6 @@ func main() {
 	each = total / 4
 	bestCnt = math.MaxInt8
 	bestQE = math.MaxInt64
-	bestUsed = 0
 	packFirst(0, each, 1, 0, 1, 0)
 	fmt.Println(bestQE)
 }
