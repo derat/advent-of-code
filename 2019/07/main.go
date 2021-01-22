@@ -57,12 +57,14 @@ func run(input, vals []int, feedback bool) int {
 	return max
 }
 
+// vm runs Intcode instructions.
 type vm struct {
 	mem     map[int]int
 	in, out chan int
 	done    chan bool
 }
 
+// newVM returns a new vm with a copy of the supplied initial memory.
 func newVM(init []int) *vm {
 	vm := &vm{
 		mem: make(map[int]int, len(init)),
@@ -73,25 +75,6 @@ func newVM(init []int) *vm {
 		vm.mem[addr] = val
 	}
 	return vm
-}
-
-func (vm *vm) get(addr, mode int) int {
-	switch mode {
-	case imm:
-		return addr
-	case pos:
-		val, ok := vm.mem[addr]
-		if !ok {
-			panic("Invalid read")
-		}
-		return val
-	default:
-		panic("Invalid mode")
-	}
-}
-
-func (vm *vm) set(addr, val int) {
-	vm.mem[addr] = val
 }
 
 // start starts the VM in a goroutine.
@@ -123,86 +106,77 @@ func (vm *vm) run() (halted bool) {
 		close(vm.out)
 	}()
 
-	var ip int // index of current instruction
-	var sz int // size of current instruction (including op)
+	var modeDiv = []int{100, 1000, 10000}
 
-	// These functions read the specified number of parameters following ip.
-	params1 := func() int {
-		sz = 2
-		return vm.get(ip+1, pos)
+	var ip int // instruction start index
+	var op int // opcode (including mode)
+	var sz int // instruction size (including opcode)
+
+	// Gets the (mode-appropriate) 1-indexed argument.
+	get := func(arg int) int {
+		lib.Assert(arg > 0)
+		sz = lib.Max(arg+1, sz)
+		v, ok := vm.mem[ip+arg]
+		lib.Assertf(ok, "Bad read %v", ip+arg)
+
+		mode := (op / modeDiv[arg-1]) % 10
+		switch mode {
+		case 0: // position mode: address
+			vp, ok := vm.mem[v]
+			lib.Assertf(ok, "Bad read %v", v)
+			return vp
+		case 1: // immediate mode: literal value
+			return v
+		default:
+			lib.Panicf("Invalid mode %d", mode)
+		}
+		return 0 // unreached
 	}
-	params2 := func() (int, int) {
-		sz = 3
-		return vm.get(ip+1, pos), vm.get(ip+2, pos)
-	}
-	params3 := func() (int, int, int) {
-		sz = 4
-		return vm.get(ip+1, pos), vm.get(ip+2, pos), vm.get(ip+3, pos)
+
+	// Sets the 1-indexed argument to the supplied value.
+	set := func(arg, val int) {
+		lib.Assert(arg > 0)
+		sz = lib.Max(arg+1, sz)
+		addr, ok := vm.mem[ip+arg] // always treated as an address
+		lib.Assertf(ok, "Bad read %v", ip+arg)
+		vm.mem[addr] = val
 	}
 
 	for {
-		sz = 1 // number of consumed ints (including op)
-		in := vm.get(ip, pos)
-		op := in % 100
-		m := []int{ // mode for first, second, third arg
-			(in / 100) % 10,
-			(in / 1000) % 10,
-			(in / 10000) % 10,
-		}
+		var ok bool
+		op, ok = vm.mem[ip]
+		lib.Assertf(ok, "Bad ip %v", ip)
+		sz = 1
 
-		switch op {
-		case add:
-			a0, a1, a2 := params3()
-			vm.set(a2, vm.get(a0, m[0])+vm.get(a1, m[1]))
-		case mul:
-			a0, a1, a2 := params3()
-			vm.set(a2, vm.get(a0, m[0])*vm.get(a1, m[1]))
-		case inp:
-			vm.set(params1(), <-vm.in)
-		case out:
-			vm.out <- vm.get(params1(), m[0])
-		case jit:
-			a0, a1 := params2()
-			if v := vm.get(a0, m[0]); v != 0 {
-				ip = vm.get(a1, m[1])
-				sz = 0
+		switch op % modeDiv[0] {
+		case 1: // add first two args and save to third arg
+			set(3, get(1)+get(2))
+		case 2: // multiply first two args and save to third arg
+			set(3, get(1)*get(2))
+		case 3: // read input and save to first arg
+			set(1, <-vm.in)
+		case 4: // write first arg to output
+			vm.out <- get(1)
+		case 5: // jump to second arg if first arg is nonzero
+			if addr := get(2); get(1) != 0 {
+				ip = addr
+				sz = 0 // don't advance ip
 			}
-		case jif:
-			a0, a1 := params2()
-			if v := vm.get(a0, m[0]); v == 0 {
-				ip = vm.get(a1, m[1])
-				sz = 0
+		case 6: // jump to second arg if first arg is zero
+			if addr := get(2); get(1) == 0 {
+				ip = addr
+				sz = 0 // don't advance ip
 			}
-		case slt:
-			a0, a1, a2 := params3()
-			val := lib.If(vm.get(a0, m[0]) < vm.get(a1, m[1]), 1, 0)
-			vm.set(a2, val)
-		case seq:
-			a0, a1, a2 := params3()
-			val := lib.If(vm.get(a0, m[0]) == vm.get(a1, m[1]), 1, 0)
-			vm.set(a2, val)
-		case hlt:
+		case 7: // store 1 in third arg if first is less than second
+			set(3, lib.If(get(1) < get(2), 1, 0))
+		case 8: // store 1 in third arg if first is equal to second
+			set(3, lib.If(get(1) == get(2), 1, 0))
+		case 99: // halt the program
 			return
 		default:
-			panic("Invalid op")
+			lib.Panicf("Invalid op %d", op%modeDiv[0])
 		}
+
 		ip += sz
 	}
 }
-
-const (
-	add = 1  // add two args and save to third arg
-	mul = 2  // multiply two args and save to third
-	inp = 3  // read input and save to arg
-	out = 4  // write arg to output
-	jit = 5  // if first arg is non-zero, set ip to second arg
-	jif = 6  // if first arg is zero, set ip to second arg
-	slt = 7  // if first arg is less than second, store 1 in third; otherwise 0
-	seq = 8  // if first arg is equal to second, store 1 in third; otherwise 0
-	hlt = 99 // stop the program
-)
-
-const (
-	pos = 0 // position mode
-	imm = 1 // immediate mode
-)
