@@ -15,16 +15,16 @@ func main() {
 		for c, ch := range row {
 			switch ch {
 			case '^':
-				carts = append(carts, &cart{r: r, c: c, dir: up})
+				carts = append(carts, &cart{r: r, c: c, dir: lib.Up})
 				row[c] = '|'
 			case 'v':
-				carts = append(carts, &cart{r: r, c: c, dir: down}) // for want of a ternary operator
+				carts = append(carts, &cart{r: r, c: c, dir: lib.Down}) // for want of a ternary operator
 				row[c] = '|'
 			case '<':
-				carts = append(carts, &cart{r: r, c: c, dir: left})
+				carts = append(carts, &cart{r: r, c: c, dir: lib.Left})
 				row[c] = '-'
 			case '>':
-				carts = append(carts, &cart{r: r, c: c, dir: right})
+				carts = append(carts, &cart{r: r, c: c, dir: lib.Right})
 				row[c] = '-'
 			}
 		}
@@ -60,36 +60,36 @@ func main() {
 			// Turn if needed.
 			switch tracks[ca.r][ca.c] {
 			case '/':
-				if ca.dir == up || ca.dir == down {
-					ca.dir = ca.dir.right()
+				if ca.dir == lib.Up || ca.dir == lib.Down {
+					ca.dir = ca.dir.Right()
 				} else {
-					ca.dir = ca.dir.left()
+					ca.dir = ca.dir.Left()
 				}
 			case '\\':
-				if ca.dir == up || ca.dir == down {
-					ca.dir = ca.dir.left()
+				if ca.dir == lib.Up || ca.dir == lib.Down {
+					ca.dir = ca.dir.Left()
 				} else {
-					ca.dir = ca.dir.right()
+					ca.dir = ca.dir.Right()
 				}
 			case '+':
 				switch ca.ints % 3 {
 				case 0:
-					ca.dir = ca.dir.left()
+					ca.dir = ca.dir.Left()
 				case 1: // go straight
 				case 2:
-					ca.dir = ca.dir.right()
+					ca.dir = ca.dir.Right()
 				}
 				ca.ints++
 			case '|':
-				lib.Assertf(ca.dir == up || ca.dir == down, "Cart not vert at %d,%d", ca.r, ca.c)
+				lib.Assertf(ca.dir == lib.Up || ca.dir == lib.Down, "Cart not vert at %d,%d", ca.r, ca.c)
 			case '-':
-				lib.Assertf(ca.dir == left || ca.dir == right, "Cart not horiz at %d,%d", ca.r, ca.c)
+				lib.Assertf(ca.dir == lib.Left || ca.dir == lib.Right, "Cart not horiz at %d,%d", ca.r, ca.c)
 			}
 
 			// Move the cart.
 			delete(locs, lib.PackInts(ca.r, ca.c))
-			ca.r += ca.dir.dr()
-			ca.c += ca.dir.dc()
+			ca.r += ca.dir.DR()
+			ca.c += ca.dir.DC()
 
 			// Check for collision.
 			pos := lib.PackInts(ca.r, ca.c)
@@ -124,55 +124,7 @@ func main() {
 
 type cart struct {
 	r, c int
-	dir  dir
+	dir  lib.Dir
 	ints int  // intersection count
 	rem  bool // removed after collision
-}
-
-// Copied from 2017/22.
-type dir int
-
-const (
-	up dir = iota
-	left
-	down
-	right
-)
-
-func (d dir) left() dir {
-	return dir((int(d) + 1) % 4)
-}
-
-func (d dir) right() dir {
-	return dir((int(d) + 3) % 4)
-}
-
-func (d dir) reverse() dir {
-	return dir((int(d) + 2) % 4)
-}
-
-func (d dir) dr() int {
-	switch d {
-	case up:
-		return -1
-	case down:
-		return 1
-	case left, right:
-		return 0
-	default:
-		panic("Invalid dir")
-	}
-}
-
-func (d dir) dc() int {
-	switch d {
-	case up, down:
-		return 0
-	case left:
-		return -1
-	case right:
-		return 1
-	default:
-		panic("Invalid dir")
-	}
 }

@@ -27,9 +27,9 @@ func main() {
 	rooms := lib.BFS(lib.PackInts(0, 0), func(s uint64) []uint64 {
 		x, y := lib.UnpackIntSigned2(s)
 		var next []uint64
-		for _, d := range []dir{north, south, east, west} {
+		for _, d := range []lib.Dir{lib.North, lib.South, lib.East, lib.West} {
 			if lib.MapHasKey(doors, lib.PackInts(x, y, int(d))) {
-				next = append(next, lib.PackInts(x+d.dx(), y+d.dy()))
+				next = append(next, lib.PackInts(x+d.DC(), y+d.DR()))
 			}
 		}
 		return next
@@ -186,59 +186,24 @@ func visit(x, y int, seqs []*seq, doors map[uint64]struct{}) {
 		visit(x, y, next, doors)
 	case first.str != nil:
 		for _, ch := range *first.str {
-			var d dir
+			var d lib.Dir
 			switch ch {
 			case 'N':
-				d = north
+				d = lib.North
 			case 'S':
-				d = south
+				d = lib.South
 			case 'W':
-				d = west
+				d = lib.West
 			case 'E':
-				d = east
+				d = lib.East
 			}
 			// Add the door in both directions.
 			doors[lib.PackInts(x, y, int(d))] = struct{}{}
-			x, y = x+d.dx(), y+d.dy()
-			doors[lib.PackInts(x, y, int(d.opp()))] = struct{}{}
+			x, y = x+d.DC(), y+d.DR()
+			doors[lib.PackInts(x, y, int(d.Reverse()))] = struct{}{}
 		}
 		visit(x, y, rest, doors)
 	default:
 		panic("Nothing to do")
 	}
-}
-
-type dir int
-
-const (
-	north dir = iota
-	east
-	south
-	west
-)
-
-func (d dir) dx() int {
-	switch d {
-	case west:
-		return -1
-	case east:
-		return 1
-	default:
-		return 0
-	}
-}
-
-func (d dir) dy() int {
-	switch d {
-	case north:
-		return -1
-	case south:
-		return 1
-	default:
-		return 0
-	}
-}
-
-func (d dir) opp() dir {
-	return (d + 2) % 4
 }
