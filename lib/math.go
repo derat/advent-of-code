@@ -87,3 +87,35 @@ func powInt(y, x, n int) int {
 		return powInt(x*y, x*x, (n-1)/2)
 	}
 }
+
+// GCD returns the greatest common denominator of a and b using the Euclidean algorithm.
+// See https://www.khanacademy.org/computing/computer-science/cryptography/modarithmetic/a/the-euclidean-algorithm.
+func GCD(a, b int) int {
+	// From Khan Academy:
+	//  If A = 0 then GCD(A,B)=B, since the GCD(0,B)=B, and we can stop.
+	//  If B = 0 then GCD(A,B)=A, since the GCD(A,0)=A, and we can stop.
+	//  Write A in quotient remainder form (A = B*Q + R)
+	//  Find GCD(B,R) using the Euclidean Algorithm since GCD(A,B) = GCD(B,R)
+	for b != 0 {
+		if a == 0 {
+			return b
+		}
+		b0 := b
+		b = a % b
+		a = b0
+	}
+	return a
+}
+
+// LCM reaturns the least common multiple of the supplied integers.
+func LCM(vals ...int) int {
+	Assert(len(vals) > 0)
+	if len(vals) == 1 {
+		return vals[0]
+	}
+	res := vals[0] * vals[1] / GCD(vals[0], vals[1])
+	for i := 2; i < len(vals); i++ {
+		res = LCM(res, vals[i])
+	}
+	return res
+}

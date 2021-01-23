@@ -15,3 +15,39 @@ func TestPow(t *testing.T) {
 		}
 	}
 }
+
+func TestGCD(t *testing.T) {
+	for _, tc := range []struct{ a, b, want int }{
+		{1, 1, 1},
+		{4, 4, 4},
+		{2, 4, 2},
+		{4, 6, 2},
+		{4, 16, 4},
+		{3, 5, 1},
+	} {
+		if got := GCD(tc.a, tc.b); got != tc.want {
+			t.Errorf("GCD(%v, %v) = %v; want %v", tc.a, tc.b, got, tc.want)
+		}
+	}
+}
+
+func TestLCM(t *testing.T) {
+	for _, tc := range []struct {
+		in   []int
+		want int
+	}{
+		{[]int{1, 1}, 1},
+		{[]int{1, 2}, 2},
+		{[]int{2, 1}, 2},
+		{[]int{2, 4}, 4},
+		{[]int{2, 6}, 6},
+		{[]int{3, 5}, 15},
+		{[]int{6, 9}, 18},
+		{[]int{3, 2, 6}, 6},
+		{[]int{3, 2, 5, 6, 10}, 30},
+	} {
+		if got := LCM(tc.in...); got != tc.want {
+			t.Errorf("LCM(%v) = %v; want %v", tc.in, got, tc.want)
+		}
+	}
+}
