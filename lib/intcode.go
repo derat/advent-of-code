@@ -11,8 +11,8 @@ type Intcode struct {
 func NewIntcode(init []int64) *Intcode {
 	vm := &Intcode{
 		Mem: make(map[int64]int64, len(init)),
-		In:  make(chan int64, 1),
-		Out: make(chan int64, 1),
+		In:  make(chan int64),
+		Out: make(chan int64),
 	}
 	for addr, val := range init {
 		vm.Mem[int64(addr)] = val

@@ -44,11 +44,6 @@ func main() {
 
 func run(prog []int64, panels map[uint64]int64) {
 	vm := lib.NewIntcode(prog)
-
-	// Use unbuffered channels.
-	vm.In = make(chan int64)
-	vm.Out = make(chan int64)
-
 	vm.Start()
 
 	var r, c int

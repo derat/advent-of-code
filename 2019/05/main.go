@@ -12,7 +12,7 @@ func main() {
 	// Part 1: Run diagnostic program with input of 1 and print diagnostic code
 	// (the final output after a stream of 0s).
 	vm := lib.NewIntcode(input)
-	vm.In <- 1
+	go func() { vm.In <- 1 }()
 	vm.Start()
 	var last int64
 	for v := range vm.Out {
@@ -23,7 +23,12 @@ func main() {
 
 	// Part 2: Provide 5 as input and print diagnostic code (only output).
 	vm = lib.NewIntcode(input)
-	vm.In <- 5
+	done := make(chan struct{})
+	go func() {
+		vm.In <- 5
+		fmt.Println(<-vm.Out)
+		close(done)
+	}()
 	lib.Assert(vm.Run())
-	fmt.Println(<-vm.Out)
+	<-done
 }
