@@ -7,6 +7,7 @@ type Intcode struct {
 	InFunc  func() int64 // used instead of In if non-nil
 	OutFunc func(int64)  // used instead of Out if non-nil
 	done    chan bool
+	halt    bool
 }
 
 // NewIntcode returns a new Intcode VM with a copy of the supplied initial memory.
@@ -38,6 +39,11 @@ func (vm *Intcode) Start() {
 func (vm *Intcode) Wait() bool {
 	Assertf(vm.done != nil, "Not started")
 	return <-vm.done
+}
+
+// Halt makes the VM exit with success before running the next instruction.
+func (vm *Intcode) Halt() {
+	vm.halt = true
 }
 
 // Run synchronously runs the VM to completion.
@@ -105,6 +111,11 @@ func (vm *Intcode) Run() (halted bool) {
 	}
 
 	for {
+		// Handle requests from outside to stop running.
+		if vm.halt {
+			return
+		}
+
 		Assertf(ip >= 0, "Bad ip %v", ip)
 		op = vm.Mem[ip]
 		sz = 1
