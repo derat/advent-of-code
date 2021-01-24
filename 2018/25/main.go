@@ -38,13 +38,13 @@ func main() {
 	var comps int
 	for len(rem) > 0 {
 		start := lib.MapSomeKey(rem).(int)
-		inc := lib.BFS(uint64(start), func(s uint64) []uint64 {
+		inc, _ := lib.BFS(uint64(start), func(s uint64) []uint64 {
 			var next []uint64
 			for dst := range edges[int(s)] {
 				next = append(next, uint64(dst))
 			}
 			return next
-		}, nil, -1)
+		}, nil)
 
 		delete(rem, start)
 		for i := range inc {

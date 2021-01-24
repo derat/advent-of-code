@@ -24,7 +24,7 @@ func main() {
 	visit(0, 0, root.seqs, doors)
 
 	// Perform a BFS to find the shortest path to each room.
-	rooms := lib.BFS(lib.PackInts(0, 0), func(s uint64) []uint64 {
+	rooms, _ := lib.BFS(lib.PackInts(0, 0), func(s uint64) []uint64 {
 		x, y := lib.UnpackIntSigned2(s)
 		var next []uint64
 		for _, d := range []lib.Dir{lib.North, lib.South, lib.East, lib.West} {
@@ -33,7 +33,7 @@ func main() {
 			}
 		}
 		return next
-	}, nil, -1)
+	}, nil)
 
 	// Part 1: Largest number of doors required to pass through to reach a room,
 	// i.e. the longest of all rooms' shortest paths.

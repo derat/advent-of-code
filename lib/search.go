@@ -61,41 +61,68 @@ type asNode struct {
 	pri   int // lower is better
 }
 
-// BFS returns a map of the minimum number of steps to go from start to reachable states.
-// If dests is non-empty, returns when all have been reached. Otherwise, goes to all reachable states.
-// If max is non-negative, returns as soon as the cost exceeds it.
-func BFS(start uint64, next func(s uint64) []uint64, dests []uint64, max int) map[uint64]int {
-	queue := []uint64{start}
-	seen := map[uint64]struct{}{start: struct{}{}}
-	costs := map[uint64]int{start: 0}
+// BFS performs a breadth-first search to discover paths to states reachable from start.
+// If opts is non-nil, it is used to configure the search.
+// The returned steps map contains the minimum number of steps to each state.
+// The returned from map contains the state preceding each destination state.
+func BFS(start uint64, next func(s uint64) []uint64, opts *BFSOptions) (steps map[uint64]int, from map[uint64]uint64) {
+	queue := []uint64{start} // next states to check
+	steps = map[uint64]int{start: 0}
+	from = map[uint64]uint64{start: start}
 
-	remain := make(map[uint64]struct{}, len(dests))
-	for _, d := range dests {
-		remain[d] = struct{}{}
+	var remain map[uint64]struct{}
+	if opts != nil && len(opts.AllDests) > 0 {
+		remain = make(map[uint64]struct{})
+		for _, d := range opts.AllDests {
+			remain[d] = struct{}{}
+		}
 	}
 
 Loop:
 	for len(queue) > 0 {
 		cur := queue[0]
 		queue = queue[1:]
-		cost := costs[cur] + 1
-		if max >= 0 && cost > max {
-			break
-		}
-		for _, st := range next(cur) {
-			if _, ok := seen[st]; !ok {
-				queue = append(queue, st)
-				seen[st] = struct{}{}
-				costs[st] = cost
+		cost := steps[cur] + 1
 
-				// Early exit if we've reached all specified destinations.
+		// Early exit if we've exceeded the maximum number of steps.
+		if opts != nil && opts.MaxSteps > 0 && cost > opts.MaxSteps {
+			break Loop
+		}
+
+		for _, st := range next(cur) {
+			// Skip already-visited states.
+			if _, ok := from[st]; ok {
+				continue
+			}
+
+			queue = append(queue, st)
+			from[st] = cur
+			steps[st] = cost
+
+			// Early exit if we've reached one of the "any" destinations.
+			if opts != nil && MapHasKey(opts.AnyDests, st) {
+				break Loop
+			}
+
+			// Early exit if we've reached all required destinations.
+			if remain != nil {
 				delete(remain, st)
-				if len(dests) > 0 && len(remain) == 0 {
+				if len(remain) == 0 {
 					break Loop
 				}
 			}
 		}
 	}
 
-	return costs
+	return steps, from
+}
+
+// BFSOptions specifies optional configuration for BFS.
+type BFSOptions struct {
+	// AllDests contains states that must all be reached before exiting.
+	AllDests []uint64
+	// AnyDests contains states of which just one must be reached before exiting.
+	AnyDests map[uint64]struct{}
+	// MaxSteps contains the maximum number of steps before exiting.
+	MaxSteps int
 }

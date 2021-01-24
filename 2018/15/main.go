@@ -185,10 +185,10 @@ func (ca *cave) move(u *unit, dests []uint64) {
 	neighbors := ca.neighbors(u.r, u.c, nil)
 	for _, d := range dests {
 		// Find minimum number of steps from dest to each neighboring square.
-		costs := lib.BFS(d, func(s uint64) []uint64 {
+		costs, _ := lib.BFS(d, func(s uint64) []uint64 {
 			r, c := lib.UnpackInt2(s)
 			return ca.neighbors(r, c, u)
-		}, neighbors, min)
+		}, &lib.BFSOptions{AllDests: neighbors, MaxSteps: min})
 		for _, n := range neighbors {
 			cost, ok := costs[n]
 			if !ok {

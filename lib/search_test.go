@@ -49,7 +49,7 @@ func TestAStar(t *testing.T) {
 }
 
 func TestBFS(t *testing.T) {
-	got := BFS(PackInts(0, 0), func(s uint64) []uint64 {
+	got, _ := BFS(PackInts(0, 0), func(s uint64) []uint64 {
 		x, y := UnpackInt2(s)
 		var next []uint64
 		for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
@@ -59,7 +59,7 @@ func TestBFS(t *testing.T) {
 			}
 		}
 		return next
-	}, nil, -1)
+	}, nil)
 	if want := map[uint64]int{
 		PackInts(0, 0): 0,
 		PackInts(1, 0): 1,

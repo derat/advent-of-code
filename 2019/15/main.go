@@ -7,15 +7,14 @@ import (
 )
 
 func main() {
-	input := lib.InputInt64s("2019/15")
-
-	vm := lib.NewIntcode(input)
+	vm := lib.NewIntcode(lib.InputInt64s("2019/15"))
 
 	var r, c int                                           // current location
 	var mr, mc int                                         // location we tried to move to
 	var or, oc int                                         // oxygen location
 	states := map[uint64]status{lib.PackInts(r, c): empty} // known locations
 
+	// Returns neighboring squares to p with non-wall or unknown states.
 	neighbors := func(p uint64) []uint64 {
 		r, c := lib.UnpackIntSigned2(p)
 		ns := make([]uint64, 0, 4)
@@ -35,49 +34,31 @@ func main() {
 	}
 
 	vm.InFunc = func() int64 {
-		// Perform BFS from r, c. As soon as we find a square in dests, start
-		// moving toward it.
+		// Perform BFS from r, c to find the nearest square from dests.
 		start := lib.PackInts(r, c)
-		queue := []uint64{start}
-		from := map[uint64]uint64{start: start}
-		var dest uint64 // chosen location from dests
-	Search:
-		for len(queue) > 0 {
-			p := queue[0]
-			queue = queue[1:]
-			for _, n := range neighbors(p) {
-				if _, ok := from[n]; ok {
-					continue // already been there
+		_, from := lib.BFS(start, neighbors, &lib.BFSOptions{AnyDests: dests})
+		for s := range from {
+			if _, ok := dests[s]; !ok {
+				continue
+			}
+			// Walk backward to find the square after our current one.
+			for ; ; s = from[s] {
+				if f := from[s]; f == start {
+					mr, mc = lib.UnpackIntSigned2(s)
+					switch {
+					case mr == r-1:
+						return 1 // north
+					case mr == r+1:
+						return 2 // south
+					case mc == c-1:
+						return 3 // west
+					case mc == c+1:
+						return 4 // east
+					}
 				}
-				if st, ok := states[n]; ok && st == wall {
-					continue // can't move there
-				}
-				from[n] = p
-				if _, ok := dests[n]; ok {
-					dest = n
-					break Search
-				}
-				queue = append(queue, n)
 			}
 		}
-		// Walk backward to find the square after our current one.
-		for {
-			if f := from[dest]; f == start {
-				mr, mc = lib.UnpackIntSigned2(dest)
-				switch {
-				case mr == r-1:
-					return 1 // north
-				case mr == r+1:
-					return 2 // south
-				case mc == c-1:
-					return 3 // west
-				case mc == c+1:
-					return 4 // east
-				}
-			} else {
-				dest = from[dest]
-			}
-		}
+		panic("No dest")
 	}
 
 	vm.OutFunc = func(v int64) {
@@ -149,7 +130,7 @@ func main() {
 		}))
 
 	// Part 2: Print number of steps for oxygen to spread to all open locations.
-	steps := lib.BFS(os, neighbors, nil, -1)
+	steps, _ := lib.BFS(os, neighbors, nil)
 	fmt.Println(lib.Max(lib.MapIntVals(steps)...))
 }
 
