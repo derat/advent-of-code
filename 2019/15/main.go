@@ -2,17 +2,26 @@ package main
 
 import (
 	"fmt"
+	"math"
+	"time"
 
 	"github.com/derat/advent-of-code/lib"
+)
+
+const (
+	animateSearch = false
+	animateFill   = false
+	delay         = 50 * time.Millisecond
 )
 
 func main() {
 	vm := lib.NewIntcode(lib.InputInt64s("2019/15"))
 
-	var r, c int                                           // current location
+	var r, c int                                           // droid location
 	var mr, mc int                                         // location we tried to move to
 	var or, oc int                                         // oxygen location
 	states := map[uint64]status{lib.PackInts(r, c): empty} // known locations
+	dests := make(map[uint64]struct{})                     // unknown locations
 
 	// Returns neighboring squares to p with non-wall or unknown states.
 	neighbors := func(p uint64) []uint64 {
@@ -28,10 +37,26 @@ func main() {
 		return ns
 	}
 
-	dests := make(map[uint64]struct{}) // unknown locations
+	// Initially explore neighbors of the starting square.
 	for _, p := range neighbors(lib.PackInts(r, c)) {
 		dests[p] = struct{}{}
 	}
+
+	// Silly code for visualizing the search.
+	var drows int // last drawn rows
+	drawSearch := func() {
+		if !animateSearch {
+			return
+		}
+		if drows > 0 {
+			fmt.Printf("\033[%dA", drows) // clear previous grid
+		}
+		grid, _, _ := dump(states, r, c, dests)
+		drows = len(grid)
+		fmt.Println(lib.DumpBytes(grid))
+		time.Sleep(delay)
+	}
+	drawSearch()
 
 	vm.InFunc = func() int64 {
 		// Perform BFS from r, c to find the nearest square from dests.
@@ -84,40 +109,16 @@ func main() {
 			lib.Panicf("Invalid output %v", v)
 		}
 
+		drawSearch()
+
 		// Exit if we've fully explored the maze.
 		if len(dests) == 0 {
 			vm.Halt()
 		}
 	}
 
+	// Actually explore the maze (needed for both parts).
 	lib.Assert(vm.Run())
-
-	/*
-		rmin, rmax := math.MaxInt32, math.MinInt32
-		cmin, cmax := math.MaxInt32, math.MinInt32
-		for p := range states {
-			r, c := lib.UnpackIntSigned2(p)
-			rmin, rmax = lib.Min(rmin, r), lib.Max(rmax, r)
-			cmin, cmax = lib.Min(cmin, c), lib.Max(cmax, c)
-		}
-		grid := lib.NewBytes(rmax-rmin+1, cmax-cmin+1, ' ')
-		for p, s := range states {
-			r, c := lib.UnpackIntSigned2(p)
-			var ch byte
-			switch {
-			case r == 0 && c == 0:
-				ch = 'D'
-			case s == wall:
-				ch = '#'
-			case s == empty:
-				ch = '.'
-			case s == oxygen:
-				ch = '@'
-			}
-			grid[r-rmin][c-cmin] = ch
-		}
-		fmt.Println(lib.DumpBytes(grid))
-	*/
 
 	// Part 1: Print length of shortest path from starting location to oxygen.
 	os := lib.PackInts(or, oc)
@@ -131,7 +132,27 @@ func main() {
 
 	// Part 2: Print number of steps for oxygen to spread to all open locations.
 	steps, _ := lib.BFS(os, neighbors, nil)
-	fmt.Println(lib.Max(lib.MapIntVals(steps)...))
+	maxSteps := lib.Max(lib.MapIntVals(steps)...)
+	fmt.Println(maxSteps)
+
+	// Silly code for animating oxygen filling the maze.
+	if animateFill {
+		grid, rmin, cmin := dump(states, 0, 0, nil)
+		fmt.Println(lib.DumpBytes(grid))
+
+		for i := 1; i <= maxSteps; i++ {
+			for r, row := range grid {
+				for c := range row {
+					if v, ok := steps[lib.PackInts(r+rmin, c+cmin)]; ok && v == i {
+						row[c] = 'O'
+					}
+				}
+			}
+			fmt.Printf("\033[%dA", len(grid)) // clear previous grid
+			fmt.Println(lib.DumpBytes(grid))
+			time.Sleep(delay)
+		}
+	}
 }
 
 type status int
@@ -141,3 +162,44 @@ const (
 	empty         = 1
 	oxygen        = 2
 )
+
+// dump dumps the supplied tile states, droid position, and destination locations
+// to a printable grid. It also returns the min row and column number from states
+// and dests (so additional data can be added to the supplied grid).
+func dump(states map[uint64]status, dr, dc int, dests map[uint64]struct{}) ([][]byte, int, int) {
+	rmin, rmax := math.MaxInt32, math.MinInt32
+	cmin, cmax := math.MaxInt32, math.MinInt32
+	for p := range states {
+		r, c := lib.UnpackIntSigned2(p)
+		rmin, rmax = lib.Min(rmin, r), lib.Max(rmax, r)
+		cmin, cmax = lib.Min(cmin, c), lib.Max(cmax, c)
+	}
+	for p := range dests {
+		r, c := lib.UnpackIntSigned2(p)
+		rmin, rmax = lib.Min(rmin, r), lib.Max(rmax, r)
+		cmin, cmax = lib.Min(cmin, c), lib.Max(cmax, c)
+	}
+
+	grid := lib.NewBytes(rmax-rmin+1, cmax-cmin+1, ' ')
+	for p, s := range states {
+		r, c := lib.UnpackIntSigned2(p)
+		var ch byte
+		switch {
+		case r == dr && c == dc:
+			ch = 'D'
+		case s == wall:
+			ch = '#'
+		case s == empty:
+			ch = '.'
+		case s == oxygen:
+			ch = '@'
+		}
+		grid[r-rmin][c-cmin] = ch
+	}
+	for p := range dests {
+		r, c := lib.UnpackIntSigned2(p)
+		grid[r-rmin][c-cmin] = '?'
+	}
+
+	return grid, rmin, cmin
+}
