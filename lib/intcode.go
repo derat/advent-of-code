@@ -4,6 +4,8 @@ package lib
 type Intcode struct {
 	Mem     map[int64]int64
 	In, Out chan int64
+	InFunc  func() int64 // used instead of In if non-nil
+	OutFunc func(int64)  // used instead of Out if non-nil
 	done    chan bool
 }
 
@@ -113,9 +115,20 @@ func (vm *Intcode) Run() (halted bool) {
 		case 2: // multiply first two args and save to third arg
 			set(3, get(1)*get(2))
 		case 3: // read input and save to first arg
-			set(1, <-vm.In)
+			var val int64
+			if vm.InFunc != nil {
+				val = vm.InFunc()
+			} else {
+				val = <-vm.In
+			}
+			set(1, val)
 		case 4: // write first arg to output
-			vm.Out <- get(1)
+			val := get(1)
+			if vm.OutFunc != nil {
+				vm.OutFunc(val)
+			} else {
+				vm.Out <- val
+			}
 		case 5: // jump to second arg if first arg is nonzero
 			if addr := get(2); get(1) != 0 {
 				ip = addr
