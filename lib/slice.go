@@ -39,7 +39,7 @@ func Rotate(first, middle, last int, swap func(i, j int)) {
 	}
 }
 
-// RotateBy is a wrapper around Rotate that rotates n elements by amt.
+// RotateBy is a wrapper around Rotate that rotates n elements right by amt.
 func RotateBy(n, amt int, swap func(i, j int)) {
 	if n == 0 || amt == 0 {
 		return
