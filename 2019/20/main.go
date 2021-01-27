@@ -52,6 +52,8 @@ func main() {
 	}
 
 	// Part 1: Minimum number of steps to go from AA to ZZ.
+	// I'm just using BFS instead of A* here since the number of states is small
+	// and it'd be tricky to write a proper heuristic function.
 	steps, _ := lib.BFS(start, func(s uint64) []uint64 {
 		r, c := lib.UnpackInt2(s)
 		ps, hp := portals[s]
@@ -70,4 +72,52 @@ func main() {
 		return next
 	}, &lib.BFSOptions{AnyDests: map[uint64]struct{}{end: struct{}{}}})
 	fmt.Println(steps[end])
+
+	// Part 2: Inner labels go to more-deeply nested versions of the maze; outer
+	// labels go to less-deeply. AA and ZZ do nothing in nested mazes. Travel from
+	// outermost AA to outermost ZZ.
+	sr, sc := lib.UnpackInt2(start)
+	er, ec := lib.UnpackInt2(end)
+	es := pack(er, ec, 0)
+	fmt.Println(lib.AStar(
+		[]uint64{pack(sr, sc, 0)},
+		func(s uint64) bool { return s == es },
+		func(s uint64) []uint64 {
+			r, c, depth := unpack(s)
+			ps, hp := portals[lib.PackInts(r, c)]
+			out := r == 2 || c == 2 || r == len(grid)-3 || c == len(grid[0])-3
+
+			var next []uint64
+			for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+				r0, c0 := r+off[0], c+off[1]
+				if r0 < 0 || c0 < 0 || r0 >= len(grid) || c0 >= len(grid[r]) {
+					continue // probably overkill since there are labels around the edges
+				}
+				if ch := grid[r0][c0]; ch == '.' { // move to empty space
+					next = append(next, pack(r0, c0, depth))
+				} else if hp && ch >= 'A' && ch <= 'Z' { // use portal
+					pr, pc := lib.UnpackInt2(ps)
+					if out && depth > 0 { // can only take outside portals when nested
+						next = append(next, pack(pr, pc, depth-1))
+					} else if !out { // take inside portal to deeper nesting
+						next = append(next, pack(pr, pc, depth+1))
+					}
+				}
+			}
+			return next
+		},
+		func(s uint64) int {
+			// Crappy heuristic: just use the difference in depth from outermost.
+			_, _, depth := unpack(s)
+			return lib.Abs(depth)
+		}))
+}
+
+func pack(r, c, depth int) uint64 {
+	return lib.PackInts(r, c, depth)
+}
+
+func unpack(p uint64) (r, c, depth int) {
+	vals := lib.UnpackInts(p, 3)
+	return vals[0], vals[1], vals[2]
 }
