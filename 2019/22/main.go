@@ -7,6 +7,11 @@ import (
 	"github.com/derat/advent-of-code/lib"
 )
 
+const (
+	dump = false
+	test = true
+)
+
 func main() {
 	// This reminds me of 2016/21, except that one had operations based
 	// on values (e.g. "swap letter a with letter b"), while this one
@@ -58,56 +63,139 @@ func main() {
 		nshuffles = 101741582076661
 	)
 
-	// Hmm. So I was right that there would be a bunch of shuffles, but there
-	// are also a bunch of cards now. I think I should run a reverse shuffle until
-	// I find a loop.
-	//
-	// Okay, that doesn't seem work: even after a few million reverse shuffles,
-	// I haven't seen us end up back at position 2020. I don't know what to do next.
-	// The operations in my input are complicated enough that it doesn't seem possible
-	// to analyze them.
-	/*
-		pos := int64(epos)
-		var nshufs int
-		for {
-			nshufs++
-			pos = unshuffle(pos, ncards)
-			if pos == epos {
-				break
-			}
+	x := big.NewInt(1) // scalar
+	y := big.NewInt(0) // constant
+	for _, in := range ins {
+		switch in.op {
+		case dealnew:
+			x.Mul(x, big.NewInt(-1))
+			y.Mul(y, big.NewInt(-1))
+			y.Add(y, big.NewInt(ncards-1))
+		case cut:
+			y.Sub(y, big.NewInt(in.v))
+		case dealinc:
+			x.Mul(x, big.NewInt(in.v))
+			y.Mul(y, big.NewInt(in.v))
 		}
-		// This doesn't get reached. :-/
-		fmt.Println("looped after", nshufs)
-	*/
+	}
+	x.Mod(x, big.NewInt(ncards))
+	y.Mod(y, big.NewInt(ncards))
+	if dump {
+		fmt.Println("x", x.Int64())
+		fmt.Println("y", y.Int64())
+	}
 
-	// When using prime numbers of cards around 10000 and 20000, I can see that we always seem to
-	// return to the original sequence after n-1 shuffles, and also (in some cases) after numbers of
-	// shuffles that evenly divide n-1. I looked at the factors of the n-1 values but didn't see any
-	// patterns. I think that the number of shuffles gien in the problem will need to be close to
-	// one of these loop points, but I'm not sure how to figure out what the loop point is without
-	// knowing the number of loops.
-	//
-	// Furthermore, the only factors of ncards-1 are 2 and 59657858757023, so I'm actually not
-	// convinced that there's a loop point near nshuffles. For the much smaller card counts that I
-	// looked at, there were always either 1 or 2 loops when the only factors were 2 and a prime.
-	/*
-		for _, ncards := range []int64{9833, 9839, 9851, 9857, 9859, 9871, 9883, 9887, 9901, 9907, 9923,
-			9929, 9931, 9941, 9949, 9967, 9973, 10007, 10009, 10037, 10039, 10061, 10067, 10069, 10079,
-			10091, 10093, 10099, 10103, 10111, 10133, 10139, 10141, 10151, 10159, 10163, 10169, 10177,
-			19949, 19961, 19963, 19973, 19979, 19991, 19993, 19997} {
-			pos := int64(epos)
-			var nshufs int64
-			var loops []int64
-			for nshufs <= ncards && len(loops) < 10 {
-				nshufs++
-				pos = unshuffle(pos, ncards)
-				if pos == epos {
-					loops = append(loops, nshufs)
-				}
-			}
-			fmt.Printf("%5d: %0.3f %v\n", ncards, float64(ncards)/float64(loops[0]), loops)
+	x0 := big.NewInt(1) // scalar
+	y0 := big.NewInt(0) // constant
+	for i := len(ins) - 1; i >= 0; i-- {
+		in := ins[i]
+		switch in.op {
+		case dealnew: // same as forward
+			x0.Mul(x0, big.NewInt(-1))
+			y0.Sub(y0, big.NewInt(ncards-1))
+			y0.Mul(y0, big.NewInt(-1))
+		case cut:
+			y0.Add(y0, big.NewInt(in.v))
+		case dealinc:
+			inv := big.NewInt(in.v)
+			inv.ModInverse(inv, big.NewInt(ncards))
+			x0.Mul(x0, inv)
+			y0.Mul(y0, inv)
 		}
-	*/
+	}
+	x0.Mod(x0, big.NewInt(ncards))
+	y0.Mod(y0, big.NewInt(ncards))
+	if dump {
+		fmt.Println("x0", x0.Int64())
+		fmt.Println("y0", y0.Int64())
+	}
+
+	// Drop out constant term per https://math.stackexchange.com/a/2388143:
+	//
+	//  f(n) = x*f(n-1) + y
+	//	f(n-1) = x*f(n-2) + y                 prev in sequence
+	//	f(n) - f(n-1) = x*f(n-1) - x*f(n-2)   subtract second equation from first
+	//	f(n) = (x+1)*f(n-1) - x*f(n-2)        rearrange
+	//
+	// For my input:
+	//
+	//  f(n+2) = 7277816997830721537*f(n+1) - 7277816997830721536*f(n)
+	//    f(0) = 2020
+	//    f(1) = 14699430743457602759107 = 61829916141776 (mod ncards)
+	//
+	// This is a homogeneous linear recurrence relation of order 2 with constant coefficients.
+	// Per https://study.com/academy/lesson/how-to-solve-linear-recurrence-relations.html:
+	//
+	// First, find characteristic equation:
+	//
+	//	s^i = (x+1)*s^(i-1) - x*s^(i-2)       transform to variable s raised to a power
+	//	s^2 = (x+1)*s - x                     divide by s^(i-2)
+	//  s^2 - (x+1)*s + x = 0                 make equal to 0
+	//
+	// I started trying to solve this in code with the quadratic formula, but that was very
+	// painful. Plugging it into Wolfram Alpha yields a closed-form solution for f(n):
+	//
+	//	f(n+2) = 40286879916730*f(n+1) - 40286879916729*f(n)
+	//	f(0) = 2020
+	//	f(1) = 81416758296639728
+	//	f(n) = (20354189574159427 * 40286879916729^n - 9315216211787) / 10071719979182
+	//
+	// Reverse shuffle:
+	//
+	//	f(n+2) = 70994688272735*f(n+1) - 70994688272734*f(n)
+	//	f(0) = 2020
+	//	f(1) = 14976082037420
+	//  f(n) = (20 * (374402050885 * 2^(n+1) * 35497344136367^n + 7169714711444263)) / 70994688272733
+
+	shufflen := func(pos, ncards, nshuffles int64) int64 {
+		v := big.NewInt(40286879916729)
+		v.Exp(v, big.NewInt(nshuffles), nil)
+		v.Mul(v, big.NewInt(20354189574159427))
+		v.Sub(v, big.NewInt(9315216211787))
+		v.Div(v, big.NewInt(10071719979182))
+		v.Mod(v, big.NewInt(ncards))
+		return v.Int64()
+	}
+
+	unshufflen := func(pos, ncards, nshuffles int64) int64 {
+		a := big.NewInt(2)
+		a.Exp(a, big.NewInt(nshuffles+1), nil)
+
+		b := big.NewInt(35497344136367)
+		b.Exp(b, big.NewInt(nshuffles), nil)
+
+		v := big.NewInt(374402050885)
+		v.Mul(v, a)
+		v.Mul(v, b)
+		v.Add(v, big.NewInt(7169714711444263))
+		v.Mul(v, big.NewInt(20))
+		v.Div(v, big.NewInt(70994688272733))
+		v.Mod(v, big.NewInt(ncards))
+		return v.Int64()
+	}
+
+	if test {
+		pos := int64(epos)
+		fmt.Println("shuffle from", pos)
+		for i := int64(1); i <= 5; i++ {
+			pos = shuffle(pos, ncards)
+			fmt.Println(i, pos)
+			fmt.Println(i, shufflen(epos, ncards, i))
+		}
+		fmt.Println()
+
+		pos = epos
+		fmt.Println("unshuffle from", pos)
+		for i := int64(1); i <= 5; i++ {
+			pos = unshuffle(pos, ncards)
+			fmt.Println(i, pos)
+			fmt.Println(i, unshufflen(epos, ncards, i))
+		}
+	}
+
+	// Sigh, this is still too slow (because the number gets enormous).
+	// I haven't figured out if it's possible to fix the slow Exp() calls.
+	//fmt.Println(shufflen(epos, ncards, nshuffles))
 }
 
 type op int
