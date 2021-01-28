@@ -9,7 +9,7 @@ import (
 
 const (
 	dump = false
-	test = true
+	test = false
 )
 
 func main() {
@@ -147,29 +147,43 @@ func main() {
 	//	f(1) = 14976082037420
 	//  f(n) = (20 * (374402050885 * 2^(n+1) * 35497344136367^n + 7169714711444263)) / 70994688272733
 
-	shufflen := func(pos, ncards, nshuffles int64) int64 {
+	// shufflen returns the position of card 2020 after nshuffles forward shuffles.
+	shufflen := func(ncards, nshuffles int64) int64 {
+		nc := big.NewInt(ncards)
+
 		v := big.NewInt(40286879916729)
-		v.Exp(v, big.NewInt(nshuffles), nil)
+		v.Exp(v, big.NewInt(nshuffles), nc)
 		v.Mul(v, big.NewInt(20354189574159427))
 		v.Sub(v, big.NewInt(9315216211787))
-		v.Div(v, big.NewInt(10071719979182))
-		v.Mod(v, big.NewInt(ncards))
+
+		inv := big.NewInt(10071719979182)
+		inv.ModInverse(inv, nc)
+		v.Mul(v, inv)
+
+		v.Mod(v, nc)
 		return v.Int64()
 	}
 
-	unshufflen := func(pos, ncards, nshuffles int64) int64 {
+	// unshufflen returns the position of card 2020 after nshuffles reverse shuffles.
+	unshufflen := func(ncards, nshuffles int64) int64 {
+		nc := big.NewInt(ncards)
+
 		a := big.NewInt(2)
-		a.Exp(a, big.NewInt(nshuffles+1), nil)
+		a.Exp(a, big.NewInt(nshuffles+1), nc)
 
 		b := big.NewInt(35497344136367)
-		b.Exp(b, big.NewInt(nshuffles), nil)
+		b.Exp(b, big.NewInt(nshuffles), nc)
 
 		v := big.NewInt(374402050885)
 		v.Mul(v, a)
 		v.Mul(v, b)
 		v.Add(v, big.NewInt(7169714711444263))
 		v.Mul(v, big.NewInt(20))
-		v.Div(v, big.NewInt(70994688272733))
+
+		inv := big.NewInt(70994688272733)
+		inv.ModInverse(inv, nc)
+		v.Mul(v, inv)
+
 		v.Mod(v, big.NewInt(ncards))
 		return v.Int64()
 	}
@@ -177,25 +191,27 @@ func main() {
 	if test {
 		pos := int64(epos)
 		fmt.Println("shuffle from", pos)
-		for i := int64(1); i <= 5; i++ {
+		for i := int64(1); i < 10; i++ {
 			pos = shuffle(pos, ncards)
 			fmt.Println(i, pos)
-			fmt.Println(i, shufflen(epos, ncards, i))
+			fmt.Println(i, shufflen(ncards, i))
 		}
 		fmt.Println()
 
 		pos = epos
 		fmt.Println("unshuffle from", pos)
-		for i := int64(1); i <= 5; i++ {
+		for i := int64(1); i < 10; i++ {
 			pos = unshuffle(pos, ncards)
 			fmt.Println(i, pos)
-			fmt.Println(i, unshufflen(epos, ncards, i))
+			fmt.Println(i, unshufflen(ncards, i))
 		}
 	}
 
-	// Sigh, this is still too slow (because the number gets enormous).
-	// I haven't figured out if it's possible to fix the slow Exp() calls.
-	//fmt.Println(shufflen(epos, ncards, nshuffles))
+	// Shuffling ncards-1 times gets us back to the original 2020 position.
+	lib.AssertEq(shufflen(ncards, ncards-1), int64(epos))
+
+	// We want to figure out where the card at the 2020 position was nshuffles ago.
+	fmt.Println(unshufflen(ncards, nshuffles))
 }
 
 type op int
