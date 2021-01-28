@@ -52,7 +52,12 @@ func main() {
 
 	// Part 2: Print the value of the card at position 2020 after shuffling
 	// 119315717514047 cards 101741582076661 times.
-	//
+	const (
+		epos      = 2020
+		ncards    = 119315717514047
+		nshuffles = 101741582076661
+	)
+
 	// Hmm. So I was right that there would be a bunch of shuffles, but there
 	// are also a bunch of cards now. I think I should run a reverse shuffle until
 	// I find a loop.
@@ -61,23 +66,48 @@ func main() {
 	// I haven't seen us end up back at position 2020. I don't know what to do next.
 	// The operations in my input are complicated enough that it doesn't seem possible
 	// to analyze them.
-	const (
-		epos      = 2020
-		ncards    = 119315717514047
-		nshuffles = 101741582076661
-	)
-
-	pos := int64(epos)
-	var nshufs int
-	for {
-		nshufs++
-		pos = unshuffle(pos, ncards)
-		if pos == epos {
-			break
+	/*
+		pos := int64(epos)
+		var nshufs int
+		for {
+			nshufs++
+			pos = unshuffle(pos, ncards)
+			if pos == epos {
+				break
+			}
 		}
-	}
-	// This doesn't get reached. :-/
-	fmt.Println("looped after", nshufs)
+		// This doesn't get reached. :-/
+		fmt.Println("looped after", nshufs)
+	*/
+
+	// When using prime numbers of cards around 10000 and 20000, I can see that we always seem to
+	// return to the original sequence after n-1 shuffles, and also (in some cases) after numbers of
+	// shuffles that evenly divide n-1. I looked at the factors of the n-1 values but didn't see any
+	// patterns. I think that the number of shuffles gien in the problem will need to be close to
+	// one of these loop points, but I'm not sure how to figure out what the loop point is without
+	// knowing the number of loops.
+	//
+	// Furthermore, the only factors of ncards-1 are 2 and 59657858757023, so I'm actually not
+	// convinced that there's a loop point near nshuffles. For the much smaller card counts that I
+	// looked at, there were always either 1 or 2 loops when the only factors were 2 and a prime.
+	/*
+		for _, ncards := range []int64{9833, 9839, 9851, 9857, 9859, 9871, 9883, 9887, 9901, 9907, 9923,
+			9929, 9931, 9941, 9949, 9967, 9973, 10007, 10009, 10037, 10039, 10061, 10067, 10069, 10079,
+			10091, 10093, 10099, 10103, 10111, 10133, 10139, 10141, 10151, 10159, 10163, 10169, 10177,
+			19949, 19961, 19963, 19973, 19979, 19991, 19993, 19997} {
+			pos := int64(epos)
+			var nshufs int64
+			var loops []int64
+			for nshufs <= ncards && len(loops) < 10 {
+				nshufs++
+				pos = unshuffle(pos, ncards)
+				if pos == epos {
+					loops = append(loops, nshufs)
+				}
+			}
+			fmt.Printf("%5d: %0.3f %v\n", ncards, float64(ncards)/float64(loops[0]), loops)
+		}
+	*/
 }
 
 type op int
