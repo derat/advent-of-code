@@ -23,13 +23,55 @@ func main() {
 			close(done)
 		}
 	}
+	for addr := 0; addr < ncomps; addr++ {
+		vm := makeComp(input, addr, bus)
+		vm.Start()
+		vms = append(vms, vm)
+	}
+	<-done
+	for _, vm := range vms {
+		vm.Halt()
+	}
+
+	// Part 2: Print first Y value delivered by NAT to address 0 twice in a row.
+	// This code is complete garbage.
+	vms = nil
+	done = make(chan struct{}, 1)
+	bus = newBus(ncomps)
+
+	var nat [2]int64 // last packet sent to address 255
+	var haveNat bool
+	bus.snoop = func(addr int, x, y int64) {
+		if addr == 255 {
+			nat = [2]int64{x, y}
+			haveNat = true
+		}
+	}
+	var lastY int64
+	bcast := make(chan [2]int64)
+	bus.idle = func() {
+		if haveNat {
+			bcast <- nat
+			if nat[1] == lastY {
+				fmt.Println(nat[1])
+				close(bcast)
+				close(done)
+			}
+			lastY = nat[1]
+			haveNat = false
+		}
+	}
+	go func() {
+		for pkg := range bcast {
+			bus.send(0, pkg[0], pkg[1], 0)
+		}
+	}()
 
 	for addr := 0; addr < ncomps; addr++ {
 		vm := makeComp(input, addr, bus)
 		vm.Start()
 		vms = append(vms, vm)
 	}
-
 	<-done
 	for _, vm := range vms {
 		vm.Halt()
@@ -75,7 +117,7 @@ func makeComp(prog []int64, addr int, bus *bus) *lib.Intcode {
 			outX = v
 			outState = writeY
 		case writeY:
-			bus.send(outAddr, outX, v)
+			bus.send(outAddr, outX, v, addr)
 			outState = idle
 		default:
 			lib.Panicf("Invalid output state %v", inState)
@@ -97,22 +139,29 @@ const (
 
 type bus struct {
 	packets [][][2]int64
+	active  uint64
 	mu      sync.Mutex
 	snoop   func(int, int64, int64)
+	idle    func()
 }
 
 func newBus(ncomps int) *bus {
-	return &bus{packets: make([][][2]int64, ncomps)}
+	return &bus{
+		packets: make([][][2]int64, ncomps),
+		active:  (1 << ncomps) - 1,
+	}
 }
 
-func (b *bus) send(addr int, x, y int64) {
+func (b *bus) send(addr int, x, y int64, self int) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
+	b.active |= 1 << self
 	if b.snoop != nil {
 		b.snoop(addr, x, y)
 	}
 	if addr < len(b.packets) {
+		b.active |= 1 << addr
 		b.packets[addr] = append(b.packets[addr], [2]int64{x, y})
 	}
 }
@@ -122,8 +171,14 @@ func (b *bus) recv(addr int) (x, y int64, ok bool) {
 	defer b.mu.Unlock()
 
 	if len(b.packets[addr]) == 0 {
+		b.active &= ^(1 << addr)
+		if b.active == 0 {
+			b.idle()
+		}
 		return 0, 0, false
 	}
+
+	b.active |= 1 << addr
 	x, y = b.packets[addr][0][0], b.packets[addr][0][1]
 	b.packets[addr] = b.packets[addr][1:]
 	return x, y, true
