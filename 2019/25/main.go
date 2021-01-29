@@ -125,3 +125,34 @@ func combos() string {
 	}
 	return strings.Join(cmds, "\n")
 }
+
+// For posterity, here are my map and notes from manually exploring initially:
+//
+//	navigation ------------------------------------- security checkpoint            gift wrapping center
+//	(photons)                                                 |                       (weather machine)
+//		|                                                     |                               |
+//	passages --- corridor --- hot choco fountain   pressure-sensitive floor   sick bay --- storage
+//	(wreath)   (escape pod)      (molten lava)                                 (shell)  (spool of cat6)
+//		|                                                                                     |
+//	hull breach ----------------- stables ----------------------------------------------- science lab
+//								  (loom)                                                 (fixed point)
+//			   kitchen               |
+//				  |                  |
+//			 observatory             |
+//			 (candy cane)            |
+//				  |                  |
+//			   hallway ---- warp drive maintenance -- crew quarters
+//								(ornament)                  |
+//														holodeck -- engineering
+//																  (infinite loop)
+//																		 |
+//																	  arcade
+//															  (giant electromagnet)
+//
+//	navigation: eaten by grue if take photons (suddenly dark)
+//	security checkpoint: pressure-sensitive floor in next room
+//	pressure-sensitive floor: too light if empty; ejected back to checkpoint
+//	engineer: infinite loop does what you'd expect
+//	arcade: can't move after taking giant electromagnet
+//	corridor: launched into space if take escape pod
+//	hot chocolate fountain: melt if take molten lava
