@@ -116,7 +116,6 @@ func solve(initial uint64, floors, numElements int) int {
 		}
 		todo = nextTodo
 	}
-	return moves
 }
 
 func getFloorItems(state uint64, floor int) (chips, gens int) {
