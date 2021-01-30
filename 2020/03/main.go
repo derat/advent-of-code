@@ -29,8 +29,12 @@ func main() {
 				trees++
 			}
 		}
-		fmt.Printf("dx %d, dy %d: %d trees\n", sl.dx, sl.dy, trees)
+		// Part 1
+		if sl.dx == 3 && sl.dy == 1 {
+			fmt.Println(trees)
+		}
 		mult *= trees
 	}
-	fmt.Printf("mult: %d\n", mult)
+	// Part 2
+	fmt.Println(mult)
 }

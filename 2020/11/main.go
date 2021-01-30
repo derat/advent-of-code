@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 
 	"github.com/derat/advent-of-code/lib"
@@ -33,14 +34,14 @@ func main() {
 	}
 
 	// Part 1
-	println(run(rows, func(rows [][]byte, row, col int) int {
+	fmt.Println(run(rows, func(rows [][]byte, row, col int) int {
 		return occ(rows, row-1, col-1) + occ(rows, row-1, col) + occ(rows, row-1, col+1) +
 			occ(rows, row, col-1) + occ(rows, row, col+1) +
 			occ(rows, row+1, col-1) + occ(rows, row+1, col) + occ(rows, row+1, col+1)
 	}, 4))
 
 	// Part 2
-	println(run(rows, func(rows [][]byte, row, col int) int {
+	fmt.Println(run(rows, func(rows [][]byte, row, col int) int {
 		return look(rows, row, col, -1, -1) + look(rows, row, col, -1, 0) + look(rows, row, col, -1, 1) +
 			look(rows, row, col, 0, -1) + look(rows, row, col, 0, 1) +
 			look(rows, row, col, 1, -1) + look(rows, row, col, 1, 0) + look(rows, row, col, 1, 1)

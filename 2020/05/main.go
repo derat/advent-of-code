@@ -22,7 +22,7 @@ func main() {
 		}
 		seen[id] = struct{}{}
 	}
-	fmt.Printf("max: %d\n", max)
+	fmt.Println(max)
 
 	for i := 1; i < 8*128; i++ {
 		if _, ok := seen[i]; ok {
@@ -34,7 +34,8 @@ func main() {
 		if _, ok := seen[i+1]; !ok {
 			continue
 		}
-		fmt.Printf("yours: %d\n", i)
+		fmt.Println(i)
+		break
 	}
 }
 

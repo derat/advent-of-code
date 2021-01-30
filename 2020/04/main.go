@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -18,7 +19,8 @@ func main() {
 			nvalid2++
 		}
 	}
-	println(nvalid, nvalid2)
+	fmt.Println(nvalid)
+	fmt.Println(nvalid2)
 }
 
 var req = map[string]*regexp.Regexp{

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/derat/advent-of-code/lib"
@@ -30,6 +31,7 @@ func main() {
 		}
 	}
 
+	// Part 1
 	seen := make(map[string]struct{})
 	var add func(col string)
 	add = func(col string) {
@@ -41,8 +43,9 @@ func main() {
 		}
 	}
 	add("shiny gold")
-	println(len(seen))
+	fmt.Println(len(seen))
 
+	// Part 2
 	var count func(col string) int
 	count = func(col string) int {
 		total := 0
@@ -51,5 +54,5 @@ func main() {
 		}
 		return total
 	}
-	println(count("shiny gold"))
+	fmt.Println(count("shiny gold"))
 }

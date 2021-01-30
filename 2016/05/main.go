@@ -10,6 +10,8 @@ import (
 	"github.com/derat/advent-of-code/lib"
 )
 
+const animate = false
+
 func main() {
 	const (
 		zeros = 5 // number of leading zeros
@@ -26,17 +28,25 @@ func main() {
 		if bytes.HasPrefix(hash[:], want) && (zeros%2 == 0 || hash[zeros/2] < 16) {
 			ch := fmt.Sprintf("%x", getVal(hash, zeros))
 			pw += ch
-			fmt.Print(ch) // print a byte at a time because it looks cooler
+			if animate {
+				fmt.Print(ch) // print a byte at a time because it looks cooler
+			}
 		}
 	}
-	fmt.Println()
+	if animate {
+		fmt.Println()
+	} else {
+		fmt.Println(pw)
+	}
 
 	// Part 2: Hash specifies position and then char
 	// It'd be more efficient to put this in the above loop, but I want cool-looking
 	// output and don't want to need to deal with printing to multiple lines.
 	pw2 := bytes.Repeat([]byte{'.'}, pwLen)
 	rem := pwLen
-	fmt.Printf("%s", pw2)
+	if animate {
+		fmt.Printf("%s", pw2)
+	}
 	for i := 0; rem > 0; i++ {
 		s := pre + strconv.Itoa(i)
 		hash := md5.Sum([]byte(s))
@@ -48,11 +58,17 @@ func main() {
 
 			pw2[pos] = fmt.Sprintf("%x", getVal(hash, zeros+1))[0]
 			rem--
-			fmt.Print(strings.Repeat("\b", pwLen)) // clear partial password
-			fmt.Printf("%s", pw2)
+			if animate {
+				fmt.Print(strings.Repeat("\b", pwLen)) // clear partial password
+				fmt.Printf("%s", pw2)
+			}
 		}
 	}
-	fmt.Println()
+	if animate {
+		fmt.Println()
+	} else {
+		fmt.Println(string(pw2))
+	}
 }
 
 // Returns the pos-th 4-bit value from hash.

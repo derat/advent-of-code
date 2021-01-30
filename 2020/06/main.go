@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/derat/advent-of-code/lib"
 )
 
@@ -10,8 +12,8 @@ func main() {
 		sum += count(pg, false)
 		sum2 += count(pg, true)
 	}
-	println(sum)
-	println(sum2)
+	fmt.Println(sum)
+	fmt.Println(sum2)
 }
 
 func count(grp []string, all bool) int {
