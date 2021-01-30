@@ -81,6 +81,17 @@ func MapHasValue(m, v interface{}) bool {
 	return false
 }
 
+// GenericSet returns a map[interface{}]struct{} containing keys from m, a map.
+func GenericSet(m interface{}) map[interface{}]struct{} {
+	mv := reflect.ValueOf(m)
+	s := make(map[interface{}]struct{}, mv.Len())
+	it := reflect.ValueOf(m).MapRange()
+	for it.Next() {
+		s[it.Key().Interface()] = struct{}{}
+	}
+	return s
+}
+
 // AddSet adds the supplied as keys in the supplied (possibly-nil) map to struct{}.
 // The set is returned (and should be used thereafter).
 func AddSet(s interface{}, vals ...interface{}) interface{} {

@@ -80,12 +80,12 @@ func main() {
 
 	// Find nodes that are capable of holding that amount of data.
 	var maxAvail int
-	var init []uint64
+	var init []interface{}
 	for x, ns := range nodes {
 		for y, n := range ns {
 			if n.avail >= minUsed && n.avail > maxAvail {
 				maxAvail = n.avail
-				init = append(init, pack(x, y, len(nodes)-1, 0)) // data in orig position
+				init = append(init, state{x, y, len(nodes) - 1, 0}) // data in orig position
 			}
 		}
 	}
@@ -94,17 +94,14 @@ func main() {
 	nx, ny := len(nodes), len(nodes[0]) // nodes in each direction
 
 	steps := lib.AStar(init,
-		func(s uint64) bool {
-			_, _, dx, dy := unpack(s)
-			return dx == 0 && dy == 0
-		},
-		func(s uint64) (ns []uint64) {
-			sx, sy, dx, dy := unpack(s)
+		func(si interface{}) bool { return si.(state).dx == 0 && si.(state).dy == 0 },
+		func(si interface{}, m map[interface{}]int) {
+			s := si.(state)
 			for _, pos := range [][2]int{
-				{sx - 1, sy},
-				{sx + 1, sy},
-				{sx, sy - 1},
-				{sx, sy + 1},
+				{s.sx - 1, s.sy},
+				{s.sx + 1, s.sy},
+				{s.sx, s.sy - 1},
+				{s.sx, s.sy + 1},
 			} {
 				sx0, sy0 := pos[0], pos[1]
 				// Ignore nodes whose data is perpetually stuck because it's larger
@@ -112,34 +109,26 @@ func main() {
 				if sx0 >= 0 && sx0 < nx && sy0 >= 0 && sy0 < ny && nodes[sx0][sy0].used <= maxAvail {
 					// If the space moved to the position where the target data was located,
 					// the target data is now in the space's old position.
-					swapped := sx0 == dx && sy0 == dy
-					dx0, dy0 := lib.If(swapped, sx, dx), lib.If(swapped, sy, dy)
-					ns = append(ns, pack(sx0, sy0, dx0, dy0))
+					swapped := sx0 == s.dx && sy0 == s.dy
+					dx0, dy0 := lib.If(swapped, s.sx, s.dx), lib.If(swapped, s.sy, s.dy)
+					m[state{sx0, sy0, dx0, dy0}] = 1
 				}
 			}
-			return ns
 		},
-		func(s uint64) int {
+		func(si interface{}) int {
 			// Use the max of the data's Manhattan distance from the space and the space's distance
 			// from (0, 0) as a lower bound of the required moves.
-			sx, sy, dx, dy := unpack(s)
-			return lib.Max(lib.Abs(dx-sx)+lib.Abs(dy-sy), sx+sy)
+			s := si.(state)
+			return lib.Max(lib.Abs(s.dx-s.sx)+lib.Abs(s.dy-s.sy), s.sx+s.sy)
 		})
 	fmt.Println(steps)
 }
 
-// node holds information provided about a node.
 type node struct {
 	size, used, avail, pct int
 }
 
-// pack packs the location of the empty space and the data.
-func pack(sx, sy, dx, dy int) uint64 {
-	return lib.PackInts(sx, sy, dx, dy)
-}
-
-// unpack unpacks the location of the empty space and the data.
-func unpack(p uint64) (sx, sy, dx, dy int) {
-	vals := lib.UnpackInts(p, 4)
-	return vals[0], vals[1], vals[2], vals[3]
+type state struct {
+	sx, sy int // location of empty space
+	dx, dy int // location of data
 }

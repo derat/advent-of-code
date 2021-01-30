@@ -21,23 +21,22 @@ func main() {
 		return bits.OnesCount64(uint64(n))%2 == 1
 	}
 
-	ts := lib.PackInts(tx, ty) // target state
+	ts := [2]int{tx, ty} // target state
 
 	min := lib.AStar(
-		[]uint64{lib.PackInts(sx, sy)},
-		func(s uint64) bool { return s == ts },
-		func(s uint64) (ns []uint64) {
-			x, y := lib.UnpackInt2(s)
+		[]interface{}{[2]int{sx, sy}},
+		func(s interface{}) bool { return s.([2]int) == ts },
+		func(s interface{}, m map[interface{}]int) {
+			x, y := s.([2]int)[0], s.([2]int)[1]
 			for _, n := range [][2]int{{x + 1, y}, {x, y + 1}, {x - 1, y}, {x, y - 1}} {
 				if n[0] >= 0 && n[1] >= 0 && !wall(n[0], n[1]) {
-					ns = append(ns, lib.PackInts(n[0], n[1]))
+					m[n] = 1
 				}
 			}
-			return ns
 		},
-		func(s uint64) int {
-			x, y := lib.UnpackInt2(s)
-			return lib.Abs(tx-x) + lib.Abs(tx-y)
+		func(s interface{}) int {
+			x, y := s.([2]int)[0], s.([2]int)[1]
+			return lib.Abs(tx-x) + lib.Abs(ty-y)
 		})
 	fmt.Println(min)
 
@@ -65,8 +64,4 @@ func main() {
 		todo = newTodo
 	}
 	fmt.Println(len(seen))
-}
-
-type node struct {
-	x, y, priority int
 }

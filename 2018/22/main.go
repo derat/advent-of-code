@@ -14,10 +14,10 @@ func main() {
 
 	ero := func(geo int) int { return (geo + depth) % 20183 }
 
-	geos := make(map[uint64]int)
+	geos := make(map[[2]int]int)
 	var geo func(int, int) int
 	geo = func(r, c int) int {
-		k := lib.PackInts(r, c)
+		k := [2]int{r, c}
 		if g, ok := geos[k]; ok {
 			return g
 		}
@@ -52,40 +52,39 @@ func main() {
 	// - Narrow (ero % 3 == 2) needs torch or neither.
 	// Start at 0,0 with torch and get to tr,tc with climbing gear.
 	const sw = 7 // time to switch tools
-	end := pack(tr, tc, torch)
-	min := lib.AStarVarCost([]uint64{pack(0, 0, torch)},
-		func(s uint64) bool { return s == end },
-		func(s uint64) map[uint64]int {
-			r, c, t := unpack(s)
-			m := make(map[uint64]int)
+	end := state{tr, tc, torch}
+	min := lib.AStar(
+		[]interface{}{state{0, 0, torch}},
+		func(si interface{}) bool { return si.(state) == end },
+		func(si interface{}, m map[interface{}]int) {
+			s := si.(state)
 
 			// If we're holding a tool that can be equipped in an adjacent region,
 			// we can move there in 1 minute.
 			for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
-				r0, c0 := r+off[0], c+off[1]
-				if r0 < 0 || c0 < 0 {
+				n := state{s.r + off[0], s.c + off[1], s.t}
+				if n.r < 0 || n.c < 0 {
 					continue
 				}
-				if typ0 := ero(geo(r0, c0)) % 3; equip(t, typ0) {
-					m[pack(r0, c0, t)] = 1
+				if typ0 := ero(geo(n.r, n.c)) % 3; equip(n.t, typ0) {
+					m[n] = 1
 				}
 			}
 
 			// Also handle switching tools without moving.
-			typ := ero(geo(r, c)) % 3
-			for _, t0 := range []tool{climbing, torch, neither} {
-				if t0 != t && equip(t0, typ) {
-					m[pack(r, c, t0)] = sw
+			typ := ero(geo(s.r, s.c)) % 3
+			for _, t := range []tool{climbing, torch, neither} {
+				if t != s.t && equip(t, typ) {
+					m[state{s.r, s.c, t}] = sw
 				}
 			}
-			return m
 		},
-		func(s uint64) int {
+		func(si interface{}) int {
 			// The lower bound to get to the target is the Manhattan distance to get
 			// there plus the time needed to switch to the torch if it isn't equipped.
-			r, c, t := unpack(s)
-			cost := lib.Abs(tr-r) + lib.Abs(tc-c)
-			if t != torch {
+			s := si.(state)
+			cost := lib.Abs(tr-s.r) + lib.Abs(tc-s.c)
+			if s.t != torch {
 				cost += sw
 			}
 			return cost
@@ -101,13 +100,9 @@ const (
 	neither
 )
 
-func pack(r, c int, t tool) uint64 {
-	return lib.PackInts(r, c, int(t))
-}
-
-func unpack(p uint64) (int, int, tool) {
-	vals := lib.UnpackInts(p, 3)
-	return vals[0], vals[1], tool(vals[2])
+type state struct {
+	r, c int
+	t    tool
 }
 
 // equip returns true if tl can be used in a region of the supplied type.

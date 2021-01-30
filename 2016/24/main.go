@@ -12,7 +12,7 @@ func main() {
 	// The state needs to include the robot's current row and column and the locations that we've
 	// reached at least once.
 	var loc0 [2]int
-	locs := make(map[uint64]int) // packed (r, c) to location ID
+	locs := make(map[[2]int]int) // r,c to location ID
 	for r, row := range rows {
 		for c, ch := range row {
 			if ch >= '0' && ch <= '9' {
@@ -20,7 +20,7 @@ func main() {
 				if id == 0 {
 					loc0 = [2]int{r, c}
 				}
-				p := lib.PackInts(r, c)
+				p := [2]int{r, c}
 				_, seen := locs[p]
 				lib.Assertf(!seen, "Duplicate ID %v", id)
 				locs[p] = id
@@ -29,36 +29,34 @@ func main() {
 	}
 
 	for _, part := range []int{1, 2} {
-		steps := lib.AStar([]uint64{pack(loc0[0], loc0[1], 1)},
-			func(s uint64) bool {
-				r, c, vis := unpack(s)
+		steps := lib.AStar([]interface{}{state{loc0[0], loc0[1], 1}},
+			func(si interface{}) bool {
+				s := si.(state)
 				// In part 2, we need to end up back at location 0.
-				return vis == 1<<len(locs)-1 && (part != 2 || (r == loc0[0] && c == loc0[1]))
+				return s.vis == 1<<len(locs)-1 && (part != 2 || (s.r == loc0[0] && s.c == loc0[1]))
 			},
-			func(s uint64) []uint64 {
-				r, c, vis := unpack(s)
-				var ns []uint64
-				for _, n := range [][2]int{{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}} {
-					r0, c0, v0 := n[0], n[1], vis
+			func(si interface{}, m map[interface{}]int) {
+				s := si.(state)
+				for _, p := range [][2]int{{s.r - 1, s.c}, {s.r + 1, s.c}, {s.r, s.c - 1}, {s.r, s.c + 1}} {
+					n := state{p[0], p[1], s.vis}
 					// Skip moves that go out-of-bounds or hit a wall.
-					if r0 < 0 || r0 >= len(rows) || c0 < 0 || c0 >= len(rows[r]) || rows[r0][c0] == '#' {
+					if n.r < 0 || n.r >= len(rows) || n.c < 0 || n.c >= len(rows[n.r]) || rows[n.r][n.c] == '#' {
 						continue
 					}
 					// Check if we've reached a location.
-					if id, ok := locs[lib.PackInts(r0, c0)]; ok {
-						v0 |= 1 << id
+					if id, ok := locs[[2]int{n.r, n.c}]; ok {
+						n.vis |= 1 << id
 					}
-					ns = append(ns, pack(r0, c0, v0))
+					m[n] = 1
 				}
-				return ns
 			},
-			func(s uint64) int {
-				r, c, vis := unpack(s)
-				if vis == 1<<len(locs)-1 {
+			func(si interface{}) int {
+				s := si.(state)
+				if s.vis == 1<<len(locs)-1 {
 					if part == 1 {
 						return 0
 					}
-					return r + c // need to get back to start
+					return s.r + s.c // need to get back to start
 				}
 				// Use the distance to the unvisited location farthest from the robot's
 				// location as a lower bound for the number of additional steps needed.
@@ -68,9 +66,8 @@ func main() {
 				// some reason -- maybe I had a bug?).
 				var fd int
 				for p, id := range locs {
-					if vis&(1<<id) == 0 {
-						lr, lc := lib.UnpackInt2(p)
-						ld := lib.Abs(lr-r) + lib.Abs(lc-c)
+					if s.vis&(1<<id) == 0 {
+						ld := lib.Abs(p[0]-s.r) + lib.Abs(p[1]-s.c)
 						fd = lib.Max(fd, ld)
 					}
 				}
@@ -80,17 +77,10 @@ func main() {
 					// internally, I sometimes get a too-high answer for part 1.
 					return fd
 				}
-				return lib.Min(fd, r+c)
+				return lib.Min(fd, s.r+s.c)
 			})
 		fmt.Println(steps)
 	}
 }
 
-func pack(r, c, vis int) uint64 {
-	return lib.PackInts(r, c, vis)
-}
-
-func unpack(s uint64) (r, c, vis int) {
-	v := lib.UnpackInts(s, 3)
-	return v[0], v[1], v[2]
-}
+type state struct{ r, c, vis int }

@@ -1,14 +1,17 @@
 package lib
 
-// AStarGeneric uses the A* algorithm to find the minimum number of steps from the initial
-// state(s) to a state where the done function returns true. The next function should
-// return all states reachable in a single step from the state passed to it along with the
+import "container/list"
+
+// AStar uses the A* algorithm to find the minimum number of steps from the initial state(s)
+// to a state for which the done function returns true. The next function should fill the supplied
+// map with all states reachable in a single step from the state passed to it along with the
 // corresponding cost, and the estimate function should return a lower bound on the remaining
-// cost to reach a target state.
+// cost to go from the supplied state to a target state.
 // See https://www.redblobgames.com/pathfinding/a-star/introduction.html.
-func AStarGeneric(initial []interface{},
+func AStar(
+	initial []interface{},
 	done func(interface{}) bool,
-	next func(interface{}) map[interface{}]int,
+	next func(interface{}, map[interface{}]int),
 	estimate func(interface{}) int) int {
 	// TODO: Add some way to track the path if needed.
 	frontier := NewHeap(func(a, b interface{}) bool { return a.(asNode).pri < b.(asNode).pri })
@@ -27,7 +30,9 @@ func AStarGeneric(initial []interface{},
 			return cost
 		}
 
-		for ns, nc := range next(cur) {
+		nmap := make(map[interface{}]int)
+		next(cur, nmap)
+		for ns, nc := range nmap {
 			newCost := cost + nc
 			if oldCost, ok := costs[ns]; !ok || newCost < oldCost {
 				costs[ns] = newCost
@@ -36,53 +41,7 @@ func AStarGeneric(initial []interface{},
 			}
 		}
 	}
-
-	return -1
-}
-
-// AStarVarCost is a wrapper around AStarGeneric for uint64s.
-func AStarVarCost(initial []uint64,
-	done func(uint64) bool,
-	next func(uint64) map[uint64]int,
-	estimate func(uint64) int) int {
-	init := make([]interface{}, len(initial))
-	for i, v := range initial {
-		init[i] = v
-	}
-	return AStarGeneric(init,
-		func(s interface{}) bool { return done(s.(uint64)) },
-		func(s interface{}) map[interface{}]int {
-			a := next(s.(uint64))
-			b := make(map[interface{}]int, len(a))
-			for k, v := range a {
-				b[k] = v
-			}
-			return b
-		},
-		func(s interface{}) int { return estimate(s.(uint64)) })
-}
-
-// AStar is a simplified version of AStarGeneric for uint64s that adapts the
-// supplied next function to report a cost of 1 to move to each next state.
-func AStar(initial []uint64,
-	done func(uint64) bool,
-	next func(uint64) []uint64,
-	estimate func(uint64) int) int {
-	init := make([]interface{}, len(initial))
-	for i, v := range initial {
-		init[i] = v
-	}
-	return AStarGeneric(init,
-		func(s interface{}) bool { return done(s.(uint64)) },
-		func(s interface{}) map[interface{}]int {
-			a := next(s.(uint64))
-			b := make(map[interface{}]int, len(a))
-			for _, k := range a {
-				b[k] = 1
-			}
-			return b
-		},
-		func(s interface{}) int { return estimate(s.(uint64)) })
+	panic("No paths found")
 }
 
 type asNode struct {
@@ -90,27 +49,32 @@ type asNode struct {
 	pri   int // lower is better
 }
 
-// BFS performs a breadth-first search to discover paths to states reachable from start.
+// BFS performs a breadth-first search to discover paths to states reachable from initial.
 // If opts is non-nil, it is used to configure the search.
 // The returned steps map contains the minimum number of steps to each state.
-// The returned from map contains the state preceding each destination state.
-func BFS(start uint64, next func(s uint64) []uint64, opts *BFSOptions) (steps map[uint64]int, from map[uint64]uint64) {
-	queue := []uint64{start} // next states to check
-	steps = map[uint64]int{start: 0}
-	from = map[uint64]uint64{start: start}
+// The returned from map contains the state (value) preceding each destination state (key).
+func BFS(initial []interface{}, next func(interface{}, map[interface{}]struct{}), opts *BFSOptions) (
+	steps map[interface{}]int, from map[interface{}]interface{}) {
+	queue := list.New() // next states to check
+	steps = make(map[interface{}]int)
+	from = make(map[interface{}]interface{})
+	for _, s := range initial {
+		queue.PushBack(s)
+		steps[s] = 0
+		from[s] = s
+	}
 
-	var remain map[uint64]struct{}
+	var remain map[interface{}]struct{}
 	if opts != nil && len(opts.AllDests) > 0 {
-		remain = make(map[uint64]struct{})
+		remain = make(map[interface{}]struct{})
 		for _, d := range opts.AllDests {
 			remain[d] = struct{}{}
 		}
 	}
 
 Loop:
-	for len(queue) > 0 {
-		cur := queue[0]
-		queue = queue[1:]
+	for queue.Len() > 0 {
+		cur := queue.Remove(queue.Front())
 		cost := steps[cur] + 1
 
 		// Early exit if we've exceeded the maximum number of steps.
@@ -118,24 +82,26 @@ Loop:
 			break Loop
 		}
 
-		for _, st := range next(cur) {
+		nmap := make(map[interface{}]struct{})
+		next(cur, nmap)
+		for n := range nmap {
 			// Skip already-visited states.
-			if _, ok := from[st]; ok {
+			if _, ok := from[n]; ok {
 				continue
 			}
 
-			queue = append(queue, st)
-			from[st] = cur
-			steps[st] = cost
+			queue.PushBack(n)
+			from[n] = cur
+			steps[n] = cost
 
 			// Early exit if we've reached one of the "any" destinations.
-			if opts != nil && MapHasKey(opts.AnyDests, st) {
+			if opts != nil && MapHasKey(opts.AnyDests, n) {
 				break Loop
 			}
 
 			// Early exit if we've reached all required destinations.
 			if remain != nil {
-				delete(remain, st)
+				delete(remain, n)
 				if len(remain) == 0 {
 					break Loop
 				}
@@ -149,9 +115,9 @@ Loop:
 // BFSOptions specifies optional configuration for BFS.
 type BFSOptions struct {
 	// AllDests contains states that must all be reached before exiting.
-	AllDests []uint64
+	AllDests []interface{}
 	// AnyDests contains states of which just one must be reached before exiting.
-	AnyDests map[uint64]struct{}
+	AnyDests map[interface{}]struct{}
 	// MaxSteps contains the maximum number of steps before exiting.
 	MaxSteps int
 }

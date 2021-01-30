@@ -73,14 +73,14 @@ func score(rounds int, ca *cave) int {
 type cave struct {
 	grid  [][]byte         // '.' is empty, '#' is wall
 	units []*unit          // both living and dead
-	locs  map[uint64]*unit // living units keyed by packed R,C
+	locs  map[[2]int]*unit // living units keyed by r,c
 	left  map[species]int  // living units per species
 }
 
 func newCave(grid [][]byte, hp, eap, gap int) *cave {
 	ca := &cave{
 		grid: lib.CopyBytes(grid),
-		locs: make(map[uint64]*unit),
+		locs: make(map[[2]int]*unit),
 		left: make(map[species]int),
 	}
 
@@ -95,7 +95,7 @@ func newCave(grid [][]byte, hp, eap, gap int) *cave {
 				}
 				u := &unit{spec, r, c, hp, ap}
 				ca.units = append(ca.units, u)
-				ca.locs[lib.PackInts(r, c)] = u
+				ca.locs[[2]int{r, c}] = u
 				ca.left[spec]++
 				row[c] = '.'
 			}
@@ -133,7 +133,7 @@ func (ca *cave) act(u *unit) bool {
 	lib.Assertf(u.alive(), "Dead unit can't take turn")
 
 	// Identify open squares within range of living enemy units.
-	dests := make(map[uint64][]*unit)
+	dests := make(map[[2]int][]*unit)
 	var enemies int
 	for _, o := range ca.units {
 		if o.alive() && o.spec != u.spec {
@@ -154,12 +154,12 @@ func (ca *cave) act(u *unit) bool {
 	}
 
 	// If we're not already in range of the enemy, move.
-	if !lib.MapHasKey(dests, lib.PackInts(u.r, u.c)) {
-		ca.move(u, lib.MapUint64Keys(dests))
+	if !lib.MapHasKey(dests, [2]int{u.r, u.c}) {
+		ca.move(u, dests)
 	}
 
 	// If the unit isn't in range after moving, it ends its turn.
-	targets, ok := dests[lib.PackInts(u.r, u.c)]
+	targets, ok := dests[[2]int{u.r, u.c}]
 	if !ok {
 		return true
 	}
@@ -170,25 +170,31 @@ func (ca *cave) act(u *unit) bool {
 	t := targets[0]
 	t.hp -= u.ap
 	if !t.alive() {
-		delete(ca.locs, lib.PackInts(t.r, t.c))
+		delete(ca.locs, [2]int{t.r, t.c})
 		ca.left[t.spec]--
 	}
 
 	return true
 }
 
-// move moves u to the preferred packed location from dests.
-func (ca *cave) move(u *unit, dests []uint64) {
+// move moves u to the preferred location from dests.
+func (ca *cave) move(u *unit, dests map[[2]int][]*unit) {
 	// Find the neighboring square and dest with the shortest path between them.
-	var dest, next uint64
+	var dest, next [2]int
 	min := math.MaxInt32
 	neighbors := ca.neighbors(u.r, u.c, nil)
-	for _, d := range dests {
+	for d := range dests {
 		// Find minimum number of steps from dest to each neighboring square.
-		costs, _ := lib.BFS(d, func(s uint64) []uint64 {
-			r, c := lib.UnpackInt2(s)
-			return ca.neighbors(r, c, u)
-		}, &lib.BFSOptions{AllDests: neighbors, MaxSteps: min})
+		ds := make([]interface{}, len(neighbors))
+		for i, n := range neighbors {
+			ds[i] = n
+		}
+		costs, _ := lib.BFS([]interface{}{d}, func(si interface{}, m map[interface{}]struct{}) {
+			for _, n := range ca.neighbors(si.([2]int)[0], si.([2]int)[1], u) {
+				m[n] = struct{}{}
+			}
+		}, &lib.BFSOptions{AllDests: ds, MaxSteps: min})
+
 		for _, n := range neighbors {
 			cost, ok := costs[n]
 			if !ok {
@@ -209,9 +215,9 @@ func (ca *cave) move(u *unit, dests []uint64) {
 		return
 	}
 
-	delete(ca.locs, lib.PackInts(u.r, u.c))
-	u.r, u.c = lib.UnpackInt2(next)
-	ca.locs[lib.PackInts(u.r, u.c)] = u
+	delete(ca.locs, [2]int{u.r, u.c})
+	u.r, u.c = next[0], next[1]
+	ca.locs[next] = u
 }
 
 // open returns true if the specified position is in bounds and doesn't
@@ -220,17 +226,17 @@ func (ca *cave) open(r, c int) bool {
 	if r < 0 || r >= len(ca.grid) || c < 0 || c >= len(ca.grid[r]) {
 		return false
 	}
-	return ca.grid[r][c] == '.' && !lib.MapHasKey(ca.locs, lib.PackInts(r, c))
+	return ca.grid[r][c] == '.' && !lib.MapHasKey(ca.locs, [2]int{r, c})
 }
 
 // neighbors returns open neighboring squares to r, c.
 // If u is non-nil, neighboring squares are also returned if they are occupied by u.
-func (ca *cave) neighbors(r, c int, u *unit) []uint64 {
-	var next []uint64
+func (ca *cave) neighbors(r, c int, u *unit) [][2]int {
+	var next [][2]int
 	for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 		r0, c0 := r+off[0], c+off[1]
 		if ca.open(r0, c0) || (u != nil && u.r == r0 && u.c == c0) {
-			next = append(next, lib.PackInts(r0, c0))
+			next = append(next, [2]int{r0, c0})
 		}
 	}
 	return next
@@ -245,8 +251,7 @@ func (ca *cave) dump(replace bool) {
 	for r, row := range ca.grid {
 		var us []string
 		for c, ch := range row {
-			p := lib.PackInts(r, c)
-			if u, ok := ca.locs[p]; ok {
+			if u, ok := ca.locs[[2]int{r, c}]; ok {
 				if u.spec == elf {
 					fmt.Print("E")
 					us = append(us, fmt.Sprintf("E(%d)", u.hp))
@@ -304,21 +309,15 @@ func (u *unit) cmp(o *unit, hp bool) bool {
 	return u.c < o.c
 }
 
-// dist returns the Manhattan distance between two packed R,C coordinates.
-func dist(a, b uint64) int {
-	ar, ac := lib.UnpackInt2(a)
-	br, bc := lib.UnpackInt2(b)
-	return lib.Abs(ar-br) + lib.Abs(ac-bc)
-}
+// dist returns the Manhattan distance between two r,c coordinates.
+func dist(a, b [2]int) int { return lib.Abs(a[0]-b[0]) + lib.Abs(a[1]-b[1]) }
 
-// cmp returns true if packed R,C coordinate a precedes b in reading order.
-func cmp(a, b uint64) bool {
-	ar, ac := lib.UnpackInt2(a)
-	br, bc := lib.UnpackInt2(b)
-	if ar < br {
+// cmp returns true if r,c coordinate a precedes b in reading order.
+func cmp(a, b [2]int) bool {
+	if a[0] < b[0] {
 		return true
-	} else if ar > br {
+	} else if a[0] > b[0] {
 		return false
 	}
-	return ac < bc
+	return a[1] < b[1]
 }

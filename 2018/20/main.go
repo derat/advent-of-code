@@ -20,19 +20,17 @@ func main() {
 	//lib.AssertEq(input, root.String())
 	lib.AssertEq(n, len(tokens))
 
-	doors := make(map[uint64]struct{}) // keys are packed x, y, dir
+	doors := make(map[state]struct{})
 	visit(0, 0, root.seqs, doors)
 
 	// Perform a BFS to find the shortest path to each room.
-	rooms, _ := lib.BFS(lib.PackInts(0, 0), func(s uint64) []uint64 {
-		x, y := lib.UnpackIntSigned2(s)
-		var next []uint64
+	rooms, _ := lib.BFS([]interface{}{[2]int{0, 0}}, func(si interface{}, m map[interface{}]struct{}) {
+		s := si.([2]int)
 		for _, d := range []lib.Dir{lib.North, lib.South, lib.East, lib.West} {
-			if lib.MapHasKey(doors, lib.PackInts(x, y, int(d))) {
-				next = append(next, lib.PackInts(x+d.DC(), y+d.DR()))
+			if lib.MapHasKey(doors, state{s[0], s[1], d}) {
+				m[[2]int{s[0] + d.DC(), s[1] + d.DR()}] = struct{}{}
 			}
 		}
-		return next
 	}, nil)
 
 	// Part 1: Largest number of doors required to pass through to reach a room,
@@ -41,6 +39,11 @@ func main() {
 
 	// Part 2: Number of rooms with a shortest path of at least 1000 doors.
 	fmt.Println(lib.AtLeast(1000, lib.MapIntVals(rooms)...))
+}
+
+type state struct {
+	x, y int
+	dir  lib.Dir
 }
 
 // seq describes a portion of a regular expression.
@@ -167,7 +170,7 @@ func loop(str string) bool {
 
 // visit recursively follows all paths reachable using seqs starting at x, y.
 // It records doors that are used in the supplied map.
-func visit(x, y int, seqs []*seq, doors map[uint64]struct{}) {
+func visit(x, y int, seqs []*seq, doors map[state]struct{}) {
 	if len(seqs) == 0 {
 		return
 	}
@@ -198,9 +201,9 @@ func visit(x, y int, seqs []*seq, doors map[uint64]struct{}) {
 				d = lib.East
 			}
 			// Add the door in both directions.
-			doors[lib.PackInts(x, y, int(d))] = struct{}{}
+			doors[state{x, y, d}] = struct{}{}
 			x, y = x+d.DC(), y+d.DR()
-			doors[lib.PackInts(x, y, int(d.Reverse()))] = struct{}{}
+			doors[state{x, y, d.Reverse()}] = struct{}{}
 		}
 		visit(x, y, rest, doors)
 	default:

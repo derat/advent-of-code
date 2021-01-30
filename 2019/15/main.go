@@ -17,28 +17,26 @@ const (
 func main() {
 	vm := lib.NewIntcode(lib.InputInt64s("2019/15"))
 
-	var r, c int                                           // droid location
-	var mr, mc int                                         // location we tried to move to
-	var or, oc int                                         // oxygen location
-	states := map[uint64]status{lib.PackInts(r, c): empty} // known locations
-	dests := make(map[uint64]struct{})                     // unknown locations
+	var dp [2]int                          // droid location
+	var mp [2]int                          // location we tried to move to
+	var op [2]int                          // oxygen location
+	states := map[[2]int]status{dp: empty} // known locations
+	dests := make(map[[2]int]struct{})     // unknown locations
 
 	// Returns neighboring squares to p with non-wall or unknown states.
-	neighbors := func(p uint64) []uint64 {
-		r, c := lib.UnpackIntSigned2(p)
-		ns := make([]uint64, 0, 4)
-		for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
-			r, c := r+off[0], c+off[1]
-			p := lib.PackInts(r, c)
-			if st, ok := states[p]; !ok || st != wall {
-				ns = append(ns, p)
+	neighbors := func(p [2]int) [][2]int {
+		ns := make([][2]int, 0, 4)
+		for _, o := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+			n := [2]int{p[0] + o[0], p[1] + o[1]}
+			if st, ok := states[n]; !ok || st != wall {
+				ns = append(ns, n)
 			}
 		}
 		return ns
 	}
 
 	// Initially explore neighbors of the starting square.
-	for _, p := range neighbors(lib.PackInts(r, c)) {
+	for _, p := range neighbors(dp) {
 		dests[p] = struct{}{}
 	}
 
@@ -51,7 +49,7 @@ func main() {
 		if drows > 0 {
 			fmt.Printf("\033[%dA", drows) // clear previous grid
 		}
-		grid, _, _ := dump(states, r, c, dests)
+		grid, _, _ := dump(states, dp, dests)
 		drows = len(grid)
 		fmt.Println(lib.DumpBytes(grid))
 		time.Sleep(delay)
@@ -60,24 +58,27 @@ func main() {
 
 	vm.InFunc = func() int64 {
 		// Perform BFS from r, c to find the nearest square from dests.
-		start := lib.PackInts(r, c)
-		_, from := lib.BFS(start, neighbors, &lib.BFSOptions{AnyDests: dests})
-		for s := range from {
-			if _, ok := dests[s]; !ok {
+		_, from := lib.BFS([]interface{}{dp}, func(si interface{}, m map[interface{}]struct{}) {
+			for _, n := range neighbors(si.([2]int)) {
+				m[n] = struct{}{}
+			}
+		}, &lib.BFSOptions{AnyDests: lib.GenericSet(dests)})
+		for si := range from {
+			if _, ok := dests[si.([2]int)]; !ok {
 				continue
 			}
 			// Walk backward to find the square after our current one.
-			for ; ; s = from[s] {
-				if f := from[s]; f == start {
-					mr, mc = lib.UnpackIntSigned2(s)
+			for ; ; si = from[si] {
+				if f := from[si].([2]int); f == dp {
+					mp = si.([2]int)
 					switch {
-					case mr == r-1:
+					case mp[0] == dp[0]-1:
 						return 1 // north
-					case mr == r+1:
+					case mp[0] == dp[0]+1:
 						return 2 // south
-					case mc == c-1:
+					case mp[1] == dp[1]-1:
 						return 3 // west
-					case mc == c+1:
+					case mp[1] == dp[1]+1:
 						return 4 // east
 					}
 				}
@@ -87,7 +88,6 @@ func main() {
 	}
 
 	vm.OutFunc = func(v int64) {
-		mp := lib.PackInts(mr, mc)
 		delete(dests, mp)
 		st := status(v)
 		states[mp] = st
@@ -95,14 +95,14 @@ func main() {
 		switch st {
 		case empty, oxygen:
 			// Move was successful. Add unknown neighboring locations to dests.
-			r, c = mr, mc
-			for _, p := range neighbors(lib.PackInts(r, c)) {
+			dp = mp
+			for _, p := range neighbors(mp) {
 				if _, ok := states[p]; !ok {
 					dests[p] = struct{}{}
 				}
 			}
 			if st == oxygen {
-				or, oc = r, c
+				op = mp
 			}
 		case wall:
 		default:
@@ -121,29 +121,36 @@ func main() {
 	lib.Assert(vm.Run())
 
 	// Part 1: Print length of shortest path from starting location to oxygen.
-	os := lib.PackInts(or, oc)
-	fmt.Println(lib.AStar([]uint64{lib.PackInts(0, 0)},
-		func(s uint64) bool { return s == os },
-		neighbors,
-		func(s uint64) int {
-			r, c := lib.UnpackIntSigned2(s)
-			return lib.Abs(or-r) + lib.Abs(oc-c)
+	fmt.Println(lib.AStar([]interface{}{[2]int{0, 0}},
+		func(si interface{}) bool { return si.([2]int) == op },
+		func(si interface{}, m map[interface{}]int) {
+			for _, n := range neighbors(si.([2]int)) {
+				m[n] = 1
+			}
+		},
+		func(si interface{}) int {
+			s := si.([2]int)
+			return lib.Abs(op[0]-s[0]) + lib.Abs(op[1]-s[1])
 		}))
 
 	// Part 2: Print number of steps for oxygen to spread to all open locations.
-	steps, _ := lib.BFS(os, neighbors, nil)
+	steps, _ := lib.BFS([]interface{}{op}, func(si interface{}, m map[interface{}]struct{}) {
+		for _, n := range neighbors(si.([2]int)) {
+			m[n] = struct{}{}
+		}
+	}, nil)
 	maxSteps := lib.Max(lib.MapIntVals(steps)...)
 	fmt.Println(maxSteps)
 
 	// Silly code for animating oxygen filling the maze.
 	if animateFill {
-		grid, rmin, cmin := dump(states, 0, 0, nil)
+		grid, rmin, cmin := dump(states, [2]int{0, 0}, nil)
 		fmt.Println(lib.DumpBytes(grid))
 
 		for i := 1; i <= maxSteps; i++ {
 			for r, row := range grid {
 				for c := range row {
-					if v, ok := steps[lib.PackInts(r+rmin, c+cmin)]; ok && v == i {
+					if v, ok := steps[[2]int{r + rmin, c + cmin}]; ok && v == i {
 						row[c] = 'O'
 					}
 				}
@@ -166,26 +173,23 @@ const (
 // dump dumps the supplied tile states, droid position, and destination locations
 // to a printable grid. It also returns the min row and column number from states
 // and dests (so additional data can be added to the supplied grid).
-func dump(states map[uint64]status, dr, dc int, dests map[uint64]struct{}) ([][]byte, int, int) {
+func dump(states map[[2]int]status, dp [2]int, dests map[[2]int]struct{}) ([][]byte, int, int) {
 	rmin, rmax := math.MaxInt32, math.MinInt32
 	cmin, cmax := math.MaxInt32, math.MinInt32
 	for p := range states {
-		r, c := lib.UnpackIntSigned2(p)
-		rmin, rmax = lib.Min(rmin, r), lib.Max(rmax, r)
-		cmin, cmax = lib.Min(cmin, c), lib.Max(cmax, c)
+		rmin, rmax = lib.Min(rmin, p[0]), lib.Max(rmax, p[0])
+		cmin, cmax = lib.Min(cmin, p[1]), lib.Max(cmax, p[1])
 	}
 	for p := range dests {
-		r, c := lib.UnpackIntSigned2(p)
-		rmin, rmax = lib.Min(rmin, r), lib.Max(rmax, r)
-		cmin, cmax = lib.Min(cmin, c), lib.Max(cmax, c)
+		rmin, rmax = lib.Min(rmin, p[0]), lib.Max(rmax, p[0])
+		cmin, cmax = lib.Min(cmin, p[1]), lib.Max(cmax, p[1])
 	}
 
 	grid := lib.NewBytes(rmax-rmin+1, cmax-cmin+1, ' ')
 	for p, s := range states {
-		r, c := lib.UnpackIntSigned2(p)
 		var ch byte
 		switch {
-		case r == dr && c == dc:
+		case p == dp:
 			ch = 'D'
 		case s == wall:
 			ch = '#'
@@ -194,11 +198,10 @@ func dump(states map[uint64]status, dr, dc int, dests map[uint64]struct{}) ([][]
 		case s == oxygen:
 			ch = '@'
 		}
-		grid[r-rmin][c-cmin] = ch
+		grid[p[0]-rmin][p[1]-cmin] = ch
 	}
 	for p := range dests {
-		r, c := lib.UnpackIntSigned2(p)
-		grid[r-rmin][c-cmin] = '?'
+		grid[p[0]-rmin][p[1]-cmin] = '?'
 	}
 
 	return grid, rmin, cmin
