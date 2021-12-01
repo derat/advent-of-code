@@ -19,15 +19,14 @@ func main() {
 	fmt.Println(incs)
 
 	// Part 2: Count increasing depths using three-measurement sliding window.
-	var wnds []int
-	for i := range depths[:len(depths)-2] {
-		wnds = append(wnds, depths[i]+depths[i+1]+depths[i+2])
-	}
 	wndIncs := 0
-	for i := 1; i < len(wnds); i++ {
-		if wnds[i] > wnds[i-1] {
+	prevWnd := depths[0] + depths[1] + depths[2]
+	for i := 1; i < len(depths)-2; i++ {
+		wnd := prevWnd - depths[i-1] + depths[i+2]
+		if wnd > prevWnd {
 			wndIncs++
 		}
+		prevWnd = wnd
 	}
 	fmt.Println(wndIncs)
 }
