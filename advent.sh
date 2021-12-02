@@ -12,6 +12,7 @@ Usage:
   $prog <YEAR> <DAY>   Print (and init) dir for specified year and day.
   $prog <DAY>          Print dir for specified day in current dir's year.
   $prog check          Run code in current dir and compare against answer.
+  $prog help           Display this message (-h and --help work too).
   $prog input          Print input for current dir.
   $prog lib            Print library directory.
   $prog next           Print dir for day after current dir.
@@ -62,7 +63,7 @@ day=
 [ $# -eq 0 ] && exec echo "$script_dir"
 
 case "$1" in
-  -h|--help)
+  -h|--help|help)
     usage
     ;;
   check)
