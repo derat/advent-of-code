@@ -12,10 +12,6 @@ func main() {
 	var ones []int // index 0 is MSB
 
 	// Part 2: Store bit patterns in a trie.
-	type node struct {
-		cnt       int // 0 for root
-		zero, one *node
-	}
 	var root node
 
 	for _, ln := range lib.InputLines("2021/3") {
@@ -49,17 +45,15 @@ func main() {
 	}
 
 	// Part 1: Multiply gamma (most common bits) and epsilon (least common bits).
-	var gamma, epsilon uint32
+	var gamma uint32
 	for _, cnt := range ones {
 		gamma <<= 1
-		epsilon <<= 1
 		if cnt >= vals/2 {
 			gamma |= 1
-		} else {
-			epsilon |= 1
 		}
 	}
-	fmt.Println(uint64(gamma) * uint64(epsilon))
+	epsilon := ^gamma & ((1 << len(ones)) - 1) // yuck
+	fmt.Println(gamma * epsilon)
 
 	// Part 2: Multiply oxygen (number with most-common bits, 1 wins in ties) and
 	// CO2 (number with least-common bits, 0 wins in ties).
@@ -67,18 +61,15 @@ func main() {
 		var v uint32
 		n := &root
 		for range ones {
-			onlyOne := n.one != nil && n.zero == nil
-			onlyZero := n.zero != nil && n.one == nil
-			onesWin := n.one != nil && (n.zero == nil || n.one.cnt > n.zero.cnt)
-			zerosWin := n.zero != nil && (n.one == nil || n.zero.cnt > n.one.cnt)
-			tie := !onesWin && !zerosWin
-
 			v <<= 1
-			if !onlyZero && (onlyOne || (mostCommon && (onesWin || tie)) || (!mostCommon && zerosWin)) {
+			if n.zero.getCnt() == 0 ||
+				(mostCommon && n.one.getCnt() >= n.zero.getCnt()) ||
+				(!mostCommon && n.one.getCnt() > 0 && n.one.getCnt() < n.zero.getCnt()) {
 				v |= 1
+				lib.Assert(n.one.getCnt() > 0)
 				n = n.one
 			} else {
-				lib.Assert(onlyZero || (mostCommon && zerosWin) || (!mostCommon && (onesWin || tie)))
+				lib.Assert(n.zero.getCnt() > 0)
 				n = n.zero
 			}
 		}
@@ -86,5 +77,18 @@ func main() {
 	}
 	oxygen := findNum(true)
 	co2 := findNum(false)
-	fmt.Println(uint64(oxygen) * uint64(co2))
+	fmt.Println(oxygen * co2)
+}
+
+type node struct {
+	cnt       int // 0 for root
+	zero, one *node
+}
+
+// getCnt returns n.cnt if n is non-nil or 0 otherwise.
+func (n *node) getCnt() int {
+	if n == nil {
+		return 0
+	}
+	return n.cnt
 }
