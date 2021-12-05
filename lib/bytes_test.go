@@ -31,6 +31,62 @@ func TestCopyBytesRegion(t *testing.T) {
 	}
 }
 
+func TestSetBytes(t *testing.T) {
+	const (
+		sr = 3
+		sc = 4
+	)
+	for _, tc := range []struct {
+		r0, c0 int
+		r1, c1 int
+		want   string
+	}{
+		{0, 0, 0, 0, "x...\n....\n...."},
+		{2, 3, 2, 3, "....\n....\n...x"},
+		{0, 0, 2, 3, "xxxx\nxxxx\nxxxx"},
+		{0, 0, 1, 2, "xxx.\nxxx.\n...."},
+		{2, 3, 1, 1, "....\n.xxx\n.xxx"},   // swap
+		{-1, -1, 3, 4, "xxxx\nxxxx\nxxxx"}, // clamp
+	} {
+		b := NewBytes(sr, sc, '.')
+		SetBytes(b, tc.r0, tc.c0, tc.r1, tc.c1, 'x')
+		if got := DumpBytes(b); got != tc.want {
+			t.Errorf("SetBytes(..., %d, %d, %d, %d, 'x') = %q; want %q",
+				tc.r0, tc.c0, tc.r1, tc.c1, got, tc.want)
+		}
+	}
+}
+
+func TestIterBytesLine(t *testing.T) {
+	const (
+		sr = 3
+		sc = 4
+	)
+	for _, tc := range []struct {
+		r0, c0 int
+		r1, c1 int
+		want   string
+	}{
+		{0, 0, 0, 0, "x...\n....\n...."},
+		{2, 3, 2, 3, "....\n....\n...x"},
+		{1, 1, 1, 2, "....\n.xx.\n...."},   // horizontal
+		{0, 2, 1, 2, "..x.\n..x.\n...."},   // vertical
+		{0, 0, 1, 1, "x...\n.x..\n...."},   // diagonal
+		{1, 3, 2, 2, "....\n...x\n..x."},   // diagonal
+		{2, 2, 0, 0, "x...\n.x..\n..x."},   // diagonal
+		{0, 0, 2, 3, "x...\n.xx.\n...x"},   // diagonal, not 1:1
+		{0, 3, 2, 0, "...x\n.xx.\nx..."},   // diagonal, not 1:1
+		{-1, -1, 4, 4, "x...\n.x..\n..x."}, // out of bounds
+	} {
+		b := NewBytes(sr, sc, '.')
+		IterBytesLine(b, tc.r0, tc.c0, tc.r1, tc.c1, func(r, c int) { b[r][c] = 'x' })
+		if got := DumpBytes(b); got != tc.want {
+			t.Errorf("IterBytesLine(..., %d, %d, %d, %d, ...) = %q; want %q",
+				tc.r0, tc.c0, tc.r1, tc.c1, got, tc.want)
+		}
+	}
+}
+
 func TestFlipBytesX(t *testing.T) {
 	for _, tc := range []struct {
 		input, want string

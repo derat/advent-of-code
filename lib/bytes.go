@@ -3,6 +3,7 @@ package lib
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"strings"
 )
 
@@ -42,14 +43,8 @@ func CopyBytes(b [][]byte) [][]byte {
 
 // CopyBytesRegion returns a copy of the region bounded by (r0, c0) and (r1, c1), inclusive.
 func CopyBytesRegion(b [][]byte, r0, c0, r1, c1 int) [][]byte {
-	r0 = Max(r0, 0)
-	c0 = Max(c0, 0)
-	r1 = Min(r1, len(b)-1)
-	c1 = Min(c1, len(b[0])-1)
-
-	AssertLessEq(r0, r1)
-	AssertLessEq(c0, c1)
-
+	r0, r1 = clampAndSwap(r0, r1, 0, len(b)-1)
+	c0, c1 = clampAndSwap(c0, c1, 0, len(b[0])-1)
 	n := make([][]byte, r1-r0+1)
 	for r := range n {
 		n[r] = make([]byte, c1-c0+1)
@@ -58,35 +53,69 @@ func CopyBytesRegion(b [][]byte, r0, c0, r1, c1 int) [][]byte {
 	return n
 }
 
-// SetBytes the rectangle bounded by (r0, c0) and (r1, c1), inclusive, to ch.
+// SetBytes sets the rectangle bounded by (r0, c0) and (r1, c1), inclusive, to ch.
 func SetBytes(b [][]byte, r0, c0, r1, c1 int, ch byte) {
-	for r := Max(r0, 0); r <= Min(r1, len(b)-1); r++ {
-		for c := Max(c0, 0); c <= Min(c1, len(b[r])-1); c++ {
-			b[r][c] = ch
-		}
-	}
+	IterBytesRect(b, r0, c0, r1, c1, func(r, c int) { b[r][c] = ch })
 }
 
 // CountBytes returns the number of occurrences of chars in the rectangle bounded
 // by (r0, c0) and (r1, c1), inclusive. The supplied bounds are clamped.
 func CountBytes(b [][]byte, r0, c0, r1, c1 int, chars ...byte) int {
-	cnt := 0
-	for r := Max(r0, 0); r <= Min(r1, len(b)-1); r++ {
-		for c := Max(c0, 0); c <= Min(c1, len(b[r])-1); c++ {
-			for _, ch := range chars {
-				if b[r][c] == ch {
-					cnt++
-					break
-				}
+	var cnt int
+	IterBytesRect(b, r0, c0, r1, c1, func(r, c int) {
+		for _, ch := range chars {
+			if b[r][c] == ch {
+				cnt++
+				return
 			}
 		}
-	}
+	})
 	return cnt
 }
 
 // CountBytesFull calls CountBytes for the full bounds of b.
-func CountBytesFull(b [][]byte, ch byte) int {
-	return CountBytes(b, 0, 0, len(b)-1, len(b[0])-1, ch)
+func CountBytesFull(b [][]byte, chars ...byte) int {
+	return CountBytes(b, 0, 0, len(b)-1, len(b[0])-1, chars...)
+}
+
+// IterBytesRect calls f for each coordinate in the rectangle bounded by (r0, c0)
+// and (r1, c1), inclusive. The supplied bounds are clamped and swapped if needed.
+func IterBytesRect(b [][]byte, r0, c0, r1, c1 int, f func(r, c int)) {
+	r0, r1 = clampAndSwap(r0, r1, 0, len(b)-1)
+	c0, c1 = clampAndSwap(c0, c1, 0, len(b[0])-1)
+	for r := r0; r <= r1; r++ {
+		for c := c0; c <= c1; c++ {
+			f(r, c)
+		}
+	}
+}
+
+// clampAndSwap clamps a and b within [min, max] and swaps them if needed to
+// be in ascending order.
+func clampAndSwap(a, b, min, max int) (c, d int) {
+	c = Max(Min(a, b), min)
+	d = Min(Max(a, b), max)
+	return c, d
+}
+
+// IterBytesLine calls f for each coordinate in the line from (r0, c0) to (r1, c1).
+// The supplied points may be outside of b's bounds, but f will only be called for
+// in-bounds coordinates.
+func IterBytesLine(b [][]byte, r0, c0, r1, c1 int, f func(r, c int)) {
+	// This uses the "line drawing on a grid" algorithm that Amit Patel
+	// describes at https://www.redblobgames.com/grids/line-drawing.html.
+	diagDist := Max(Abs(r1-r0), Abs(c1-c0))
+	for step := 0; step <= diagDist; step++ {
+		var t float64
+		if diagDist > 0 {
+			t = float64(step) / float64(diagDist)
+		}
+		r := int(math.Round(float64(r0) + t*float64(r1-r0)))
+		c := int(math.Round(float64(c0) + t*float64(c1-c0)))
+		if r >= 0 && r < len(b) && c >= 0 && c < len(b[0]) {
+			f(r, c)
+		}
+	}
 }
 
 // DumpBytes returns b as a newline-separated string.
