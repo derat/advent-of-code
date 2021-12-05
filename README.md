@@ -1,6 +1,6 @@
 # advent-of-code
 
-[![Build Status](https://travis-ci.org/derat/advent-of-code.svg?branch=main)](https://travis-ci.org/derat/advent-of-code)
+[![Build Status](https://app.travis-ci.com/derat/advent-of-code.svg?branch=main)](https://app.travis-ci.com/derat/advent-of-code)
 
 This repository contains my Go solutions for [Advent of Code] programming
 challenges, along with [related library code](./lib) and
