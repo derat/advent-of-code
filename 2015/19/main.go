@@ -98,5 +98,5 @@ func main() {
 		}
 		return -1
 	}
-	println(recurse(target, 0))
+	fmt.Println(recurse(target, 0))
 }
