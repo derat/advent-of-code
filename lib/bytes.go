@@ -81,6 +81,15 @@ func (b ByteGrid) CopyRect(r0, c0, r1, c1 int) ByteGrid {
 	return n
 }
 
+// Get returns the byte at (r, c). If the coordinates are outside b's bounds,
+// def is returned instead.
+func (b ByteGrid) Get(r, c int, def byte) byte {
+	if r < 0 || r > b.MaxRow() || c < 0 || c > b.MaxCol() {
+		return def
+	}
+	return b[r][c]
+}
+
 // SetRect sets the rectangle bounded by (r0, c0) and (r1, c1), inclusive, to ch.
 func (b ByteGrid) SetRect(r0, c0, r1, c1 int, ch byte) {
 	b.IterRect(r0, c0, r1, c1, func(r, c int) { b[r][c] = ch })
@@ -104,6 +113,11 @@ func (b ByteGrid) CountRect(r0, c0, r1, c1 int, chars ...byte) int {
 // Count returns the number of occurrences of chars in b.
 func (b ByteGrid) Count(chars ...byte) int {
 	return b.CountRect(0, 0, b.MaxRow(), b.MaxCol(), chars...)
+}
+
+// Iter calls f for each coordinate in b.
+func (b ByteGrid) Iter(f func(r, c int)) {
+	b.IterRect(0, 0, b.Rows(), b.Cols(), f)
 }
 
 // IterRect calls f for each coordinate in the rectangle bounded by (r0, c0)

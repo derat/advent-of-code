@@ -31,6 +31,23 @@ func TestByteGrid_CopyRect(t *testing.T) {
 	}
 }
 
+func TestByteGrid_Get(t *testing.T) {
+	b := NewByteGridString("123\n456")
+	for _, tc := range []struct {
+		r, c int
+		want byte
+	}{
+		{-1, -1, '?'}, {-1, 0, '?'}, {-1, 1, '?'}, {-1, 2, '?'}, {-1, 3, '?'},
+		{0, -1, '?'}, {0, 0, '1'}, {0, 1, '2'}, {0, 2, '3'}, {0, 3, '?'},
+		{1, -1, '?'}, {1, 0, '4'}, {1, 1, '5'}, {1, 2, '6'}, {1, 3, '?'},
+		{2, -1, '?'}, {2, 0, '?'}, {2, 1, '?'}, {2, 2, '?'}, {2, 3, '?'},
+	} {
+		if got := b.Get(tc.r, tc.c, '?'); got != tc.want {
+			t.Errorf("Get(%d, %d, '?') = %q; want %q", tc.r, tc.c, rune(got), rune(tc.want))
+		}
+	}
+}
+
 func TestByteGrid_SetRect(t *testing.T) {
 	const (
 		sr = 3
