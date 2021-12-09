@@ -12,6 +12,7 @@ Usage:
   $prog <YEAR> <DAY>   Print (and init) dir for specified year and day.
   $prog <DAY>          Print dir for specified day in current dir's year.
   $prog check          Run code in current dir and compare against answer.
+  $prog checkall       Run all days and compare against answers.
   $prog help           Display this message (-h and --help work too).
   $prog input          Print input for current dir.
   $prog lib            Print library directory.
@@ -70,7 +71,19 @@ case "$1" in
     check_in_day_dir
     answers="${answers_dir}/$(printf "%d/%02d" $cur_year $cur_day)"
     [ -e "$answers" ] || die "No answers for ${cur_year}/${cur_day}"
-    go run main.go | exec diff "$answers" -
+    out=$(go run main.go)
+    echo "$out" | exec diff "$answers" -
+    exit 0
+    ;;
+  checkall)
+    for dir in ${script_dir}/20??/??; do
+      cd "$dir"
+      # https://stackoverflow.com/a/24427249
+      name=$(echo "$dir" | rev | cut -c -7 |rev)
+      if [ -e .slow ]; then echo "$name skipped"; continue; fi
+      echo "$name"
+      "$0" check || true
+    done
     exit 0
     ;;
   input)

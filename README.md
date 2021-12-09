@@ -11,8 +11,8 @@ I have a function similar to the following declared in my shell ([zsh]):
 ```sh
 advent() {
   case "$1" in
-    -h|--help|check|help|input|run|save|stdin|web)
-      $HOME/advent-of-code/advent.sh $*
+    -h|--help|check|checkall|help|input|run|save|stdin|web)
+      $HOME/advent-of-code/advent.sh "$@"
       ;;
     *)
       cd "$($HOME/advent-of-code/advent.sh "$@")"
