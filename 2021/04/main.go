@@ -13,7 +13,7 @@ func main() {
 	var boards []board
 	for _, lines := range input[1:] {
 		b := board{
-			seen:   lib.NewBytes(len(lines), len(lines), ' '),
+			seen:   lib.NewByteGrid(len(lines), len(lines), ' '),
 			lookup: make(map[int][2]int),
 		}
 		for _, ln := range lines {
@@ -54,7 +54,7 @@ Loop:
 
 type board struct {
 	rows   [][]int
-	seen   [][]byte
+	seen   lib.ByteGrid
 	lookup map[int][2]int // vals are [row, col]
 }
 
@@ -66,8 +66,8 @@ func (b *board) set(v int) bool {
 	r, c := coords[0], coords[1]
 	b.seen[r][c] = 'x'
 	nr, nc := len(b.rows), len(b.rows[r])
-	return lib.CountBytes(b.seen, r, 0, r, nc-1, 'x') == nc ||
-		lib.CountBytes(b.seen, 0, c, nr-1, c, 'x') == nr
+	return b.seen.CountRect(r, 0, r, nc-1, 'x') == nc ||
+		b.seen.CountRect(0, c, nr-1, c, 'x') == nr
 }
 
 func (b *board) score(drawn int) int {

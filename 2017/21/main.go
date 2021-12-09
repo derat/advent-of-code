@@ -111,20 +111,20 @@ func split2(s string) []string {
 // by flipping and rotating the supplied string (e.g. "#./.#").
 // This is similar to 2020/20.
 func transforms(s string) []string {
-	rows := bytes.Split([]byte(s), []byte("/"))
+	rows := lib.ByteGrid(bytes.Split([]byte(s), []byte("/")))
 	lib.AssertEq(len(rows), len(rows[0])) // square
 
 	ts := make([]string, 8)
 	for tr := 0; tr < 8; tr++ {
-		trows := lib.CopyBytes(rows)
+		trows := rows.Copy()
 		if tr&1 != 0 {
-			lib.FlipBytesY(trows)
+			trows = trows.FlipVert()
 		}
 		if tr&2 != 0 {
-			lib.FlipBytesX(trows)
+			trows = trows.FlipHoriz()
 		}
 		if tr&4 != 0 {
-			trows = lib.RotateBytes(trows)
+			trows = trows.RotateCW()
 		}
 		ts[tr] = string(bytes.Join(trows, []byte("/")))
 	}

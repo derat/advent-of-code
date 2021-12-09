@@ -13,7 +13,7 @@ func main() {
 	)
 
 	key := lib.InputLines("2017/14")[0]
-	grid := lib.NewBytes(nrows, ncols, '.')
+	grid := lib.NewByteGrid(nrows, ncols, '.')
 	for r := range grid {
 		for i, b := range knot(fmt.Sprintf("%s-%d", key, r)) {
 			for j := 0; j < 8; j++ {
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	// Part 1: Count the number of used squares.
-	fmt.Println(lib.CountBytesFull(grid, '#'))
+	fmt.Println(grid.Count('#'))
 
 	// Part 2: Count the number of used regions.
 	// I was originally thinking about scanning the grid one row at a time, keeping

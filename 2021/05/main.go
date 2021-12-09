@@ -8,11 +8,11 @@ import (
 
 func main() {
 	const dim = 1000
-	grid := lib.NewBytes(dim, dim, '.')
-	grid2 := lib.NewBytes(dim, dim, '.')
+	grid := lib.NewByteGrid(dim, dim, '.')
+	grid2 := lib.NewByteGrid(dim, dim, '.')
 
 	drawVent := func(b [][]byte, x1, y1, x2, y2 int) {
-		lib.IterBytesLine(grid, y1, x1, y2, x2, func(r, c int) {
+		grid.IterLine(y1, x1, y2, x2, func(r, c int) {
 			if ch := b[r][c]; ch == '.' {
 				b[r][c] = '1'
 			} else {
@@ -39,9 +39,9 @@ func main() {
 		drawVent(grid2, x1, y1, x2, y2)
 	}
 
-	countOverlaps := func(b [][]byte) int {
+	countOverlaps := func(b lib.ByteGrid) int {
 		var cnt int
-		lib.IterBytesRect(b, 0, 0, dim-1, dim-1, func(r, c int) {
+		b.IterRect(0, 0, dim-1, dim-1, func(r, c int) {
 			if ch := b[r][c]; ch >= '2' && ch <= '9' {
 				cnt++
 			}

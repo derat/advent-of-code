@@ -12,7 +12,7 @@ func main() {
 	// Part 1: Count affected points in 50x50 grid.
 	// I assumed that the program would read repeated coordinates,
 	// but it seems like I need to run it once for each point...?
-	grid := lib.NewBytes(50, 50, '.')
+	grid := lib.NewByteGrid(50, 50, '.')
 	for r := range grid {
 		for c := range grid[r] {
 			if check(input, r, c) {
@@ -20,7 +20,7 @@ func main() {
 			}
 		}
 	}
-	fmt.Println(lib.CountBytesFull(grid, '#'))
+	fmt.Println(grid.Count('#'))
 
 	// Part 2: Fit a 100x100 square into the beam as close to 0,0 as possible.
 	// Then print 10000*x + y for its top-left corner.

@@ -41,7 +41,7 @@ func main() {
 	}
 
 	xmin, ymin, width, height := bounds(points)
-	grid := lib.NewBytes(height+2, width+2, ' ')
+	grid := lib.NewByteGrid(height+2, width+2, ' ')
 	for _, p := range points {
 		r := 1 + p.y - ymin
 		c := 1 + p.x - xmin

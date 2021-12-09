@@ -7,19 +7,19 @@ import (
 )
 
 func main() {
-	input := lib.InputLinesBytes("2019/24", '#', '.')
+	input := lib.InputByteGrid("2019/24", '#', '.')
 
 	// Part 1: Print biodiversity score after loop detected.
-	grid := lib.CopyBytes(input)
+	grid := input.Copy()
 	seen := map[uint64]struct{}{bio(grid): struct{}{}}
 	for {
-		next := lib.NewBytes(len(grid), len(grid[0]), '.')
+		next := lib.NewByteGrid(len(grid), len(grid[0]), '.')
 		for r, row := range grid {
 			for c, ch := range row {
-				cnt := lib.CountBytes(grid, r-1, c, r-1, c, '#') +
-					lib.CountBytes(grid, r+1, c, r+1, c, '#') +
-					lib.CountBytes(grid, r, c-1, r, c-1, '#') +
-					lib.CountBytes(grid, r, c+1, r, c+1, '#')
+				cnt := grid.CountRect(r-1, c, r-1, c, '#') +
+					grid.CountRect(r+1, c, r+1, c, '#') +
+					grid.CountRect(r, c-1, r, c-1, '#') +
+					grid.CountRect(r, c+1, r, c+1, '#')
 				switch ch {
 				case '#':
 					if cnt == 1 { // bug dies unless there's exactly one adjacent bug
@@ -51,7 +51,7 @@ func main() {
 	// alternative would be to pass the inner and outer grids into update(),
 	// but doing that seemed like it would be a bit fiddly.
 	base := &rgrid{
-		b:   lib.CopyBytes(input),
+		b:   input.Copy(),
 		in:  mkgrid(),
 		out: mkgrid(),
 	}
@@ -66,7 +66,7 @@ func main() {
 
 // bio returns the biodiversity score for part 1.
 // This also functions as a unique key for the grid's state.
-func bio(grid [][]byte) uint64 {
+func bio(grid lib.ByteGrid) uint64 {
 	var score uint64
 	pts := uint64(1)
 	for _, row := range grid {
@@ -123,12 +123,12 @@ func update(cur *rgrid, d dir) *rgrid {
 }
 
 func mkgrid() *rgrid {
-	return &rgrid{b: lib.NewBytes(5, 5, '.')}
+	return &rgrid{b: lib.NewByteGrid(5, 5, '.')}
 }
 
 // rgrid represents a recursive 5x5 grid for part 2.
 type rgrid struct {
-	b       [][]byte
+	b       lib.ByteGrid
 	in, out *rgrid
 }
 
@@ -151,7 +151,7 @@ func (g *rgrid) count(d dir) int {
 	if g == nil {
 		return 0
 	}
-	cnt := lib.CountBytesFull(g.b, '#')
+	cnt := g.b.Count('#')
 	if d&in != 0 {
 		cnt += g.in.count(in)
 	}
@@ -201,7 +201,7 @@ func (g *rgrid) print(d dir, depth int) {
 	}
 
 	fmt.Printf("Depth %d:\n", depth)
-	fmt.Println(lib.DumpBytes(g.b))
+	fmt.Println(g.b.Dump())
 	fmt.Println()
 
 	if d&in != 0 {

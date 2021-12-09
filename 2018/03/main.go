@@ -19,7 +19,7 @@ func main() {
 
 	// Part 1: Print number of points with two or more overlapping claims.
 	const dim = 1000
-	grid := lib.NewBytes(dim, dim, 0)
+	grid := lib.NewByteGrid(dim, dim, 0)
 	for _, cl := range claims {
 		for r := cl.t; r <= cl.b; r++ {
 			for c := cl.l; c <= cl.r; c++ {

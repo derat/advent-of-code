@@ -31,14 +31,14 @@ func main() {
 	}
 	nrows := rmax - rmin + 1
 	ncols := cmax - cmin + 1
-	grid := lib.NewBytes(nrows, ncols, ' ')
+	grid := lib.NewByteGrid(nrows, ncols, ' ')
 	for p, v := range panels {
 		r, c := lib.UnpackIntSigned2(p)
 		if v == 1 {
 			grid[r][c] = '#'
 		}
 	}
-	//fmt.Println(lib.DumpBytes(grid))
+	//fmt.Println(grid.Dump())
 	fmt.Println(lib.OCR(grid, ' '))
 }
 

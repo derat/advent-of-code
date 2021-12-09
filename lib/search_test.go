@@ -7,7 +7,7 @@ import (
 )
 
 func TestAStar(t *testing.T) {
-	grid := ByteLines(strings.TrimLeft(`
+	grid := NewByteGridString(strings.TrimLeft(`
 ..#.....
 ..#.#...
 ..#.###.

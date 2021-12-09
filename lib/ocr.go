@@ -13,7 +13,7 @@ func OCR(b [][]byte, blank byte) string {
 	if canonGlyphs == nil {
 		canonGlyphs = make(map[byte][]glyph, len(canonGlyphData))
 		for ch, s := range canonGlyphData {
-			canonGlyphs[ch] = extractGlyphs(ByteLines(s, '#', ' '), ' ')
+			canonGlyphs[ch] = extractGlyphs(NewByteGridString(s, '#', ' '), ' ')
 		}
 	}
 
@@ -35,7 +35,7 @@ func OCR(b [][]byte, blank byte) string {
 }
 
 // extractGlyphs extracts glyphs from b.
-func extractGlyphs(b [][]byte, blank byte) []glyph {
+func extractGlyphs(b ByteGrid, blank byte) []glyph {
 	rows, cols := len(b), len(b[0])
 	for r := range b[1:] {
 		AssertEq(len(b[r]), cols)
@@ -45,7 +45,7 @@ func extractGlyphs(b [][]byte, blank byte) []glyph {
 	var glyphs []glyph
 	var inGlyph bool
 	for c := range b[0] {
-		empty := CountBytes(b, 0, c, rows-1, c, blank) == rows
+		empty := b.CountRect(0, c, rows-1, c, blank) == rows
 		if inGlyph && empty {
 			inGlyph = false
 		} else if inGlyph && !empty {
@@ -60,13 +60,13 @@ func extractGlyphs(b [][]byte, blank byte) []glyph {
 	for i := range glyphs {
 		gl := &glyphs[i]
 		for r := 0; r < rows; r++ {
-			if CountBytes(b, r, gl.left, r, gl.right, blank) != gl.width() {
+			if b.CountRect(r, gl.left, r, gl.right, blank) != gl.width() {
 				gl.top = r
 				break
 			}
 		}
 		for r := rows - 1; r >= 0; r-- {
-			if CountBytes(b, r, gl.left, r, gl.right, blank) != gl.width() {
+			if b.CountRect(r, gl.left, r, gl.right, blank) != gl.width() {
 				gl.bottom = r
 				break
 			}
@@ -96,10 +96,10 @@ func (g *glyph) height() int {
 	return g.bottom - g.top + 1
 }
 
-func (g *glyph) addFeatures(b [][]byte, blank byte) {
+func (g *glyph) addFeatures(b ByteGrid, blank byte) {
 	// Returns the fraction of non-blank bytes in the supplied inclusive bounds.
 	filled := func(r0, c0, r1, c1 int) float64 {
-		empty := CountBytes(b, r0, c0, r1, c1, blank)
+		empty := b.CountRect(r0, c0, r1, c1, blank)
 		total := (r1 - r0 + 1) * (c1 - c0 + 1)
 		return float64(total-empty) / float64(total)
 	}

@@ -111,7 +111,13 @@ func InputLines(date string) []string {
 // InputLinesBytes returns newline-separated lines of input for the specified day.
 // If valid is non-empty, panics if any unlisted bytes are encountered.
 func InputLinesBytes(date string, valid ...byte) [][]byte {
-	return ByteLines(Input(date), valid...)
+	return NewByteLines(Input(date), valid...)
+}
+
+// InputByteGrid returns a ByteGrid holding the input for the specified day.
+// If valid is non-empty, panics if any unlisted bytes are encountered.
+func InputByteGrid(date string, valid ...byte) ByteGrid {
+	return NewByteGridString(Input(date), valid...)
 }
 
 var newlinesRegexp = regexp.MustCompile(`\n\n+`)

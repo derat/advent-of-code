@@ -33,21 +33,21 @@ func main() {
 	ncols := bnd.c1 - bnd.c0 + 3
 
 	// Fill in the clay.
-	grid := lib.NewBytes(nrows, ncols, '.')
+	grid := lib.NewByteGrid(nrows, ncols, '.')
 	for _, reg := range clay {
-		lib.SetBytes(grid, reg.r0-bnd.r0+1, reg.c0-bnd.c0+1, reg.r1-bnd.r0+1, reg.c1-bnd.c0+1, '#')
+		grid.SetRect(reg.r0-bnd.r0+1, reg.c0-bnd.c0+1, reg.r1-bnd.r0+1, reg.c1-bnd.c0+1, '#')
 	}
 
 	scol := 500 - bnd.c0 + 1 // 500 is given in puzzle
 	grid[0][scol] = '+'
 	drop(grid, 1, scol)
-	//fmt.Println(lib.DumpBytes(grid))
+	//fmt.Println(grid.Dump())
 
 	// Part 1: Number of tiles reachable by water.
-	fmt.Println(lib.CountBytes(grid, 1, 0, nrows-1, ncols-1, '~', '|'))
+	fmt.Println(grid.CountRect(1, 0, nrows-1, ncols-1, '~', '|'))
 
 	// Part 2: Number of tiles containing stationary water.
-	fmt.Println(lib.CountBytes(grid, 1, 0, nrows-1, ncols-1, '~'))
+	fmt.Println(grid.CountRect(1, 0, nrows-1, ncols-1, '~'))
 }
 
 // drop drops water in grid starting at r, c.

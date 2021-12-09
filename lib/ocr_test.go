@@ -150,7 +150,7 @@ func TestOCR(t *testing.T) {
 			"UVHXYZ",
 		},
 	} {
-		got := OCR(ByteLines(strings.TrimLeft(tc.input, "\n"), '#', ' '), ' ')
+		got := OCR(NewByteGridString(strings.TrimLeft(tc.input, "\n"), '#', ' '), ' ')
 		if got != tc.want {
 			t.Errorf("OCR([%s]) = %q; want %q", tc.desc, got, tc.want)
 		}

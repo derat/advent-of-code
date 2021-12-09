@@ -34,7 +34,7 @@ func main() {
 
 	// Part 2: Beat the game by breaking all tiles and print final score.
 	nrows, ncols := rmax+1, cmax+1
-	screen := lib.NewBytes(nrows+1, ncols, ' ') // extra row for score
+	screen := lib.NewByteGrid(nrows+1, ncols, ' ') // extra row for score
 	clear := func() { fmt.Printf("\033[%dA", len(screen)) }
 
 	var drawn bool         // have drawn at least one frame
@@ -71,7 +71,7 @@ func main() {
 			} else {
 				drawn = true
 			}
-			fmt.Println(lib.DumpBytes(screen))
+			fmt.Println(screen.Dump())
 			time.Sleep(delay)
 		}
 
@@ -96,7 +96,7 @@ func main() {
 
 	if animate {
 		clear()
-		fmt.Println(lib.DumpBytes(screen))
+		fmt.Println(screen.Dump())
 	} else {
 		fmt.Println(score)
 	}

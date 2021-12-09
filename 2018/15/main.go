@@ -77,9 +77,9 @@ type cave struct {
 	left  map[species]int  // living units per species
 }
 
-func newCave(grid [][]byte, hp, eap, gap int) *cave {
+func newCave(grid lib.ByteGrid, hp, eap, gap int) *cave {
 	ca := &cave{
-		grid: lib.CopyBytes(grid),
+		grid: grid.Copy(),
 		locs: make(map[[2]int]*unit),
 		left: make(map[species]int),
 	}

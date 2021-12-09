@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-// ByteLines returns newline-separated lines from s. Blank lines are skipped.
+// NewByteLines returns newline-separated lines from s. Blank lines are skipped.
 // If valid is non-empty, panics if any unlisted bytes are encountered.
-func ByteLines(s string, valid ...byte) [][]byte {
+func NewByteLines(s string, valid ...byte) [][]byte {
 	var lines [][]byte
 	for i, ln := range strings.Split(s, "\n") {
 		if len(ln) == 0 {
@@ -27,24 +27,52 @@ func ByteLines(s string, valid ...byte) [][]byte {
 	return lines
 }
 
-// NewBytes returns a 2-dimensional array of ch with r rows and c columns.
-func NewBytes(r, c int, ch byte) [][]byte {
+// ByteGrid holds a two-dimensional grid of bytes.
+type ByteGrid [][]byte
+
+// NewByteGrid returns a 2-dimensional array of ch with r rows and c columns.
+func NewByteGrid(r, c int, ch byte) ByteGrid {
+	AssertLess(0, r)
+	AssertLess(0, c)
 	g := make([][]byte, r)
 	for i := range g {
 		g[i] = bytes.Repeat([]byte{ch}, c)
 	}
-	return g
+	return ByteGrid(g)
 }
 
-// CopyBytes returns a deep copy of the supplied 2-dimensional array.
-func CopyBytes(b [][]byte) [][]byte {
-	return CopyBytesRegion(b, 0, 0, len(b)-1, len(b[0])-1)
+// NewByteGrid creates a ByteGrid containing only the supplied row.
+func NewByteGridRow(r []byte) ByteGrid {
+	AssertLess(0, len(r))
+	return ByteGrid([][]byte{r})
 }
 
-// CopyBytesRegion returns a copy of the region bounded by (r0, c0) and (r1, c1), inclusive.
-func CopyBytesRegion(b [][]byte, r0, c0, r1, c1 int) [][]byte {
-	r0, r1 = clampAndSwap(r0, r1, 0, len(b)-1)
-	c0, c1 = clampAndSwap(c0, c1, 0, len(b[0])-1)
+// NewByteGridString splits s into rows per NewByteLines and returns a ByteGrid.
+func NewByteGridString(s string, valid ...byte) ByteGrid {
+	lines := NewByteLines(s, valid...)
+	AssertLess(0, len(lines))
+	AssertLess(0, len(lines[0]))
+	for i := 0; i < len(lines); i++ {
+		AssertEq(len(lines[0]), len(lines[1]))
+	}
+	return ByteGrid(lines)
+}
+
+func (b ByteGrid) Rows() int { return len(b) }
+func (b ByteGrid) Cols() int { return len(b[0]) }
+
+func (b ByteGrid) MaxRow() int { return b.Rows() - 1 }
+func (b ByteGrid) MaxCol() int { return b.Cols() - 1 }
+
+// Copy returns a deep copy of b.
+func (b ByteGrid) Copy() ByteGrid {
+	return b.CopyRect(0, 0, b.MaxRow(), b.MaxCol())
+}
+
+// CopyRect returns a copy of the rectangle bounded by (r0, c0) and (r1, c1), inclusive.
+func (b ByteGrid) CopyRect(r0, c0, r1, c1 int) ByteGrid {
+	r0, r1 = clampAndSwap(r0, r1, 0, b.MaxRow())
+	c0, c1 = clampAndSwap(c0, c1, 0, b.MaxCol())
 	n := make([][]byte, r1-r0+1)
 	for r := range n {
 		n[r] = make([]byte, c1-c0+1)
@@ -53,16 +81,16 @@ func CopyBytesRegion(b [][]byte, r0, c0, r1, c1 int) [][]byte {
 	return n
 }
 
-// SetBytes sets the rectangle bounded by (r0, c0) and (r1, c1), inclusive, to ch.
-func SetBytes(b [][]byte, r0, c0, r1, c1 int, ch byte) {
-	IterBytesRect(b, r0, c0, r1, c1, func(r, c int) { b[r][c] = ch })
+// SetRect sets the rectangle bounded by (r0, c0) and (r1, c1), inclusive, to ch.
+func (b ByteGrid) SetRect(r0, c0, r1, c1 int, ch byte) {
+	b.IterRect(r0, c0, r1, c1, func(r, c int) { b[r][c] = ch })
 }
 
-// CountBytes returns the number of occurrences of chars in the rectangle bounded
+// CountRect returns the number of occurrences of chars in the rectangle bounded
 // by (r0, c0) and (r1, c1), inclusive. The supplied bounds are clamped.
-func CountBytes(b [][]byte, r0, c0, r1, c1 int, chars ...byte) int {
+func (b ByteGrid) CountRect(r0, c0, r1, c1 int, chars ...byte) int {
 	var cnt int
-	IterBytesRect(b, r0, c0, r1, c1, func(r, c int) {
+	b.IterRect(r0, c0, r1, c1, func(r, c int) {
 		for _, ch := range chars {
 			if b[r][c] == ch {
 				cnt++
@@ -73,16 +101,16 @@ func CountBytes(b [][]byte, r0, c0, r1, c1 int, chars ...byte) int {
 	return cnt
 }
 
-// CountBytesFull calls CountBytes for the full bounds of b.
-func CountBytesFull(b [][]byte, chars ...byte) int {
-	return CountBytes(b, 0, 0, len(b)-1, len(b[0])-1, chars...)
+// Count returns the number of occurrences of chars in b.
+func (b ByteGrid) Count(chars ...byte) int {
+	return b.CountRect(0, 0, b.MaxRow(), b.MaxCol(), chars...)
 }
 
-// IterBytesRect calls f for each coordinate in the rectangle bounded by (r0, c0)
+// IterRect calls f for each coordinate in the rectangle bounded by (r0, c0)
 // and (r1, c1), inclusive. The supplied bounds are clamped and swapped if needed.
-func IterBytesRect(b [][]byte, r0, c0, r1, c1 int, f func(r, c int)) {
-	r0, r1 = clampAndSwap(r0, r1, 0, len(b)-1)
-	c0, c1 = clampAndSwap(c0, c1, 0, len(b[0])-1)
+func (b ByteGrid) IterRect(r0, c0, r1, c1 int, f func(r, c int)) {
+	r0, r1 = clampAndSwap(r0, r1, 0, b.MaxRow())
+	c0, c1 = clampAndSwap(c0, c1, 0, b.MaxCol())
 	for r := r0; r <= r1; r++ {
 		for c := c0; c <= c1; c++ {
 			f(r, c)
@@ -98,10 +126,10 @@ func clampAndSwap(a, b, min, max int) (c, d int) {
 	return c, d
 }
 
-// IterBytesLine calls f for each coordinate in the line from (r0, c0) to (r1, c1).
+// IterLine calls f for each coordinate in the line from (r0, c0) to (r1, c1).
 // The supplied points may be outside of b's bounds, but f will only be called for
 // in-bounds coordinates.
-func IterBytesLine(b [][]byte, r0, c0, r1, c1 int, f func(r, c int)) {
+func (b ByteGrid) IterLine(r0, c0, r1, c1 int, f func(r, c int)) {
 	// This uses the "line drawing on a grid" algorithm that Amit Patel
 	// describes at https://www.redblobgames.com/grids/line-drawing.html.
 	diagDist := Max(Abs(r1-r0), Abs(c1-c0))
@@ -112,37 +140,41 @@ func IterBytesLine(b [][]byte, r0, c0, r1, c1 int, f func(r, c int)) {
 		}
 		r := int(math.Round(float64(r0) + t*float64(r1-r0)))
 		c := int(math.Round(float64(c0) + t*float64(c1-c0)))
-		if r >= 0 && r < len(b) && c >= 0 && c < len(b[0]) {
+		if r >= 0 && r < b.Rows() && c >= 0 && c < b.Cols() {
 			f(r, c)
 		}
 	}
 }
 
-// DumpBytes returns b as a newline-separated string.
-func DumpBytes(b [][]byte) string {
+// Dump returns b as a newline-separated string.
+func (b ByteGrid) Dump() string {
 	return string(bytes.Join(b, []byte{'\n'}))
 }
 
-// FlipBytesX flips the supplied grid across the X axis.
-func FlipBytesX(b [][]byte) {
-	for _, r := range b {
+// FlipHoriz returns a copy of b reflected across the Y axis.
+func (b ByteGrid) FlipHoriz() ByteGrid {
+	n := b.Copy()
+	for _, r := range n {
 		ReverseBytes(r)
 	}
+	return n
 }
 
-// FlipBytesY flips the supplied grid across the Y axis.
-func FlipBytesY(b [][]byte) {
-	Reverse(b)
+// FlipVert returns a copy of b reflected across the X axis.
+func (b ByteGrid) FlipVert() ByteGrid {
+	n := b.Copy()
+	Reverse(n)
+	return n
 }
 
-// RotateBytes returns a copy of the supplied grid rotated 90 degrees clockwise.
-func RotateBytes(b [][]byte) [][]byte {
-	rb := make([][]byte, len(b[0]))
+// RotateCW returns a copy of b rotated 90 degrees clockwise.
+func (b ByteGrid) RotateCW() ByteGrid {
+	rb := make([][]byte, b.Cols())
 	for r := range rb {
-		rb[r] = make([]byte, len(b))
+		rb[r] = make([]byte, b.Rows())
 		for c := range rb[r] {
-			rb[r][c] = b[len(b)-c-1][r]
+			rb[r][c] = b[b.Rows()-c-1][r]
 		}
 	}
-	return rb
+	return ByteGrid(rb)
 }

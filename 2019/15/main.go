@@ -51,7 +51,7 @@ func main() {
 		}
 		grid, _, _ := dump(states, dp, dests)
 		drows = len(grid)
-		fmt.Println(lib.DumpBytes(grid))
+		fmt.Println(grid.Dump())
 		time.Sleep(delay)
 	}
 	drawSearch()
@@ -145,7 +145,7 @@ func main() {
 	// Silly code for animating oxygen filling the maze.
 	if animateFill {
 		grid, rmin, cmin := dump(states, [2]int{0, 0}, nil)
-		fmt.Println(lib.DumpBytes(grid))
+		fmt.Println(grid.Dump())
 
 		for i := 1; i <= maxSteps; i++ {
 			for r, row := range grid {
@@ -156,7 +156,7 @@ func main() {
 				}
 			}
 			fmt.Printf("\033[%dA", len(grid)) // clear previous grid
-			fmt.Println(lib.DumpBytes(grid))
+			fmt.Println(grid.Dump())
 			time.Sleep(delay)
 		}
 	}
@@ -173,7 +173,7 @@ const (
 // dump dumps the supplied tile states, droid position, and destination locations
 // to a printable grid. It also returns the min row and column number from states
 // and dests (so additional data can be added to the supplied grid).
-func dump(states map[[2]int]status, dp [2]int, dests map[[2]int]struct{}) ([][]byte, int, int) {
+func dump(states map[[2]int]status, dp [2]int, dests map[[2]int]struct{}) (lib.ByteGrid, int, int) {
 	rmin, rmax := math.MaxInt32, math.MinInt32
 	cmin, cmax := math.MaxInt32, math.MinInt32
 	for p := range states {
@@ -185,7 +185,7 @@ func dump(states map[[2]int]status, dp [2]int, dests map[[2]int]struct{}) ([][]b
 		cmin, cmax = lib.Min(cmin, p[1]), lib.Max(cmax, p[1])
 	}
 
-	grid := lib.NewBytes(rmax-rmin+1, cmax-cmin+1, ' ')
+	grid := lib.NewByteGrid(rmax-rmin+1, cmax-cmin+1, ' ')
 	for p, s := range states {
 		var ch byte
 		switch {

@@ -16,7 +16,7 @@ func main() {
 	vm := lib.NewIntcode(input)
 
 	var inRow bool
-	var grid [][]byte
+	var grid lib.ByteGrid
 	vm.OutFunc = func(v int64) {
 		switch v {
 		case 10: // newline
@@ -66,7 +66,7 @@ func main() {
 					if drawn {
 						fmt.Printf("\033[%dA", nrows)
 					}
-					fmt.Println(lib.DumpBytes(grid))
+					fmt.Println(grid.Dump())
 					time.Sleep(50 * time.Millisecond)
 					drawn = true // clear next time
 					grid = nil   // reset for next frame

@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	lights := lib.InputLinesBytes("2015/18", '.', '#')
+	lights := lib.InputByteGrid("2015/18", '.', '#')
 	lib.AssertEq(len(lights[0]), len(lights))
 	dim := len(lights)
 
@@ -17,7 +17,7 @@ func main() {
 	for i := 0; i < steps; i++ {
 		lights1 = update(lights1, false)
 	}
-	fmt.Println(lib.CountBytesFull(lights1, '#'))
+	fmt.Println(lights1.Count('#'))
 
 	// Part 2: Corners are stuck on.
 	// This mutates the original lights, but whatever.
@@ -29,12 +29,12 @@ func main() {
 	for i := 0; i < steps; i++ {
 		lights2 = update(lights2, true)
 	}
-	fmt.Println(lib.CountBytesFull(lights2, '#'))
+	fmt.Println(lights2.Count('#'))
 }
 
 // Performs a single update.
-func update(lights [][]byte, cornersStuck bool) [][]byte {
-	newLights := lib.NewBytes(len(lights), len(lights[0]), '.')
+func update(lights lib.ByteGrid, cornersStuck bool) [][]byte {
+	newLights := lib.NewByteGrid(len(lights), len(lights[0]), '.')
 	for r, row := range lights {
 		for c, ch := range row {
 			if cornersStuck && (r == 0 || r == len(lights)-1) && (c == 0 || c == len(row)-1) {
@@ -42,7 +42,7 @@ func update(lights [][]byte, cornersStuck bool) [][]byte {
 				continue
 			}
 
-			cnt := lib.CountBytes(lights, r-1, c-1, r+1, c+1, '#')
+			cnt := lights.CountRect(r-1, c-1, r+1, c+1, '#')
 			on := (ch == '#' && (cnt == 3 || cnt == 4)) || (ch == '.' && cnt == 3)
 			if on {
 				newLights[r][c] = '#'

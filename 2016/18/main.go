@@ -21,7 +21,7 @@ func main() {
 
 	first := lib.InputLinesBytes("2016/18", '.', '^')[0]
 
-	cnt := lib.CountBytesFull([][]byte{first}, '.')
+	cnt := lib.NewByteGridRow(first).Count('.')
 	prev := first
 	for r := 1; r < nrows2; r++ {
 		// Part 1
