@@ -64,6 +64,10 @@ func (b ByteGrid) Cols() int { return len(b[0]) }
 func (b ByteGrid) MaxRow() int { return b.Rows() - 1 }
 func (b ByteGrid) MaxCol() int { return b.Cols() - 1 }
 
+func (b ByteGrid) InBounds(r, c int) bool {
+	return r >= 0 && c >= 0 && r <= b.MaxRow() && c <= b.MaxCol()
+}
+
 // Copy returns a deep copy of b.
 func (b ByteGrid) Copy() ByteGrid {
 	return b.CopyRect(0, 0, b.MaxRow(), b.MaxCol())
