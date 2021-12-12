@@ -21,7 +21,8 @@ func UnpackInts(packed uint64, n int) []int {
 	return vals
 }
 
-// PackInt sets a size-bit region at the supplied offset in packed to val.
+// PackInt sets a size-bit region at the supplied offset (from the LSB)
+// in packed to val.
 func PackInt(packed uint64, val, size, offset int) uint64 {
 	mask := uint64(1<<size - 1)
 	packed &= ^(mask << offset)
@@ -29,7 +30,7 @@ func PackInt(packed uint64, val, size, offset int) uint64 {
 }
 
 // UnpackInt unpacks and returns an unsigned value of size bits at the supplied
-// offset from packed.
+// offset (from the LSB) from packed.
 func UnpackInt(packed uint64, size, offset int) int {
 	return int((packed >> offset) & (1<<size - 1))
 }
