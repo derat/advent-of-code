@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	prof    = true
+	prof    = false
 	version = 3
 )
 
