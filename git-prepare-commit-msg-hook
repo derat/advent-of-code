@@ -19,11 +19,6 @@ HINT=$(cat "$COMMIT_MSG_FILE")
 echo -n >"$COMMIT_MSG_FILE"
 TITLE=
 
-# Skip tests unless we're modifying something in the lib package.
-if ! git diff --cached --name-only | grep -q '^lib/'; then
-  TITLE='[ci skip]'
-fi
-
 # Prefix the title with the day if we're modifying a single file from a day dir.
 DAYFILES="$(git diff --cached --name-only | grep -E '^[0-9]{4}/[0-9]{2}/main\.go$')"
 if [ "$(echo "$DAYFILES" | sed '/^\s*$/d' | wc -l)" -eq 1 ]; then
