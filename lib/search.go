@@ -4,11 +4,11 @@ import (
 	"container/list"
 )
 
-// AStar uses the A* algorithm to find the minimum number of steps from the initial state(s)
-// to a state for which the done function returns true.
+// AStar uses the A* algorithm to find the minimum cost from the initial state(s) to a state for
+// which the done function returns true.
 //
 // The next function should fill nextStates map with all states reachable in a single step from
-// state along with the corresponding cost.
+// state along with the corresponding additional cost.
 //
 // The estimate function should return a lower bound on the remaining cost to go from state to a
 // target state (i.e. one for which done will return true).
