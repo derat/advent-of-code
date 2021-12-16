@@ -52,7 +52,7 @@ func Sum(vals ...int) int {
 // Product returns the product of the supplied values.
 func Product(vals ...int) int {
 	Assertf(len(vals) > 0, "No values given")
-	prod := vals[1]
+	prod := vals[0]
 	for _, v := range vals[1:] {
 		prod *= v
 	}
