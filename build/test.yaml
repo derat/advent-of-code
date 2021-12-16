@@ -1,4 +1,4 @@
 steps:
   - name: golang
     entrypoint: go
-    args: ["test", "-v", "./..."]
+    args: ["test", "-v", "./lib/..."]
