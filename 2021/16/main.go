@@ -16,8 +16,8 @@ func main() {
 		lib.Panicf("Failed decoding input: %v", err)
 	}
 
-	buf := buffer{b, 0}
-	root := buf.parse()
+	r := lib.NewBitReader(b, 0)
+	root := readPacket(r)
 	fmt.Println(root.vsum())
 	fmt.Println(root.eval())
 }
@@ -90,16 +90,10 @@ func (p *operator) eval() int {
 	}
 }
 
-type buffer struct {
-	b   []byte
-	off int // current bit offset into b
-}
-
-// parse parses the packet (and any subpackets) at b.off.
-// b.off is updated to point at the start of the next packet, if any.
-func (b *buffer) parse() packet {
-	ver := b.read(3)
-	tid := b.read(3)
+// readPacket reads the next packet (and any subpackets) from r.
+func readPacket(r *lib.BitReader) packet {
+	ver := r.ReadInt(3)
+	tid := r.ReadInt(3)
 	switch tid {
 	case 4:
 		// "Packets with type ID 4 represent a literal value. Literal value packets encode a single
@@ -109,7 +103,7 @@ func (b *buffer) parse() packet {
 		// groups of five bits immediately follow the packet header."
 		var val int
 		for true {
-			n := b.read(5)
+			n := r.ReadInt(5)
 			val = (val << 4) | n&0xf
 			if n&0x10 == 0 {
 				break
@@ -123,43 +117,24 @@ func (b *buffer) parse() packet {
 		// the bit immediately after the packet header; this is called the length type ID. ...
 		// Finally, after the length type ID bit and the 15-bit or 11-bit field, the sub-packets
 		// appear."
-		ltype := b.read(1)
 		var subs []packet
-		if ltype == 0 {
+		if r.ReadInt(1) == 0 {
 			// "If the length type ID is 0, then the next 15 bits are a number that represents the
 			// total length in bits of the sub-packets contained by this packet."
-			next := b.off + b.read(15)
-			for b.off < next {
-				subs = append(subs, b.parse())
+			slen := r.ReadInt(15)
+			next := r.Offset() + slen
+			for r.Offset() < next {
+				subs = append(subs, readPacket(r))
 			}
-			lib.AssertEq(b.off, next)
+			lib.AssertEq(r.Offset(), next)
 		} else {
 			// "If the length type ID is 1, then the next 11 bits are a number that represents the
 			// number of sub-packets immediately contained by this packet."
-			nsubs := b.read(11)
+			nsubs := r.ReadInt(11)
 			for i := 0; i < nsubs; i++ {
-				subs = append(subs, b.parse())
+				subs = append(subs, readPacket(r))
 			}
 		}
 		return &operator{ver, tid, subs}
 	}
-}
-
-// read reads a value of the supplied length starting at b.off and updates b.off.
-func (b *buffer) read(nbits int) int {
-	lib.AssertLessEq(nbits, 64)
-	size := 8 * len(b.b)
-	if b.off+nbits > size {
-		lib.Panicf("%v-bit read at %v overruns %v-bit buffer", nbits, b.off, size)
-	}
-	var v int
-	for i := 0; i < nbits; i++ {
-		v <<= 1
-		pos := b.off + i
-		if b.b[pos/8]&(1<<(8-pos%8-1)) != 0 {
-			v |= 1
-		}
-	}
-	b.off += nbits
-	return v
 }
