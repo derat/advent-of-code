@@ -150,7 +150,7 @@ func (b *buffer) read(nbits int) int {
 	lib.AssertLessEq(nbits, 64)
 	size := 8 * len(b.b)
 	if b.off+nbits > size {
-		lib.Panicf("%v-bit read at %v overruns buffer", nbits, b.off, size)
+		lib.Panicf("%v-bit read at %v overruns %v-bit buffer", nbits, b.off, size)
 	}
 	var v int
 	for i := 0; i < nbits; i++ {
