@@ -6,27 +6,29 @@ import (
 	"github.com/derat/advent-of-code/lib"
 )
 
+type pos struct{ r, c int }
+
 func main() {
 	grid := lib.InputByteGrid("2021/15")
 
 	// Part 1: Find lowest cost from top left to bottom right.
 	// Don't count cost of starting position unless you enter it.
-	end := lib.PackInts(grid.MaxRow(), grid.MaxCol())
+	end := pos{grid.MaxRow(), grid.MaxCol()}
 	cost := lib.AStar(
-		[]interface{}{lib.PackInts(0, 0)},
-		func(s interface{}) bool { return s.(uint64) == end },
+		[]interface{}{pos{0, 0}},
+		func(s interface{}) bool { return s.(pos) == end },
 		func(s interface{}, next map[interface{}]int) {
-			r, c := lib.UnpackInt2(s.(uint64))
+			p := s.(pos)
 			for _, d := range [][2]int{{-1, 0}, {0, -1}, {0, 1}, {1, 0}} {
-				nr, nc := r+d[0], c+d[1]
+				nr, nc := p.r+d[0], p.c+d[1]
 				if nr >= 0 && nr <= grid.MaxRow() && nc >= 0 && nc <= grid.MaxCol() {
-					next[lib.PackInts(nr, nc)] = int(grid[nr][nc] - '0')
+					next[pos{nr, nc}] = int(grid[nr][nc] - '0')
 				}
 			}
 		},
 		func(s interface{}) int {
-			r, c := lib.UnpackInt2(s.(uint64))
-			return (grid.MaxRow() - r) + (grid.MaxCol() - c)
+			p := s.(pos)
+			return (grid.MaxRow() - p.r) + (grid.MaxCol() - p.c)
 		})
 	fmt.Println(cost)
 
@@ -38,14 +40,14 @@ func main() {
 	// around when they go above 9.
 	const repeats = 5
 	maxr2, maxc2 := repeats*grid.Rows()-1, repeats*grid.Cols()-1
-	end2 := lib.PackInts(maxr2, maxc2)
+	end2 := pos{maxr2, maxc2}
 	cost2 := lib.AStar(
-		[]interface{}{lib.PackInts(0, 0)},
-		func(s interface{}) bool { return s.(uint64) == end2 },
+		[]interface{}{pos{0, 0}},
+		func(s interface{}) bool { return s.(pos) == end2 },
 		func(s interface{}, next map[interface{}]int) {
-			r, c := lib.UnpackInt2(s.(uint64))
+			p := s.(pos)
 			for _, d := range [][2]int{{-1, 0}, {0, -1}, {0, 1}, {1, 0}} {
-				nr, nc := r+d[0], c+d[1]
+				nr, nc := p.r+d[0], p.c+d[1]
 				if nr >= 0 && nr <= maxr2 && nc >= 0 && nc <= maxc2 {
 					// "Your original map tile repeats to the right and downward; each time the tile
 					// repeats to the right or downward, all of its risk levels are 1 higher than
@@ -56,13 +58,13 @@ func main() {
 					for cost > 9 {
 						cost -= 9
 					}
-					next[lib.PackInts(nr, nc)] = cost
+					next[pos{nr, nc}] = cost
 				}
 			}
 		},
 		func(s interface{}) int {
-			r, c := lib.UnpackInt2(s.(uint64))
-			return (maxr2 - r) + (maxc2 - c)
+			p := s.(pos)
+			return (maxr2 - p.r) + (maxc2 - p.c)
 		})
 	fmt.Println(cost2)
 }

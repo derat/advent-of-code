@@ -16,11 +16,13 @@ func main() {
 	fmt.Println(cnt2)
 }
 
-var numProdCache = make(map[uint64]int64)
+type key struct{ state, days int }
+
+var numProdCache = make(map[key]int64)
 
 func numProd(state, days int) int64 {
-	key := lib.PackInts(state, days)
-	if v, ok := numProdCache[key]; ok {
+	k := key{state, days}
+	if v, ok := numProdCache[k]; ok {
 		return v
 	}
 
@@ -28,6 +30,6 @@ func numProd(state, days int) int64 {
 	for days = days - state - 1; days >= 0; days -= 7 {
 		cnt += 1 + numProd(8, days)
 	}
-	numProdCache[key] = cnt
+	numProdCache[k] = cnt
 	return cnt
 }
