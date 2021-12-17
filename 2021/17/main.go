@@ -22,7 +22,12 @@ func main() {
 	vymax := -tymin - 1
 
 	// To find the highest y position, we need to sum [n, n-1, n-2, ..., 1], i.e. n+n*(n-1)/2.
-	fmt.Println(vymax + vymax*(vymax-1)/2)
+	//
+	// This approach works for my input (and maybe all official inputs?), but there are some
+	// inputs for which it won't work: https://www.reddit.com/r/adventofcode/comments/rid0g3
+	// Specifically, it's wrong if there are no inputs such that the probe will eventually settle in
+	// the x target range. I've switched to an approach that just uses the data from part 2.
+	//fmt.Println(vymax + vymax*(vymax-1)/2)
 
 	// Part 2: "How many distinct initial velocity values cause the probe to be within the target
 	// area after any step?"
@@ -73,13 +78,16 @@ func main() {
 	// This ended up being a bit more subtle than I initially thought. Some trajectories will put
 	// the probe in the target area for multiple steps, and we need to make sure that we only count
 	// each of those once.
+	vymax = 0 // part 1
 	vels := make(map[[2]int]struct{})
 	for y, steps := range yvels {
 		for _, s := range steps {
 			for _, x := range xsteps[s] {
 				vels[[2]int{x, y}] = struct{}{}
+				vymax = lib.Max(vymax, y) // part 1
 			}
 		}
 	}
-	fmt.Println(len(vels))
+	fmt.Println(vymax + vymax*(vymax-1)/2) // part 1
+	fmt.Println(len(vels))                 // part 2
 }
