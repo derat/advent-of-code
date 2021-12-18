@@ -15,7 +15,7 @@ func NewInstr(ln string, rmin, rmax byte, ops map[uint8]string) Instr {
 		nargs := getRegexp(re).NumSubexp()
 		args := make([]string, 2)
 		argps := []interface{}{&args[0], &args[1]}
-		if !ExtractMaybe(ln, re, argps[:nargs]...) {
+		if _, ok := ExtractMaybe(ln, re, argps[:nargs]...); !ok {
 			continue
 		}
 		in.Op = op

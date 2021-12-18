@@ -13,13 +13,13 @@ func main() {
 		var in instr
 		var arg string
 		switch {
-		case lib.ExtractMaybe(ln, `^(swap position) (\d+) with position (\d+)$`, &in.op, &in.p1, &in.p2):
-		case lib.ExtractMaybe(ln, `^(swap letter) ([a-z]) with letter ([a-z])$`, &in.op, &in.l1, &in.l2):
-		case lib.ExtractMaybe(ln, `^(rotate) (left|right) (\d+) steps?$`, &in.op, &arg, &in.p1):
+		case lib.TryExtract(ln, `^(swap position) (\d+) with position (\d+)$`, &in.op, &in.p1, &in.p2):
+		case lib.TryExtract(ln, `^(swap letter) ([a-z]) with letter ([a-z])$`, &in.op, &in.l1, &in.l2):
+		case lib.TryExtract(ln, `^(rotate) (left|right) (\d+) steps?$`, &in.op, &arg, &in.p1):
 			in.p1 *= lib.If(arg == "left", -1, 1)
-		case lib.ExtractMaybe(ln, `^(rotate) based on position of letter ([a-z])$`, &in.op, &in.l1):
-		case lib.ExtractMaybe(ln, `^(reverse) positions (\d+) through (\d+)$`, &in.op, &in.p1, &in.p2):
-		case lib.ExtractMaybe(ln, `^(move) position (\d+) to position (\d+)$`, &in.op, &in.p1, &in.p2):
+		case lib.TryExtract(ln, `^(rotate) based on position of letter ([a-z])$`, &in.op, &in.l1):
+		case lib.TryExtract(ln, `^(reverse) positions (\d+) through (\d+)$`, &in.op, &in.p1, &in.p2):
+		case lib.TryExtract(ln, `^(move) position (\d+) to position (\d+)$`, &in.op, &in.p1, &in.p2):
 		default:
 			lib.Assertf(false, "Bad line %q", ln)
 		}

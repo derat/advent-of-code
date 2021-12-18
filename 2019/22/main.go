@@ -29,9 +29,9 @@ func main() {
 		switch {
 		case ln == "deal into new stack":
 			in.op = dealnew
-		case lib.ExtractMaybe(ln, `^cut (-?\d+)$`, &in.v):
+		case lib.TryExtract(ln, `^cut (-?\d+)$`, &in.v):
 			in.op = cut
-		case lib.ExtractMaybe(ln, `^deal with increment (\d+)$`, &in.v):
+		case lib.TryExtract(ln, `^deal with increment (\d+)$`, &in.v):
 			in.op = dealinc
 		default:
 			lib.Panicf("Invalid line %q", ln)

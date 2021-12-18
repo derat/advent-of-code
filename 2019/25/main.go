@@ -27,7 +27,7 @@ func main() {
 
 			switch {
 			case cmd == "north" || cmd == "south" || cmd == "east" || cmd == "west" || cmd == "inv":
-			case lib.ExtractMaybe(cmd, `^(?:drop|take) .+$`):
+			case lib.TryExtract(cmd, `^(?:drop|take) .+$`):
 			case cmd == "combos":
 				cmd = strings.TrimSpace(combos())
 			case cmd == "yoink":

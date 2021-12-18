@@ -71,11 +71,11 @@ func getRegexp(re string) *regexp.Regexp {
 }
 
 // ExtractMaybe executes regular expression re on s and assigns groups to dsts.
-// It returns false if re does not match s.
-func ExtractMaybe(s, re string, dsts ...interface{}) bool {
+// It returns the total match length and a bool indicating whether re matched s.
+func ExtractMaybe(s, re string, dsts ...interface{}) (int, bool) {
 	ms := getRegexp(re).FindStringSubmatch(s)
 	if ms == nil {
-		return false
+		return 0, false
 	}
 	Assertf(len(ms)-1 == len(dsts), "%q has %v group(s), but %v dest(s) were supplied", re, len(ms)-1, len(dsts))
 	for i, dst := range dsts {
@@ -103,13 +103,21 @@ func ExtractMaybe(s, re string, dsts ...interface{}) bool {
 		}
 		Assertf(err == nil, "Failed to parse group %q matched by %q: %v", m, re, err)
 	}
-	return true
+	return len(ms[0]), true
 }
 
-// Extract executes regular expression re on s and assigns groups to dsts.
-// It panics if re does not match s.
-func Extract(s, re string, dsts ...interface{}) {
-	Assertf(ExtractMaybe(s, re, dsts...), "%q not matched by %q", s, re)
+// Extract is a convenience wrapper around ExtractMaybe that panics if re doesn't match s.
+func Extract(s, re string, dsts ...interface{}) int {
+	n, ok := ExtractMaybe(s, re, dsts...)
+	Assertf(ok, "%q not matched by %q", s, re)
+	return n
+}
+
+// TryExtract is a convenience wrapper around ExtractMaybe that omits the number
+// of matched characters. It's useful for case conditions in switch statements.
+func TryExtract(s, re string, dsts ...interface{}) bool {
+	_, ok := ExtractMaybe(s, re, dsts...)
+	return ok
 }
 
 // Tokenize splits s into tokens from the supplied args (either string or *regexp.Regexp).

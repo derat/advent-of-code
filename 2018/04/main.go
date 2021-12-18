@@ -22,7 +22,7 @@ func main() {
 
 		var newGuard int
 		switch {
-		case lib.ExtractMaybe(rest, `^Guard #(\d+) begins shift$`, &newGuard):
+		case lib.TryExtract(rest, `^Guard #(\d+) begins shift$`, &newGuard):
 			if guard > 0 {
 				data[guard] = append(data[guard], day)
 			}

@@ -13,9 +13,9 @@ func main() {
 	for _, s := range strings.Split(lib.InputLines("2017/16")[0], ",") {
 		var m move
 		switch {
-		case lib.ExtractMaybe(s, `^(s)(\d+)$`, &m.op, &m.v1):
-		case lib.ExtractMaybe(s, `^(x)(\d+)/(\d+)$`, &m.op, &m.v1, &m.v2):
-		case lib.ExtractMaybe(s, `^(p)([a-p])/([a-p]+)$`, &m.op, &m.p1, &m.p2):
+		case lib.TryExtract(s, `^(s)(\d+)$`, &m.op, &m.v1):
+		case lib.TryExtract(s, `^(x)(\d+)/(\d+)$`, &m.op, &m.v1, &m.v2):
+		case lib.TryExtract(s, `^(p)([a-p])/([a-p]+)$`, &m.op, &m.p1, &m.p2):
 		default:
 			lib.Panicf("Invalid move %q", s)
 		}

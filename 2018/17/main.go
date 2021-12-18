@@ -14,9 +14,9 @@ func main() {
 	for _, ln := range lib.InputLines("2018/17") {
 		var reg region
 		switch {
-		case lib.ExtractMaybe(ln, `^y=(\d+), x=(\d+)\.\.(\d+)$`, &reg.r0, &reg.c0, &reg.c1):
+		case lib.TryExtract(ln, `^y=(\d+), x=(\d+)\.\.(\d+)$`, &reg.r0, &reg.c0, &reg.c1):
 			reg.r1 = reg.r0
-		case lib.ExtractMaybe(ln, `^x=(\d+), y=(\d+)\.\.(\d+)$`, &reg.c0, &reg.r0, &reg.r1):
+		case lib.TryExtract(ln, `^x=(\d+), y=(\d+)\.\.(\d+)$`, &reg.c0, &reg.r0, &reg.r1):
 			reg.c1 = reg.c0
 		default:
 			lib.Panicf("Bad line %q", ln)
