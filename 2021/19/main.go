@@ -29,6 +29,8 @@ func main() {
 	for _, p := range scanners[0].beacons {
 		glob[p] = struct{}{}
 	}
+	// Keep track of the distance sets from all of the incorporated scanners.
+	dists := append([]map[int]struct{}(nil), scanners[0].dists...)
 
 	offs := []point{point{}}                            // scanner offsets from scanner 0 for part 2
 	rem := make(map[*scanner]struct{}, len(scanners)-1) // unaligned scanners
@@ -37,10 +39,28 @@ func main() {
 	}
 
 	for len(rem) > 0 {
-		// For each scanner that we haven't yet lined up with the global map,
-		// iterate over all of its orientations.
+		// Check each scanner that we haven't yet lined up with the global map.
 		for s := range rem {
+			// Make sure that the distances between points match those of at least one
+			// of the scanners that we've already added to the global view. If they
+			// don't, there's no need to do the slower check to find the actual
+			// transformation.
+			distsOk := false
+		DistLoop:
+			for _, sd := range s.dists {
+				for _, gd := range dists {
+					if distsMatch(sd, gd) {
+						distsOk = true
+						break DistLoop
+					}
+				}
+			}
+			if !distsOk {
+				continue
+			}
+
 		ViewLoop:
+			// Iterate over all of the scanner's orientations.
 			for _, v := range s.views {
 				// Try offsetting each of the scanner's beacons to match each
 				// beacon in the global map and check if enough of the scanner's
@@ -66,6 +86,7 @@ func main() {
 							for p := range v {
 								glob[add(p, off)] = struct{}{}
 							}
+							dists = append(dists, s.dists...)
 							offs = append(offs, off)
 							delete(rem, s)
 							break ViewLoop
@@ -83,7 +104,7 @@ func main() {
 	max := -1
 	for _, a := range offs {
 		for _, b := range offs {
-			max = lib.Max(max, lib.Abs(a.x-b.x)+lib.Abs(a.y-b.y)+lib.Abs(a.z-b.z))
+			max = lib.Max(max, dist(a, b))
 		}
 	}
 	fmt.Println(max)
@@ -94,6 +115,12 @@ type pointMap map[point]struct{}
 
 func add(a, b point) point { return point{a.x + b.x, a.y + b.y, a.z + b.z} }
 func sub(a, b point) point { return point{a.x - b.x, a.y - b.y, a.z - b.z} }
+
+// dist returns the Manhattan distance between a and b.
+func dist(a, b point) int {
+	d := sub(a, b)
+	return lib.Abs(d.x) + lib.Abs(d.y) + lib.Abs(d.z)
+}
 
 // overlap returns true if ma and mb have at least thresh matching points
 // after offsetting ma by off.
@@ -114,14 +141,31 @@ func overlap(ma, mb pointMap, off point) bool {
 	return false
 }
 
+// distsMatch returns true if da and db have at least thresh-1 matching distances.
+func distsMatch(da, db map[int]struct{}) bool {
+	var cnt, seen int
+	for d := range da {
+		if _, ok := db[d]; ok {
+			if cnt++; cnt >= thresh-1 {
+				return true
+			}
+		}
+		if seen++; thresh-1-cnt > len(da)-seen {
+			break
+		}
+	}
+	return false
+}
+
 type scanner struct {
 	id      int
-	beacons []point    // original positions
-	views   []pointMap // positions in different orientations
+	beacons []point            // original positions
+	views   []pointMap         // positions in different orientations
+	dists   []map[int]struct{} // for each beacon, distances to all other beacons
 }
 
 func newScanner(id int, beacons []point) *scanner {
-	sc := &scanner{id, beacons, nil}
+	sc := &scanner{id: id, beacons: beacons}
 	for i := 0; i < 24; i++ {
 		sc.views = append(sc.views, make(pointMap))
 	}
@@ -159,6 +203,16 @@ func newScanner(id int, beacons []point) *scanner {
 			}
 			p = roll(turn(roll(p)))
 		}
+	}
+
+	for i, p := range beacons {
+		m := make(map[int]struct{})
+		for j, o := range beacons {
+			if i != j {
+				m[dist(p, o)] = struct{}{}
+			}
+		}
+		sc.dists = append(sc.dists, m)
 	}
 
 	return sc
