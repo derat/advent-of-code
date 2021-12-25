@@ -410,7 +410,7 @@ func run(ins []lib.Instr, regs, input []int64) error {
 			a := in.Val(0, regs)
 			b := in.Val(1, regs)
 			if a < 0 || b <= 0 {
-				return fmt.Errorf("inst %d mods %v by %v", a, b)
+				return fmt.Errorf("inst %d mods %v by %v", i, a, b)
 			}
 			*in.Ptr(0, regs) = a % b
 		case eql:

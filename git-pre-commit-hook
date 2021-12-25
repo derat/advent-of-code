@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Symlink this into .git/hooks/pre-commit to run 'go vet'
+# before committing.
+
+for p in $(git diff --cached --name-only -- '*.go'); do go vet "$p"; done
