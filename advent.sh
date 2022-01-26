@@ -39,11 +39,9 @@ case "$cur_dir" in
   ${script_dir}/20[1-9][0-9]/[0-2][0-9])
     cur_year="$(basename "$(dirname "$cur_dir")")"
     cur_day="$(basename "$cur_dir")"
-    break
     ;;
   ${script_dir}/20[1-9][0-9])
     cur_year="$(basename "$cur_dir")"
-    break
     ;;
 esac
 
@@ -69,14 +67,14 @@ case "$1" in
     ;;
   check)
     check_in_day_dir
-    answers="${answers_dir}/$(printf "%d/%02d" $cur_year $cur_day)"
+    answers="${answers_dir}/$(printf "%d/%02d" "$cur_year" "$cur_day")"
     [ -e "$answers" ] || die "No answers for ${cur_year}/${cur_day}"
     out=$(go run main.go)
     echo "$out" | exec diff "$answers" -
     exit 0
     ;;
   checkall)
-    for dir in ${script_dir}/20??/??; do
+    for dir in "$script_dir"/20??/??; do
       cd "$dir"
       # https://stackoverflow.com/a/24427249
       name=$(echo "$dir" | rev | cut -c -7 |rev)
@@ -88,7 +86,7 @@ case "$1" in
     ;;
   input)
     check_in_day_dir
-    exec cat "$HOME/.cache/advent-of-code/$(printf "%d/%d" $cur_year $cur_day)"
+    exec cat "$HOME/.cache/advent-of-code/$(printf "%d/%d" "$cur_year" "$cur_day")"
     ;;
   lib)
     exec echo "${script_dir}/lib"
@@ -96,12 +94,12 @@ case "$1" in
   next)
     check_in_day_dir
     year=$cur_year
-    day=$(($cur_day + 1))
+    day=$((cur_day + 1))
     ;;
   prev)
     check_in_day_dir
     year=$cur_year
-    day=$(($cur_day - 1))
+    day=$((cur_day - 1))
     ;;
   run)
     check_in_day_dir
@@ -110,7 +108,7 @@ case "$1" in
   save)
     check_in_day_dir
     mkdir -p "${answers_dir}/${cur_year}"
-    answers="${answers_dir}/$(printf "%d/%02d" $cur_year $cur_day)"
+    answers="${answers_dir}/$(printf "%d/%02d" "$cur_year" "$cur_day")"
     if [ -e "$answers" ]; then die "${answers} already exists"; fi
     exec go run main.go >"$answers"
     ;;
@@ -119,13 +117,13 @@ case "$1" in
     exec go run main.go -
     ;;
   today)
-    [ $(date +%m) -eq 12 ] || die "Not in December"
+    [ "$(date +%m)" -eq 12 ] || die "Not in December"
     year=$(date +%Y)
     day=$(date +%d)
     ;;
   web)
     check_in_day_dir
-    exec xdg-open "$(printf "https://adventofcode.com/%d/day/%d" $cur_year $cur_day)"
+    exec xdg-open "$(printf "https://adventofcode.com/%d/day/%d" "$cur_year" "$cur_day")"
     ;;
   *)
     if [ $# -eq 1 ]; then
