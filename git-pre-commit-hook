@@ -7,6 +7,6 @@
 # files seems to cause problems in multi-file packages (e.g. 'go vet
 # lib/heap_test.go' produces 'vet: lib/heap_test.go:6:7: undeclared name:
 # NewHeap').
-for p in $(git diff --cached --name-only -- '*.go' | sed -e 's/\/[^/]*$//' | sort | uniq); do
+for p in $(git diff --diff-filter=ACMR --cached --name-only -- '*.go' | sed -e 's/\/[^/]*$//' | sort | uniq); do
   go vet "./${p}/..."
 done
