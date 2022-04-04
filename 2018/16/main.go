@@ -42,8 +42,8 @@ func main() {
 	for _, sa := range samples {
 		code := sa.in.op
 		for _, o := range sa.ops() {
-			unk[o] = lib.AddSet(unk[o], code).(map[int]struct{})
-			runk[code] = lib.AddSet(runk[code], o).(map[op]struct{})
+			unk[o] = lib.AddSet(unk[o], code)
+			runk[code] = lib.AddSet(runk[code], o)
 		}
 	}
 
@@ -66,7 +66,7 @@ func main() {
 		}
 
 		lib.AssertEq(len(unk[o]), 1)
-		code := lib.MapSomeKey(unk[o]).(int)
+		code := lib.MapSomeKey(unk[o])
 		ops[code] = o
 
 		delete(unk, o)

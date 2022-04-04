@@ -63,7 +63,7 @@ func main() {
 	for id := range claims {
 		cols[id] = 0
 	}
-	sorted := lib.MapIntKeys(claims)
+	sorted := lib.MapKeys(claims)
 	sort.Slice(sorted, func(i, j int) bool { return claims[sorted[i]].t < claims[sorted[j]].t })
 	for i, id := range sorted {
 		cl := claims[id]

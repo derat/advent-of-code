@@ -4,27 +4,28 @@ package lib
 // See https://runestone.academy/runestone/books/published/pythonds/Trees/BinaryHeapImplementation.html.
 // (I originally used the description from https://www.cs.princeton.edu/~wayne/cs423/lectures/heaps-4up.pdf
 // but I ended up with buggy code; probably I messed up while writing it.)
-type Heap struct {
-	items  []interface{}
+type Heap[T any] struct {
+	items  []T
 	size   int
-	before HeapFunc
+	before HeapFunc[T]
 }
 
 // HeapFunc returns true if a is ordered before b.
-type HeapFunc func(a, b interface{}) bool
+type HeapFunc[T any] func(a, b T) bool
 
-func NewHeap(before HeapFunc) *Heap {
-	return &Heap{
-		items:  []interface{}{nil}, // first item is unused but makes code simpler
+func NewHeap[T any](before HeapFunc[T]) *Heap[T] {
+	var zero T
+	return &Heap[T]{
+		items:  []T{zero}, // first item is unused but makes code simpler
 		before: before,
 	}
 }
 
-func (h *Heap) Len() int {
+func (h *Heap[T]) Len() int {
 	return h.size
 }
 
-func (h *Heap) Insert(x interface{}) {
+func (h *Heap[T]) Insert(x T) {
 	// Add new item as rightmost leaf.
 	h.items = append(h.items, x)
 	h.size++
@@ -38,7 +39,7 @@ func (h *Heap) Insert(x interface{}) {
 	}
 }
 
-func (h *Heap) Pop() interface{} {
+func (h *Heap[T]) Pop() T {
 	if h.size == 0 {
 		panic("Heap is empty")
 	}
@@ -68,10 +69,10 @@ func (h *Heap) Pop() interface{} {
 	return v
 }
 
-type heapNode struct {
-	data    interface{}
-	parent  *heapNode // nil for root
-	child   *heapNode // leftmost child
-	sibling *heapNode // right sibling, nil if rightmost child
-	degree  int       // number of children
+type heapNode[T any] struct {
+	data    T
+	parent  *heapNode[T] // nil for root
+	child   *heapNode[T] // leftmost child
+	sibling *heapNode[T] // right sibling, nil if rightmost child
+	degree  int          // number of children
 }

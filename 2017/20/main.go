@@ -99,7 +99,7 @@ func add(a, b [3]int) [3]int {
 // corresponding velocities and accelerations are also ordered. Once they are, the particles won't
 // able to overtake each other.
 func ordered(parts map[int]*particle) bool {
-	ids := lib.MapIntKeys(parts)
+	ids := lib.MapKeys(parts)
 	for dim := 0; dim < 3; dim++ {
 		sort.Slice(ids, func(a, b int) bool { return parts[ids[a]].pos[dim] < parts[ids[b]].pos[dim] })
 		for i, id := range ids[:len(ids)-1] {

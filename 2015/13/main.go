@@ -40,12 +40,12 @@ func main() {
 			check(append(seated, p), others)
 		}
 	}
-	check(nil, lib.MapStringKeys(people))
+	check(nil, lib.MapKeys(people))
 	fmt.Println(max)
 
 	// Part 2: Add yourself.
 	max = 0
 	people["Me"] = struct{}{}
-	check(nil, lib.MapStringKeys(people))
+	check(nil, lib.MapKeys(people))
 	fmt.Println(max)
 }

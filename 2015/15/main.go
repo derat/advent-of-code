@@ -24,10 +24,10 @@ func main() {
 		ingreds[name] = stats
 	}
 
-	ingredNames := lib.MapStringKeys(ingreds)
+	ingredNames := lib.MapKeys(ingreds)
 	ingredBits := 64 / len(ingreds)
 
-	statNames := lib.MapStringKeys(statSet)
+	statNames := lib.MapKeys(statSet)
 	statBits := 64/len(statSet) - 1 // signed
 	calsIdx := lib.SliceIndexesWithVal(statNames, "calories")[0]
 

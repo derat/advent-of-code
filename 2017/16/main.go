@@ -24,7 +24,7 @@ func main() {
 
 	const nprogs = 16
 	progs := make([]byte, nprogs)
-	lib.SetAscUint(progs, 'a')
+	lib.SetAscInt(progs, 'a')
 	run(progs, moves)
 	fmt.Println(string(progs))
 
@@ -35,8 +35,8 @@ func main() {
 
 	// First, find out how many cycles it takes to loop back to the initial state.
 	orig := make([]byte, nprogs)
-	lib.SetAscUint(orig, 'a')
-	lib.SetAscUint(progs, 'a')
+	lib.SetAscInt(orig, 'a')
+	lib.SetAscInt(progs, 'a')
 	var loop int
 	for loop = 1; true; loop++ {
 		run(progs, moves)

@@ -14,8 +14,6 @@ const (
 	delay         = 50 * time.Millisecond
 )
 
-type pos [2]int
-
 func main() {
 	vm := lib.NewIntcode(lib.InputInt64s("2019/15"))
 
@@ -72,15 +70,14 @@ func main() {
 			// Walk backward to find the square after our current one.
 			for ; ; s = from[s] {
 				if f := from[s]; f == dp {
-					mp = s
 					switch {
-					case mp[0] == dp[0]-1:
+					case s[0] == dp[0]-1:
 						return 1 // north
-					case mp[0] == dp[0]+1:
+					case s[0] == dp[0]+1:
 						return 2 // south
-					case mp[1] == dp[1]-1:
+					case s[1] == dp[1]-1:
 						return 3 // west
-					case mp[1] == dp[1]+1:
+					case s[1] == dp[1]+1:
 						return 4 // east
 					}
 				}
@@ -130,7 +127,9 @@ func main() {
 				m[n] = 1
 			}
 		},
-		func(s pos) int { return lib.Abs(op[0]-s[0]) + lib.Abs(op[1]-s[1]) }))
+		func(s pos) int {
+			return lib.Abs(op[0]-s[0]) + lib.Abs(op[1]-s[1])
+		}))
 
 	// Part 2: Print number of steps for oxygen to spread to all open locations.
 	steps, _ := lib.BFS([]pos{op}, func(s pos, m map[pos]struct{}) {
@@ -160,6 +159,8 @@ func main() {
 		}
 	}
 }
+
+type pos [2]int
 
 type status int
 

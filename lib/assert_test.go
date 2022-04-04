@@ -8,7 +8,7 @@ import (
 
 func TestAssertEq(t *testing.T) {
 	for _, tc := range []struct {
-		a, b interface{}
+		a, b any
 		eq   bool
 	}{
 		{true, true, true},

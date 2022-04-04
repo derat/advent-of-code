@@ -19,7 +19,7 @@ func main() {
 			max = lib.Max(max, regs[dr])
 		}
 	}
-	fmt.Println(lib.Max(lib.MapIntVals(regs)...))
+	fmt.Println(lib.Max(lib.MapVals(regs)...))
 	fmt.Println(max)
 }
 

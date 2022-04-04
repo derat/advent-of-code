@@ -24,20 +24,19 @@ func TestAStar(t *testing.T) {
 		want  = 30
 	)
 
-	end := [2]int{nrows - 1, ncols - 1}
-	got := AStar([]interface{}{[2]int{0, 0}},
-		func(si interface{}) bool { return si.([2]int) == end },
-		func(si interface{}, m map[interface{}]int) {
-			s := si.([2]int)
-			for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+	type state [2]int
+	end := state{nrows - 1, ncols - 1}
+	got := AStar([]state{{0, 0}},
+		func(s state) bool { return s == end },
+		func(s state, m map[state]int) {
+			for _, off := range []state{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 				r, c := s[0]+off[0], s[1]+off[1]
 				if r >= 0 && r < nrows && c >= 0 && c < ncols && grid[r][c] == '.' {
-					m[[2]int{r, c}] = 1
+					m[state{r, c}] = 1
 				}
 			}
 		},
-		func(si interface{}) int {
-			s := si.([2]int)
+		func(s state) int {
 			return Abs(end[0]-s[0]) + Abs(end[1]-s[1]) // Manhattan distance
 		})
 	if got != want {
@@ -46,17 +45,17 @@ func TestAStar(t *testing.T) {
 }
 
 func TestBFS(t *testing.T) {
-	got, _ := BFS([]interface{}{[2]int{0, 0}},
-		func(si interface{}, m map[interface{}]struct{}) {
-			s := si.([2]int)
-			for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
+	type state [2]int
+	got, _ := BFS([]state{{0, 0}},
+		func(s state, m map[state]struct{}) {
+			for _, off := range []state{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 				x, y := s[0]+off[0], s[1]+off[1]
 				if x >= 0 && x < 3 && y >= 0 && y < 3 {
-					m[[2]int{x, y}] = struct{}{}
+					m[state{x, y}] = struct{}{}
 				}
 			}
 		}, nil)
-	if want := map[interface{}]int{
+	if want := map[state]int{
 		[2]int{0, 0}: 0,
 		[2]int{1, 0}: 1,
 		[2]int{2, 0}: 2,
@@ -72,14 +71,14 @@ func TestBFS(t *testing.T) {
 }
 
 func TestBFS_NoSteps_NoFrom(t *testing.T) {
-	expSteps := map[interface{}]int{
+	expSteps := map[string]int{
 		"start":       0,
 		"start,a":     1,
 		"start,b":     1,
 		"start,a,end": 2,
 		"start,b,end": 2,
 	}
-	expFrom := map[interface{}]interface{}{
+	expFrom := map[string]string{
 		"start":       "start",
 		"start,a":     "start",
 		"start,b":     "start",
@@ -88,19 +87,18 @@ func TestBFS_NoSteps_NoFrom(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		opts  *BFSOptions
-		steps map[interface{}]int
-		from  map[interface{}]interface{}
+		opts  *BFSOptions[string]
+		steps map[string]int
+		from  map[string]string
 	}{
 		{nil, expSteps, expFrom},
-		{&BFSOptions{}, expSteps, expFrom},
-		{&BFSOptions{NoSteps: true}, nil, expFrom},
-		{&BFSOptions{NoFrom: true}, expSteps, nil},
-		{&BFSOptions{NoSteps: true, NoFrom: true}, nil, nil},
+		{&BFSOptions[string]{}, expSteps, expFrom},
+		{&BFSOptions[string]{NoSteps: true}, nil, expFrom},
+		{&BFSOptions[string]{NoFrom: true}, expSteps, nil},
+		{&BFSOptions[string]{NoSteps: true, NoFrom: true}, nil, nil},
 	} {
 		npaths := 0
-		steps, from := BFS([]interface{}{"start"}, func(si interface{}, m map[interface{}]struct{}) {
-			s := si.(string)
+		steps, from := BFS([]string{"start"}, func(s string, m map[string]struct{}) {
 			if strings.HasSuffix(s, ",end") {
 				npaths++
 				return

@@ -48,7 +48,7 @@ func main() {
 			}
 
 		}
-		if reps2 > 0 && lib.Max(lib.MapIntVals(pairs)...) > 1 {
+		if reps2 > 0 && lib.Max(lib.MapVals(pairs)...) > 1 {
 			nice2++
 		}
 	}

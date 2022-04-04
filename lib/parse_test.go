@@ -7,21 +7,21 @@ import (
 
 func TestExtractMaybe(t *testing.T) {
 	for _, tc := range []struct {
-		s, re string        // input
-		n     int           // desired match length
-		ok    bool          // desired ok value
-		want  []interface{} // desired extracted values
+		s, re string // input
+		n     int    // desired match length
+		ok    bool   // desired ok value
+		want  []any  // desired extracted values
 	}{
-		{"abc 23 def", `^(\d)`, 0, false, []interface{}{}},
-		{"abc 23 def", `(\d+)`, 2, true, []interface{}{23}},
-		{"abc 23 def", `^abc (\d\d) def$`, 10, true, []interface{}{23}},
+		{"abc 23 def", `^(\d)`, 0, false, []any{}},
+		{"abc 23 def", `(\d+)`, 2, true, []any{23}},
+		{"abc 23 def", `^abc (\d\d) def$`, 10, true, []any{23}},
 		{"a -23.1  -45 -9223372036854775808   test  18446744073709551615",
 			`^(a|b)\s+(-?\d+\.\d+)\s+(-?\d+)\s+(-?\d+)\s+([a-z]+)\s+(\d+)$`, 62, true,
-			[]interface{}{byte('a'), -23.1, -45, int64(-9223372036854775808), "test",
+			[]any{byte('a'), -23.1, -45, int64(-9223372036854775808), "test",
 				uint64(18446744073709551615)}},
 	} {
 		// Create pointers matching the types of the desired data.
-		dsts := make([]interface{}, len(tc.want))
+		dsts := make([]any, len(tc.want))
 		for i, v := range tc.want {
 			dsts[i] = reflect.New(reflect.TypeOf(v)).Interface()
 		}
@@ -34,7 +34,7 @@ func TestExtractMaybe(t *testing.T) {
 		}
 
 		// Dereference the pointers we created earlier so we can compare the concrete values.
-		got := make([]interface{}, len(dsts))
+		got := make([]any, len(dsts))
 		for i, d := range dsts {
 			got[i] = reflect.Indirect(reflect.ValueOf(d)).Interface()
 		}

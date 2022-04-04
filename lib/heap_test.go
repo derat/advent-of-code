@@ -3,7 +3,7 @@ package lib
 import "testing"
 
 func TestHeap(t *testing.T) {
-	h := NewHeap(func(a, b interface{}) bool { return a.(int) < b.(int) })
+	h := NewHeap(func(a, b int) bool { return a < b })
 
 	for _, tc := range []struct {
 		op  string
@@ -39,7 +39,7 @@ func TestHeap(t *testing.T) {
 				t.Fatalf("Len() = %v; want %v", got, tc.val)
 			}
 		case "pop":
-			if got := h.Pop().(int); got != tc.val {
+			if got := h.Pop(); got != tc.val {
 				t.Fatalf("Pop() = %v; want %v", got, tc.val)
 			}
 		}

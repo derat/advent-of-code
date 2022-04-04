@@ -73,8 +73,7 @@ func main() {
 // This is the first version I wrote. It took about 3s, and profiling showed it spending
 // a bunch of time hashing strings. After adding NoSteps/NoFrom, it went down to about 1.5s.
 func exploreSlow(conns map[string][]string, canVisitSmallTwice bool) (npaths int) {
-	lib.BFS([]interface{}{"start"}, func(si interface{}, next map[interface{}]struct{}) {
-		s := si.(string)
+	lib.BFS([]string{"start"}, func(s string, next map[string]struct{}) {
 		if strings.HasSuffix(s, ",end") {
 			npaths++
 			return
@@ -97,7 +96,7 @@ func exploreSlow(conns map[string][]string, canVisitSmallTwice bool) (npaths int
 				next[s+","+dst] = struct{}{}
 			}
 		}
-	}, &lib.BFSOptions{NoSteps: true, NoFrom: true})
+	}, &lib.BFSOptions[string]{NoSteps: true, NoFrom: true})
 
 	return npaths
 }
@@ -106,7 +105,7 @@ func exploreSlow(conns map[string][]string, canVisitSmallTwice bool) (npaths int
 // into a uint64 before realizing that I still need to track the order in which caves are
 // visited. It took about 2.3s, but then went down to about 0.6s with NoSteps/NoFrom.
 func exploreFast(conns map[string][]string, canVisitSmallTwice bool) (npaths int) {
-	caves := lib.MapStringKeys(conns)
+	caves := lib.MapKeys(conns)
 	sort.Strings(caves)
 	caveNum := make(map[string]int, len(caves))
 	for i, cave := range caves {
@@ -115,26 +114,25 @@ func exploreFast(conns map[string][]string, canVisitSmallTwice bool) (npaths int
 	startNum, endNum := caveNum["start"], caveNum["end"]
 
 	start := state{startNum, 1 << startNum, false}
-	lib.BFS([]interface{}{start}, func(si interface{}, next map[interface{}]struct{}) {
-		st := si.(state)
-		if lib.HasBit(st.seen, endNum) {
+	lib.BFS([]state{start}, func(s state, next map[state]struct{}) {
+		if lib.HasBit(s.seen, endNum) {
 			npaths++
 			return
 		}
-		for _, dst := range conns[caves[st.at]] {
+		for _, dst := range conns[caves[s.at]] {
 			big := unicode.IsUpper(rune(dst[0]))
 			num := caveNum[dst]
-			seen := lib.HasBit(st.seen, num)
-			if big || !seen || (canVisitSmallTwice && !st.twice && dst != "start" && dst != "end") {
+			seen := lib.HasBit(s.seen, num)
+			if big || !seen || (canVisitSmallTwice && !s.twice && dst != "start" && dst != "end") {
 				ns := state{
 					at:    num,
-					seen:  lib.SetBit(st.seen, num, true),
-					twice: st.twice || (!big && seen),
+					seen:  lib.SetBit(s.seen, num, true),
+					twice: s.twice || (!big && seen),
 				}
 				next[ns] = struct{}{}
 			}
 		}
-	}, &lib.BFSOptions{NoSteps: true, NoFrom: true})
+	}, &lib.BFSOptions[state]{NoSteps: true, NoFrom: true})
 	return npaths
 }
 
@@ -149,7 +147,7 @@ type state struct {
 // after all as long the BFS function is told to not check for duplicate states itself. This brings
 // the running time down to 0.5s, probably due to avoiding exploreFast's struct allocs.
 func exploreFaster(conns map[string][]string, canVisitSmallTwice bool) (npaths int) {
-	caves := lib.MapStringKeys(conns)
+	caves := lib.MapKeys(conns)
 	sort.Strings(caves)
 	caveNum := make(map[string]int, len(caves))
 	for i, cave := range caves {
@@ -158,8 +156,8 @@ func exploreFaster(conns map[string][]string, canVisitSmallTwice bool) (npaths i
 	startNum, endNum := caveNum["start"], caveNum["end"]
 
 	start := pack(startNum, 1<<startNum, false)
-	lib.BFS([]interface{}{start}, func(si interface{}, next map[interface{}]struct{}) {
-		at, seen, twice := unpack(si.(uint64))
+	lib.BFS([]uint64{start}, func(s uint64, next map[uint64]struct{}) {
+		at, seen, twice := unpack(s)
 		if lib.HasBit(seen, endNum) {
 			npaths++
 			return
@@ -173,7 +171,7 @@ func exploreFaster(conns map[string][]string, canVisitSmallTwice bool) (npaths i
 				next[ns] = struct{}{}
 			}
 		}
-	}, &lib.BFSOptions{NoSteps: true, NoFrom: true})
+	}, &lib.BFSOptions[uint64]{NoSteps: true, NoFrom: true})
 	return npaths
 }
 

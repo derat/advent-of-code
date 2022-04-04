@@ -27,10 +27,9 @@ func main() {
 
 	// Part 1: Print minimum number of steps to pick up all keys.
 	steps := lib.AStar(
-		[]interface{}{state{sr, sc, 0}},
-		func(si interface{}) bool { return si.(state).keys&allKeys == allKeys },
-		func(si interface{}, m map[interface{}]int) {
-			s := si.(state)
+		[]state{{sr, sc, 0}},
+		func(s state) bool { return s.keys&allKeys == allKeys },
+		func(s state, m map[state]int) {
 			for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 				n := s
 				n.r += off[0]
@@ -53,9 +52,8 @@ func main() {
 				m[n] = 1
 			}
 		},
-		func(si interface{}) int {
+		func(s state) int {
 			// Use the Manhattan distance to the farthest key as a lower bound.
-			s := si.(state)
 			var max int
 			for id, loc := range klocs {
 				if s.keys&id == 0 { // don't have the key yet
@@ -116,10 +114,9 @@ func main() {
 	}
 
 	steps = lib.AStar(
-		[]interface{}{state2{[4]int{26, 27, 28, 29}, 0}},
-		func(si interface{}) bool { return si.(state2).keys == allKeys },
-		func(si interface{}, m map[interface{}]int) {
-			s := si.(state2)
+		[]state2{{[4]int{26, 27, 28, 29}, 0}},
+		func(s state2) bool { return s.keys == allKeys },
+		func(s state2, m map[state2]int) {
 			for ri, loc := range s.locs {
 				for _, d := range dests[loc] {
 					if d.doors&^s.keys == 0 { // have all required keys
@@ -137,14 +134,13 @@ func main() {
 				}
 			}
 		},
-		func(si interface{}) int {
+		func(s state2) int {
 			// As a crappy lower bound, take each robot's current location and add
 			// the minimum distance required for it to get another key. A better one
 			// would be to find the minimum path to get all needed and reachable keys,
 			// but I'm not sure how to get that data without performing a bunch more
 			// searches.
 			var sum int
-			s := si.(state2)
 			for _, loc := range s.locs {
 				min := math.MaxInt32
 				for _, d := range dests[loc] {
@@ -175,9 +171,8 @@ type state2 struct {
 func explore(grid [][]byte, r, c int) []dest {
 	type state struct{ r, c, keys, doors int }
 	states, _ := lib.BFS(
-		[]interface{}{state{r, c, 0, 0}},
-		func(si interface{}, m map[interface{}]struct{}) {
-			s := si.(state)
+		[]state{{r, c, 0, 0}},
+		func(s state, m map[state]struct{}) {
 			for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 				n := s
 				n.r += off[0]
@@ -195,8 +190,7 @@ func explore(grid [][]byte, r, c int) []dest {
 
 	// Only return states ending on other keys.
 	var dests []dest
-	for si, steps := range states {
-		s := si.(state)
+	for s, steps := range states {
 		if s.r == r && s.c == c {
 			continue // skip paths leading back to us
 		}

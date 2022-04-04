@@ -80,7 +80,7 @@ func main() {
 
 	// Find nodes that are capable of holding that amount of data.
 	var maxAvail int
-	var init []interface{}
+	var init []state
 	for x, ns := range nodes {
 		for y, n := range ns {
 			if n.avail >= minUsed && n.avail > maxAvail {
@@ -94,9 +94,8 @@ func main() {
 	nx, ny := len(nodes), len(nodes[0]) // nodes in each direction
 
 	steps := lib.AStar(init,
-		func(si interface{}) bool { return si.(state).dx == 0 && si.(state).dy == 0 },
-		func(si interface{}, m map[interface{}]int) {
-			s := si.(state)
+		func(s state) bool { return s.dx == 0 && s.dy == 0 },
+		func(s state, m map[state]int) {
 			for _, pos := range [][2]int{
 				{s.sx - 1, s.sy},
 				{s.sx + 1, s.sy},
@@ -115,10 +114,9 @@ func main() {
 				}
 			}
 		},
-		func(si interface{}) int {
+		func(s state) int {
 			// Use the max of the data's Manhattan distance from the space and the space's distance
 			// from (0, 0) as a lower bound of the required moves.
-			s := si.(state)
 			return lib.Max(lib.Abs(s.dx-s.sx)+lib.Abs(s.dy-s.sy), s.sx+s.sy)
 		})
 	fmt.Println(steps)

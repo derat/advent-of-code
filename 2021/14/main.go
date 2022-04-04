@@ -66,7 +66,7 @@ func main() {
 				counts[r] += n
 			}
 		}
-		vals := lib.MapIntVals(counts)
+		vals := lib.MapVals(counts)
 		sort.Ints(vals)
 		return vals[len(vals)-1] - vals[0]
 	}

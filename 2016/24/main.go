@@ -29,14 +29,12 @@ func main() {
 	}
 
 	for _, part := range []int{1, 2} {
-		steps := lib.AStar([]interface{}{state{loc0[0], loc0[1], 1}},
-			func(si interface{}) bool {
-				s := si.(state)
+		steps := lib.AStar([]state{{loc0[0], loc0[1], 1}},
+			func(s state) bool {
 				// In part 2, we need to end up back at location 0.
 				return s.vis == 1<<len(locs)-1 && (part != 2 || (s.r == loc0[0] && s.c == loc0[1]))
 			},
-			func(si interface{}, m map[interface{}]int) {
-				s := si.(state)
+			func(s state, m map[state]int) {
 				for _, p := range [][2]int{{s.r - 1, s.c}, {s.r + 1, s.c}, {s.r, s.c - 1}, {s.r, s.c + 1}} {
 					n := state{p[0], p[1], s.vis}
 					// Skip moves that go out-of-bounds or hit a wall.
@@ -50,8 +48,7 @@ func main() {
 					m[n] = 1
 				}
 			},
-			func(si interface{}) int {
-				s := si.(state)
+			func(s state) int {
 				if s.vis == 1<<len(locs)-1 {
 					if part == 1 {
 						return 0

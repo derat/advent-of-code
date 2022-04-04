@@ -54,11 +54,9 @@ func main() {
 	const sw = 7 // time to switch tools
 	end := state{tr, tc, torch}
 	min := lib.AStar(
-		[]interface{}{state{0, 0, torch}},
-		func(si interface{}) bool { return si.(state) == end },
-		func(si interface{}, m map[interface{}]int) {
-			s := si.(state)
-
+		[]state{{0, 0, torch}},
+		func(s state) bool { return s == end },
+		func(s state, m map[state]int) {
 			// If we're holding a tool that can be equipped in an adjacent region,
 			// we can move there in 1 minute.
 			for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
@@ -79,10 +77,9 @@ func main() {
 				}
 			}
 		},
-		func(si interface{}) int {
+		func(s state) int {
 			// The lower bound to get to the target is the Manhattan distance to get
 			// there plus the time needed to switch to the torch if it isn't equipped.
-			s := si.(state)
 			cost := lib.Abs(tr-s.r) + lib.Abs(tc-s.c)
 			if s.t != torch {
 				cost += sw

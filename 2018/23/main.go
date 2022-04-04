@@ -98,15 +98,15 @@ func main() {
 		}
 		for v := range p {
 			bronKerbosch(
-				lib.Union(r, map[int]struct{}{v: struct{}{}}).(map[int]struct{}),
-				lib.Intersect(p, overlaps[v]).(map[int]struct{}),
-				lib.Intersect(x, overlaps[v]).(map[int]struct{}))
+				lib.Union(r, map[int]struct{}{v: struct{}{}}),
+				lib.Intersect(p, overlaps[v]),
+				lib.Intersect(x, overlaps[v]))
 			// Early exit once we've found the maximum clique.
 			if len(inc) > len(bots)/2 {
 				return
 			}
 			delete(p, v)
-			x = lib.Union(x, map[int]struct{}{v: struct{}{}}).(map[int]struct{})
+			x = lib.Union(x, map[int]struct{}{v: struct{}{}})
 		}
 	}
 

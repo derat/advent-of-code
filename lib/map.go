@@ -1,159 +1,100 @@
 package lib
 
-import "reflect"
+// MapKeys returns keys from the provided map in an arbitrary order.
+func MapKeys[K comparable, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
 
-// MapIntVals returns integer values from the provided map.
-func MapIntVals(m interface{}) []int {
-	mv := reflect.ValueOf(m)
-	vals := make([]int, 0, mv.Len())
-	it := mv.MapRange()
-	for it.Next() {
-		vals = append(vals, int(it.Value().Int()))
+// MapVals returns values from the provided map in an arbitrary order.
+func MapVals[K comparable, V any](m map[K]V) []V {
+	vals := make([]V, 0, len(m))
+	for _, v := range m {
+		vals = append(vals, v)
 	}
 	return vals
 }
 
-// MapIntKeys returns integer keys from the provided map.
-func MapIntKeys(m interface{}) []int {
-	mv := reflect.ValueOf(m)
-	keys := make([]int, 0, mv.Len())
-	for _, kv := range mv.MapKeys() {
-		keys = append(keys, int(kv.Int()))
-	}
-	return keys
-}
-
-// MapUint64Keys returns uint64 keys from the provided map.
-func MapUint64Keys(m interface{}) []uint64 {
-	mv := reflect.ValueOf(m)
-	keys := make([]uint64, 0, mv.Len())
-	for _, kv := range mv.MapKeys() {
-		keys = append(keys, kv.Uint())
-	}
-	return keys
-}
-
-// MapStringKeys returns string keys from the provided map.
-func MapStringKeys(m interface{}) []string {
-	mv := reflect.ValueOf(m)
-	keys := make([]string, 0, mv.Len())
-	for _, kv := range mv.MapKeys() {
-		keys = append(keys, kv.String())
-	}
-	return keys
-}
-
-// MapStringKeysWithVal returns string keys from map m with values equal to v.
-func MapStringKeysWithVal(m, v interface{}) []string {
-	mv := reflect.ValueOf(m)
-	var keys []string
-	it := mv.MapRange()
-	for it.Next() {
-		if it.Value().Interface() == v {
-			keys = append(keys, it.Key().String())
+// MapKeysWithVal returns keys from the provided map that have want as their value.
+func MapKeysWithVal[K, V comparable](m map[K]V, want V) []K {
+	var keys []K
+	for k, v := range m {
+		if v == want {
+			keys = append(keys, k)
 		}
 	}
 	return keys
 }
 
 // MapSomeKey returns an arbitrary key from the supplied map.
-func MapSomeKey(m interface{}) interface{} {
-	mv := reflect.ValueOf(m)
-	for _, kv := range mv.MapKeys() {
-		return kv.Interface()
+func MapSomeKey[K comparable, V any](m map[K]V) K {
+	for k := range m {
+		return k
 	}
 	panic("Can't get key from empty map")
 }
 
 // MapHasKey returns true if map m contains key k.
-func MapHasKey(m, k interface{}) bool {
-	return reflect.ValueOf(m).MapIndex(reflect.ValueOf(k)).IsValid()
+func MapHasKey[K comparable, V any](m map[K]V, k K) bool {
+	_, ok := m[k]
+	return ok
 }
 
-// MapHasValue returns true if map m contains value v.
-func MapHasValue(m, v interface{}) bool {
-	it := reflect.ValueOf(m).MapRange()
-	for it.Next() {
-		if it.Value().Interface() == v {
+// MapHasValue returns true if map m contains the specified value.
+func MapHasValue[K, V comparable](m map[K]V, want V) bool {
+	for _, v := range m {
+		if v == want {
 			return true
 		}
 	}
 	return false
 }
 
-// GenericSet returns a map[interface{}]struct{} containing keys from m, a map.
-func GenericSet(m interface{}) map[interface{}]struct{} {
-	mv := reflect.ValueOf(m)
-	s := make(map[interface{}]struct{}, mv.Len())
-	it := reflect.ValueOf(m).MapRange()
-	for it.Next() {
-		s[it.Key().Interface()] = struct{}{}
+// Set returns a map-to-empty-struct containing keys from m, a map.
+func Set[K comparable, V any](m map[K]V) map[K]struct{} {
+	s := make(map[K]struct{}, len(m))
+	for k := range m {
+		s[k] = struct{}{}
 	}
 	return s
 }
 
-// AddSet adds the supplied as keys in the supplied (possibly-nil) map to struct{}.
+// AddSet adds keys to the supplied (possibly-nil) map to struct{}.
 // The set is returned (and should be used thereafter).
-func AddSet(s interface{}, vals ...interface{}) interface{} {
-	sv := reflect.ValueOf(s)
-	if sv.IsNil() {
-		sv = reflect.MakeMapWithSize(sv.Type(), len(vals))
+func AddSet[K comparable](m map[K]struct{}, keys ...K) map[K]struct{} {
+	if m == nil {
+		m = make(map[K]struct{}, len(keys))
 	}
-	for _, v := range vals {
-		sv.SetMapIndex(reflect.ValueOf(v), reflect.ValueOf(struct{}{}))
+	for _, k := range keys {
+		m[k] = struct{}{}
 	}
-	return sv.Interface()
-}
-
-// AddStringSet is a wrapper around AddSet for string keys.
-func AddStringSet(s map[string]struct{}, vals ...string) map[string]struct{} {
-	ivals := make([]interface{}, len(vals))
-	for i := range vals {
-		ivals[i] = vals[i]
-	}
-	return AddSet(s, ivals...).(map[string]struct{})
+	return m
 }
 
 // Union returns a new map with the union of keys from a and b.
-func Union(a, b interface{}) interface{} {
-	av := reflect.ValueOf(a)
-	bv := reflect.ValueOf(b)
-	AssertEq(av.Type(), bv.Type())
-	cv := reflect.MakeMapWithSize(av.Type(), Max(av.Len(), bv.Len()))
-
-	ai := av.MapRange()
-	for ai.Next() {
-		cv.SetMapIndex(ai.Key(), ai.Value())
+// If a key is present in both maps, the value from a will be used.
+func Union[K comparable, V any](a, b map[K]V) map[K]V {
+	c := make(map[K]V, len(a)+len(b))
+	for k, v := range a {
+		c[k] = v
 	}
-	bi := bv.MapRange()
-	for bi.Next() {
-		cv.SetMapIndex(bi.Key(), bi.Value())
+	for k, v := range b {
+		c[k] = v
 	}
-
-	return cv.Interface()
+	return c
 }
 
 // Intersect returns a new map with the intersection of keys from a and b.
-func Intersect(a, b interface{}) interface{} {
-	av := reflect.ValueOf(a)
-	bv := reflect.ValueOf(b)
-	AssertEq(av.Type(), bv.Type())
-	cv := reflect.MakeMap(av.Type())
-
-	var it *reflect.MapIter
-	var ov reflect.Value
-	if av.Len() < bv.Len() {
-		it = av.MapRange()
-		ov = bv
-	} else {
-		it = bv.MapRange()
-		ov = av
-	}
-	for it.Next() {
-		if ov.MapIndex(it.Key()).IsValid() {
-			cv.SetMapIndex(it.Key(), it.Value())
+// Values from a will be used.
+func Intersect[K comparable, V any](a, b map[K]V) map[K]V {
+	c := make(map[K]V, Max(len(a), len(b)))
+	for k, v := range a {
+		if _, ok := b[k]; ok {
+			c[k] = v
 		}
 	}
-
-	return cv.Interface()
+	return c
 }

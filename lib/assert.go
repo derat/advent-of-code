@@ -13,19 +13,19 @@ func Assert(v bool) {
 }
 
 // Assertf panics if v is false.
-func Assertf(v bool, s string, args ...interface{}) {
+func Assertf(v bool, s string, args ...any) {
 	if !v {
 		panic(fmt.Sprintf(s, args...))
 	}
 }
 
 // Panicf panics with the supplied message.
-func Panicf(s string, args ...interface{}) {
+func Panicf(s string, args ...any) {
 	Assertf(false, s, args...)
 }
 
 // AssertEq panics if a doesn't equal b.
-func AssertEq(a, b interface{}) {
+func AssertEq(a, b any) {
 	var eq bool
 	if av, ok := convertInt(a); ok {
 		if bv, ok := convertInt(b); ok {
@@ -50,7 +50,7 @@ func AssertEq(a, b interface{}) {
 	}
 }
 
-func convertInt(i interface{}) (int64, bool) {
+func convertInt(i any) (int64, bool) {
 	switch v := i.(type) {
 	case int:
 		return int64(v), true
@@ -77,7 +77,7 @@ func convertInt(i interface{}) (int64, bool) {
 	}
 }
 
-func convertFloat(i interface{}) (float64, bool) {
+func convertFloat(i any) (float64, bool) {
 	switch v := i.(type) {
 	case float32:
 		return float64(v), true

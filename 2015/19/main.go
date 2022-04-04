@@ -70,7 +70,7 @@ func main() {
 
 	// Iterating over a map yields (intentionally) non-deterministic behavior.
 	// Try longest strings first to avoid this.
-	backSorted := lib.MapStringKeys(backRepls)
+	backSorted := lib.MapKeys(backRepls)
 	sort.Slice(backSorted, func(i, j int) bool {
 		si, sj := backSorted[i], backSorted[j]
 		return len(si) > len(sj) || (len(si) == len(sj) && si < sj)

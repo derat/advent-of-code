@@ -25,10 +25,9 @@ func main() {
 	end := [p1len]typ{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 1, 2, 3, 4}
 
 	// Part 1: "What is the least energy required to organize the amphipods?"
-	cost := lib.AStar([]interface{}{start},
-		func(si interface{}) bool { return si.([p1len]typ) == end },
-		func(si interface{}, next map[interface{}]int) {
-			s := si.([p1len]typ)
+	cost := lib.AStar([][p1len]typ{start},
+		func(s [p1len]typ) bool { return s == end },
+		func(s [p1len]typ, next map[[p1len]typ]int) {
 			for start, t := range s {
 				if t == empty {
 					continue
@@ -44,10 +43,10 @@ func main() {
 				}
 			}
 		},
-		func(si interface{}) int {
+		func(s [p1len]typ) int {
 			// Return the sum of the minimum cost to move each amphipod to its room.
 			var sum int
-			for start, t := range si.([p1len]typ) {
+			for start, t := range s {
 				if t == empty {
 					continue
 				}
@@ -76,10 +75,9 @@ func main() {
 		4, 2, 1, 3, // given in puzzle
 		start[15], start[16], start[17], start[18]}
 	end2 := [p2len]typ{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}
-	cost2 := lib.AStar([]interface{}{start2},
-		func(si interface{}) bool { return si.([p2len]typ) == end2 },
-		func(si interface{}, next map[interface{}]int) {
-			s := si.([p2len]typ)
+	cost2 := lib.AStar([][p2len]typ{start2},
+		func(s [p2len]typ) bool { return s == end2 },
+		func(s [p2len]typ, next map[[p2len]typ]int) {
 			for start, t := range s {
 				if t == empty {
 					continue
@@ -95,9 +93,9 @@ func main() {
 				}
 			}
 		},
-		func(si interface{}) int {
+		func(s [p2len]typ) int {
 			var sum int
-			for start, t := range si.([p2len]typ) {
+			for start, t := range s {
 				if t == empty {
 					continue
 				}

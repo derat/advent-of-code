@@ -21,21 +21,22 @@ func main() {
 		return bits.OnesCount64(uint64(n))%2 == 1
 	}
 
-	ts := [2]int{tx, ty} // target state
+	type state [2]int
+	ts := state{tx, ty} // target state
 
 	min := lib.AStar(
-		[]interface{}{[2]int{sx, sy}},
-		func(s interface{}) bool { return s.([2]int) == ts },
-		func(s interface{}, m map[interface{}]int) {
-			x, y := s.([2]int)[0], s.([2]int)[1]
-			for _, n := range [][2]int{{x + 1, y}, {x, y + 1}, {x - 1, y}, {x, y - 1}} {
+		[]state{{sx, sy}},
+		func(s state) bool { return s == ts },
+		func(s state, m map[state]int) {
+			x, y := s[0], s[1]
+			for _, n := range []state{{x + 1, y}, {x, y + 1}, {x - 1, y}, {x, y - 1}} {
 				if n[0] >= 0 && n[1] >= 0 && !wall(n[0], n[1]) {
 					m[n] = 1
 				}
 			}
 		},
-		func(s interface{}) int {
-			x, y := s.([2]int)[0], s.([2]int)[1]
+		func(s state) int {
+			x, y := s[0], s[1]
 			return lib.Abs(tx-x) + lib.Abs(ty-y)
 		})
 	fmt.Println(min)

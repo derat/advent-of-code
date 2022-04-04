@@ -21,7 +21,7 @@ func main() {
 	// Part 2: Count groups.
 	var cnt int
 	for len(conns) > 0 {
-		for id := range find(conns, lib.MapSomeKey(conns).(int)) {
+		for id := range find(conns, lib.MapSomeKey(conns)) {
 			delete(conns, id)
 		}
 		cnt++

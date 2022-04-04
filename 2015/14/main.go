@@ -29,7 +29,7 @@ func main() {
 		flyTime := full*rd.fly + lib.Min(rd.fly, total%cycle)
 		dists[name] = flyTime * rd.vel
 	}
-	fmt.Println(lib.Max(lib.MapIntVals(dists)...))
+	fmt.Println(lib.Max(lib.MapVals(dists)...))
 
 	// Part 2
 	// Sigh, I misread this multiple times. First I thought that the extra
@@ -51,10 +51,10 @@ func main() {
 			}
 		}
 		// Award one point to current leader(s).
-		max := lib.Max(lib.MapIntVals(dists)...)
-		for _, name := range lib.MapStringKeysWithVal(dists, max) {
+		max := lib.Max(lib.MapVals(dists)...)
+		for _, name := range lib.MapKeysWithVal(dists, max) {
 			points[name]++
 		}
 	}
-	fmt.Println(lib.Max(lib.MapIntVals(points)...))
+	fmt.Println(lib.Max(lib.MapVals(points)...))
 }

@@ -17,7 +17,7 @@ func main() {
 	}
 
 	// Find initially-ready steps.
-	ready := lib.NewHeap(func(a, b interface{}) bool { return a.(string) < b.(string) })
+	ready := lib.NewHeap(func(a, b string) bool { return a < b })
 	for k := range rdeps {
 		if _, ok := deps[k]; !ok {
 			ready.Insert(k)
@@ -28,7 +28,7 @@ func main() {
 	var order string
 	need := makeNeed(deps)
 	for ready.Len() > 0 {
-		step := ready.Pop().(string)
+		step := ready.Pop()
 		order += step
 		for _, s := range rdeps[step] {
 			delete(need[s], step)
@@ -76,7 +76,7 @@ func main() {
 
 		// Start working on new steps.
 		for ready.Len() > 0 && len(working) < nworkers {
-			step := ready.Pop().(string)
+			step := ready.Pop()
 			working[step] = baseDur + int(step[0]-'A'+1)
 		}
 

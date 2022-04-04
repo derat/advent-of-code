@@ -54,8 +54,7 @@ func main() {
 	// Part 1: Minimum number of steps to go from AA to ZZ.
 	// I'm just using BFS instead of A* here since the number of states is small
 	// and it'd be tricky to write a proper heuristic function.
-	steps, _ := lib.BFS([]interface{}{start}, func(si interface{}, m map[interface{}]struct{}) {
-		s := si.([2]int)
+	steps, _ := lib.BFS([][2]int{start}, func(s [2]int, m map[[2]int]struct{}) {
 		ps, hp := portals[s]
 		for _, off := range [][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}} {
 			r, c := s[0]+off[0], s[1]+off[1]
@@ -68,7 +67,7 @@ func main() {
 				m[ps] = struct{}{}
 			}
 		}
-	}, &lib.BFSOptions{AnyDests: map[interface{}]struct{}{end: struct{}{}}})
+	}, &lib.BFSOptions[[2]int]{AnyDests: map[[2]int]struct{}{end: struct{}{}}})
 	fmt.Println(steps[end])
 
 	// Part 2: Inner labels go to more-deeply nested versions of the maze; outer
@@ -76,10 +75,9 @@ func main() {
 	// outermost AA to outermost ZZ.
 	es := state{end[0], end[1], 0}
 	fmt.Println(lib.AStar(
-		[]interface{}{state{start[0], start[1], 0}},
-		func(si interface{}) bool { return si.(state) == es },
-		func(si interface{}, m map[interface{}]int) {
-			s := si.(state)
+		[]state{{start[0], start[1], 0}},
+		func(s state) bool { return s == es },
+		func(s state, m map[state]int) {
 			ps, hp := portals[[2]int{s.r, s.c}]
 			out := s.r == 2 || s.c == 2 || s.r == len(grid)-3 || s.c == len(grid[0])-3
 
@@ -99,10 +97,8 @@ func main() {
 				}
 			}
 		},
-		func(si interface{}) int {
-			// Crappy heuristic: just use the difference in depth from outermost.
-			return lib.Abs(si.(state).depth)
-		}))
+		// Crappy heuristic: just use the difference in depth from outermost.
+		func(s state) int { return lib.Abs(s.depth) }))
 }
 
 type state struct{ r, c, depth int }

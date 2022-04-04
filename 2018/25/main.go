@@ -37,16 +37,16 @@ func main() {
 
 	var comps int
 	for len(rem) > 0 {
-		start := lib.MapSomeKey(rem).(int)
-		inc, _ := lib.BFS([]interface{}{start}, func(si interface{}, m map[interface{}]struct{}) {
-			for dst := range edges[si.(int)] {
+		start := lib.MapSomeKey(rem)
+		inc, _ := lib.BFS([]int{start}, func(s int, m map[int]struct{}) {
+			for dst := range edges[s] {
 				m[dst] = struct{}{}
 			}
 		}, nil)
 
 		delete(rem, start)
 		for i := range inc {
-			delete(rem, i.(int))
+			delete(rem, i)
 		}
 
 		comps++

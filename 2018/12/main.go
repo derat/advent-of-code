@@ -44,7 +44,7 @@ func main() {
 
 		// Part 1: Print sum of pots with plants after 20 generations.
 		if gen == 20 {
-			fmt.Println(lib.Sum(lib.MapIntKeys(plants)...))
+			fmt.Println(lib.Sum(lib.MapKeys(plants)...))
 		}
 
 		// Part 2: Print sum of pots with plants after 30 billion generations.
@@ -57,7 +57,7 @@ func main() {
 			lib.AssertEq(1, gen-pgen)
 			shift := int64(left - pleft)       // shift amount each generation
 			rem := 50_000_000_000 - int64(gen) // remaining generations
-			val := int64(lib.Sum(lib.MapIntKeys(plants)...))
+			val := int64(lib.Sum(lib.MapKeys(plants)...))
 			fmt.Println(val + int64(len(plants))*rem*shift)
 			break
 		}
@@ -93,7 +93,7 @@ func update(plants map[int]struct{}, pats map[byte]struct{}) map[int]struct{} {
 }
 
 func state(plants map[int]struct{}) (string, int) {
-	keys := lib.MapIntKeys(plants)
+	keys := lib.MapKeys(plants)
 	min, max := lib.Min(keys...), lib.Max(keys...)
 	b := make([]byte, max-min+1)
 	for i := range b {

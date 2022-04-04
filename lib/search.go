@@ -14,21 +14,21 @@ import (
 // target state (i.e. one for which done will return true).
 //
 // See https://www.redblobgames.com/pathfinding/a-star/introduction.html.
-func AStar(
-	initial []interface{},
-	done func(state interface{}) bool,
-	next func(state interface{}, nextStates map[interface{}]int),
-	estimate func(state interface{}) int) int {
+func AStar[S comparable](
+	initial []S,
+	done func(state S) bool,
+	next func(state S, nextStates map[S]int),
+	estimate func(state S) int) int {
 	// TODO: Add some way to track the path if needed.
-	frontier := NewHeap(func(a, b interface{}) bool { return a.(asNode).pri < b.(asNode).pri })
-	costs := make(map[interface{}]int)
+	frontier := NewHeap(func(a, b asNode[S]) bool { return a.pri < b.pri })
+	costs := make(map[S]int)
 	for _, init := range initial {
-		frontier.Insert(asNode{init, 0})
+		frontier.Insert(asNode[S]{init, 0})
 		costs[init] = 0
 	}
 
 	for frontier.Len() != 0 {
-		cur := frontier.Pop().(asNode).state
+		cur := frontier.Pop().state
 		cost := costs[cur]
 
 		// Check if we're done.
@@ -36,22 +36,22 @@ func AStar(
 			return cost
 		}
 
-		nmap := make(map[interface{}]int)
+		nmap := make(map[S]int)
 		next(cur, nmap)
 		for ns, nc := range nmap {
 			newCost := cost + nc
 			if oldCost, ok := costs[ns]; !ok || newCost < oldCost {
 				costs[ns] = newCost
 				pri := newCost + estimate(ns)
-				frontier.Insert(asNode{ns, pri})
+				frontier.Insert(asNode[S]{ns, pri})
 			}
 		}
 	}
 	panic("No paths found")
 }
 
-type asNode struct {
-	state interface{}
+type asNode[S comparable] struct {
+	state S
 	pri   int // lower is better
 }
 
@@ -60,17 +60,17 @@ type asNode struct {
 // The returned steps map contains the minimum number of steps to each state.
 // The returned from map contains the state (value) preceding each destination state (key).
 // Initial states are also included in from and list themselves as preceding states.
-func BFS(
-	initial []interface{}, next func(state interface{}, nextStates map[interface{}]struct{}), opts *BFSOptions) (
-	steps map[interface{}]int, from map[interface{}]interface{}) {
+func BFS[S comparable](
+	initial []S, next func(state S, nextStates map[S]struct{}), opts *BFSOptions[S]) (
+	steps map[S]int, from map[S]S) {
 	queue := list.New() // next states to check
 	if opts == nil || !opts.NoSteps {
-		steps = make(map[interface{}]int)
+		steps = make(map[S]int)
 	} else {
 		Assert(opts.MaxSteps <= 0) // MaxSteps requires tracking steps
 	}
 	if opts == nil || !opts.NoFrom {
-		from = make(map[interface{}]interface{})
+		from = make(map[S]S)
 	}
 	for _, s := range initial {
 		queue.PushBack(s)
@@ -82,9 +82,9 @@ func BFS(
 		}
 	}
 
-	var remain map[interface{}]struct{}
+	var remain map[S]struct{}
 	if opts != nil && len(opts.AllDests) > 0 {
-		remain = make(map[interface{}]struct{})
+		remain = make(map[S]struct{})
 		for _, d := range opts.AllDests {
 			remain[d] = struct{}{}
 		}
@@ -92,7 +92,7 @@ func BFS(
 
 Loop:
 	for queue.Len() > 0 {
-		cur := queue.Remove(queue.Front())
+		cur := queue.Remove(queue.Front()).(S)
 
 		var cost int
 		if steps != nil {
@@ -103,7 +103,7 @@ Loop:
 			}
 		}
 
-		nmap := make(map[interface{}]struct{})
+		nmap := make(map[S]struct{})
 		next(cur, nmap)
 		for n := range nmap {
 			// Skip already-visited states.
@@ -140,11 +140,11 @@ Loop:
 }
 
 // BFSOptions specifies optional configuration for BFS.
-type BFSOptions struct {
+type BFSOptions[S comparable] struct {
 	// AllDests contains states that must all be reached before exiting.
-	AllDests []interface{}
+	AllDests []S
 	// AnyDests contains states of which just one must be reached before exiting.
-	AnyDests map[interface{}]struct{}
+	AnyDests map[S]struct{}
 	// MaxSteps contains the maximum number of steps before exiting.
 	// NoSteps must not be true.
 	MaxSteps int

@@ -1,7 +1,5 @@
 package lib
 
-import "reflect"
-
 // FindCombos returns all combinations of the supplied items that sum exactly to target.
 // Initial is a bitfield specifying available items, e.g. if 0x1 is set then items[0]
 // can be used. Pass 1<<len(items)-1 to use all items.
@@ -35,27 +33,24 @@ func FindCombos(items []int, initial uint64, target int) []uint64 {
 
 // Perms sends all permutations of the supplied slice to ch and closes it.
 // This is the non-recursive version of https://en.wikipedia.org/wiki/Heap%27s_algorithm.
-func Perms(s, ch interface{}) {
-	swap := reflect.Swapper(s)
-	sv := reflect.ValueOf(s)
-	chv := reflect.ValueOf(ch)
-
+// s is modified in-place.
+func Perms[T any](s []T, ch chan []T) {
 	send := func() {
-		cp := reflect.MakeSlice(sv.Type(), sv.Len(), sv.Len())
-		reflect.Copy(cp, sv)
-		chv.Send(cp)
+		c := make([]T, len(s))
+		copy(c, s)
+		ch <- c
 	}
 
-	state := make([]int, sv.Len())
+	state := make([]int, len(s))
 	send()
 
 	var i int
-	for i < sv.Len() {
+	for i < len(s) {
 		if state[i] < i {
 			if i%2 == 0 {
-				swap(0, i)
+				s[0], s[i] = s[i], s[0]
 			} else {
-				swap(state[i], i)
+				s[state[i]], s[i] = s[i], s[state[i]]
 			}
 			send()
 			state[i]++
@@ -65,5 +60,5 @@ func Perms(s, ch interface{}) {
 			i++
 		}
 	}
-	chv.Close()
+	close(ch)
 }

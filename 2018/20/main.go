@@ -24,8 +24,7 @@ func main() {
 	visit(0, 0, root.seqs, doors)
 
 	// Perform a BFS to find the shortest path to each room.
-	rooms, _ := lib.BFS([]interface{}{[2]int{0, 0}}, func(si interface{}, m map[interface{}]struct{}) {
-		s := si.([2]int)
+	rooms, _ := lib.BFS([][2]int{{0, 0}}, func(s [2]int, m map[[2]int]struct{}) {
 		for _, d := range []lib.Dir{lib.North, lib.South, lib.East, lib.West} {
 			if lib.MapHasKey(doors, state{s[0], s[1], d}) {
 				m[[2]int{s[0] + d.DC(), s[1] + d.DR()}] = struct{}{}
@@ -35,10 +34,10 @@ func main() {
 
 	// Part 1: Largest number of doors required to pass through to reach a room,
 	// i.e. the longest of all rooms' shortest paths.
-	fmt.Println(lib.Max(lib.MapIntVals(rooms)...))
+	fmt.Println(lib.Max(lib.MapVals(rooms)...))
 
 	// Part 2: Number of rooms with a shortest path of at least 1000 doors.
-	fmt.Println(lib.AtLeast(1000, lib.MapIntVals(rooms)...))
+	fmt.Println(lib.AtLeast(1000, lib.MapVals(rooms)...))
 }
 
 type state struct {

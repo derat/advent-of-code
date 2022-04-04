@@ -15,20 +15,18 @@ func main() {
 	// Don't count cost of starting position unless you enter it.
 	end := pos{grid.MaxRow(), grid.MaxCol()}
 	cost := lib.AStar(
-		[]interface{}{pos{0, 0}},
-		func(s interface{}) bool { return s.(pos) == end },
-		func(s interface{}, next map[interface{}]int) {
-			p := s.(pos)
+		[]pos{{0, 0}},
+		func(s pos) bool { return s == end },
+		func(s pos, next map[pos]int) {
 			for _, d := range [][2]int{{-1, 0}, {0, -1}, {0, 1}, {1, 0}} {
-				nr, nc := p.r+d[0], p.c+d[1]
+				nr, nc := s.r+d[0], s.c+d[1]
 				if nr >= 0 && nr <= grid.MaxRow() && nc >= 0 && nc <= grid.MaxCol() {
 					next[pos{nr, nc}] = int(grid[nr][nc] - '0')
 				}
 			}
 		},
-		func(s interface{}) int {
-			p := s.(pos)
-			return (grid.MaxRow() - p.r) + (grid.MaxCol() - p.c)
+		func(s pos) int {
+			return (grid.MaxRow() - s.r) + (grid.MaxCol() - s.c)
 		})
 	fmt.Println(cost)
 
@@ -42,12 +40,11 @@ func main() {
 	maxr2, maxc2 := repeats*grid.Rows()-1, repeats*grid.Cols()-1
 	end2 := pos{maxr2, maxc2}
 	cost2 := lib.AStar(
-		[]interface{}{pos{0, 0}},
-		func(s interface{}) bool { return s.(pos) == end2 },
-		func(s interface{}, next map[interface{}]int) {
-			p := s.(pos)
+		[]pos{pos{0, 0}},
+		func(s pos) bool { return s == end2 },
+		func(s pos, next map[pos]int) {
 			for _, d := range [][2]int{{-1, 0}, {0, -1}, {0, 1}, {1, 0}} {
-				nr, nc := p.r+d[0], p.c+d[1]
+				nr, nc := s.r+d[0], s.c+d[1]
 				if nr >= 0 && nr <= maxr2 && nc >= 0 && nc <= maxc2 {
 					// "Your original map tile repeats to the right and downward; each time the tile
 					// repeats to the right or downward, all of its risk levels are 1 higher than
@@ -62,9 +59,6 @@ func main() {
 				}
 			}
 		},
-		func(s interface{}) int {
-			p := s.(pos)
-			return (maxr2 - p.r) + (maxc2 - p.c)
-		})
+		func(s pos) int { return (maxr2 - s.r) + (maxc2 - s.c) })
 	fmt.Println(cost2)
 }
