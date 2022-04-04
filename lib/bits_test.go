@@ -10,7 +10,7 @@ func TestPackInts_RoundTrip(t *testing.T) {
 	const bits = 11
 	orig := []int{(1 << bits) - 1, 54, 0, 1 << (bits - 1), 85}
 	packed := PackInts(orig...)
-	got := UnpackInts(packed, len(orig))
+	got := UnpackInts[int](packed, len(orig))
 	if !reflect.DeepEqual(got, orig) {
 		t.Errorf("UnpackInts(%#x, %d) = %v; want %v", packed, len(orig), got, orig)
 	}
@@ -21,7 +21,7 @@ func TestUnpackIntSigned(t *testing.T) {
 	bits := 64 / len(orig)
 	packed := PackInts(orig...)
 	for i, want := range orig {
-		if got := UnpackIntSigned(packed, bits, i*bits); got != want {
+		if got := UnpackIntSigned[int](packed, bits, i*bits); got != want {
 			t.Errorf("UnpackIntSigned(%#b, %d, %d) = %v; want %v",
 				packed, bits, i*bits, got, want)
 		}

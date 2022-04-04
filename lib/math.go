@@ -1,7 +1,9 @@
 package lib
 
+import "golang.org/x/exp/constraints"
+
 // Min returns the minimum of the supplied values.
-func Min(vals ...int) int {
+func Min[T constraints.Ordered](vals ...T) T {
 	Assertf(len(vals) > 0, "No values given")
 	min := vals[0]
 	for _, v := range vals[1:] {
@@ -13,7 +15,7 @@ func Min(vals ...int) int {
 }
 
 // Max returns the maximum of the supplied values.
-func Max(vals ...int) int {
+func Max[T constraints.Ordered](vals ...T) T {
 	Assertf(len(vals) > 0, "No values given")
 	max := vals[0]
 	for _, v := range vals[1:] {
@@ -25,7 +27,7 @@ func Max(vals ...int) int {
 }
 
 // AtLeast returns the number of values greater than or equal to n.
-func AtLeast(n int, vals ...int) int {
+func AtLeast[T constraints.Ordered](n T, vals ...T) int {
 	var cnt int
 	for _, v := range vals {
 		if v >= n {
@@ -36,13 +38,13 @@ func AtLeast(n int, vals ...int) int {
 }
 
 // Clamp clamps val within [min, max].
-func Clamp(val, min, max int) int {
+func Clamp[T constraints.Ordered](val, min, max T) T {
 	return Min(Max(val, min), max)
 }
 
 // Sum returns the sum of the supplied values.
-func Sum(vals ...int) int {
-	var sum int
+func Sum[T constraints.Integer | constraints.Float](vals ...T) T {
+	var sum T
 	for _, v := range vals {
 		sum += v
 	}
@@ -50,7 +52,7 @@ func Sum(vals ...int) int {
 }
 
 // Product returns the product of the supplied values.
-func Product(vals ...int) int {
+func Product[T constraints.Integer | constraints.Float](vals ...T) T {
 	Assertf(len(vals) > 0, "No values given")
 	prod := vals[0]
 	for _, v := range vals[1:] {
@@ -60,7 +62,7 @@ func Product(vals ...int) int {
 }
 
 // Abs returns the absolute value of v.
-func Abs(v int) int {
+func Abs[T constraints.Signed | constraints.Float](v T) T {
 	if v < 0 {
 		return -v
 	}
@@ -68,12 +70,12 @@ func Abs(v int) int {
 }
 
 // Pow returns x to the power of n.
-func Pow(x, n int) int {
+func Pow[T constraints.Integer](x T, n int) T {
 	return powInt(1, x, n)
 }
 
 // https://en.wikipedia.org/wiki/Exponentiation_by_squaring
-func powInt(y, x, n int) int {
+func powInt[T constraints.Integer](y, x T, n int) T {
 	switch {
 	case n < 0:
 		panic("Negative exponent")
@@ -90,7 +92,7 @@ func powInt(y, x, n int) int {
 
 // GCD returns the greatest common denominator of a and b using the Euclidean algorithm.
 // See https://www.khanacademy.org/computing/computer-science/cryptography/modarithmetic/a/the-euclidean-algorithm.
-func GCD(a, b int) int {
+func GCD[T constraints.Integer](a, b T) T {
 	// From Khan Academy:
 	//  If A = 0 then GCD(A,B)=B, since the GCD(0,B)=B, and we can stop.
 	//  If B = 0 then GCD(A,B)=A, since the GCD(A,0)=A, and we can stop.
@@ -108,7 +110,7 @@ func GCD(a, b int) int {
 }
 
 // LCM reaturns the least common multiple of the supplied integers.
-func LCM(vals ...int) int {
+func LCM[T constraints.Integer](vals ...T) T {
 	Assert(len(vals) > 0)
 	if len(vals) == 1 {
 		return vals[0]

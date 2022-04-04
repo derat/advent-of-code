@@ -137,7 +137,7 @@ func main() {
 	vm.regs[0] = 1
 	for !vm.oob {
 		if vm.ip == 8 {
-			vm.regs[5] = int64(lib.If(prime(vm.regs[1]), 0, 1))
+			vm.regs[5] = lib.If[int64](prime(vm.regs[1]), 0, 1)
 			vm.ip = 24
 			continue
 		}

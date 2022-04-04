@@ -373,7 +373,7 @@ func (v *vm) run(start state, smallest bool) (res bool, input []int64) {
 			}
 			*in.Ptr(0, regs) = a % b
 		case eql:
-			*in.Ptr(0, regs) = int64(lib.If(in.Val(0, regs) == in.Val(1, regs), 1, 0))
+			*in.Ptr(0, regs) = lib.If[int64](in.Val(0, regs) == in.Val(1, regs), 1, 0)
 		}
 	}
 

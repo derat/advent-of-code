@@ -3,6 +3,8 @@ package lib
 import (
 	"fmt"
 	"reflect"
+
+	"golang.org/x/exp/constraints"
 )
 
 // Assert panics if v is false.
@@ -89,14 +91,14 @@ func convertFloat(i any) (float64, bool) {
 }
 
 // AssertLess panics if a >= b.
-func AssertLess(a, b int) {
+func AssertLess[T constraints.Ordered](a, b T) {
 	if a >= b {
 		panic(fmt.Sprintf("%v >= %v", a, b))
 	}
 }
 
 // AssertLessEq panics if a > b.
-func AssertLessEq(a, b int) {
+func AssertLessEq[T constraints.Ordered](a, b T) {
 	if a > b {
 		panic(fmt.Sprintf("%v > %v", a, b))
 	}

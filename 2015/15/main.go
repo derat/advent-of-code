@@ -37,11 +37,11 @@ func main() {
 			if n == "calories" {
 				continue // calories aren't included in score
 			}
-			v := lib.UnpackIntSigned(stats, statBits, i*statBits)
+			v := lib.UnpackIntSigned[int64](stats, statBits, i*statBits)
 			if v <= 0 {
 				return 0
 			}
-			prod *= int64(v)
+			prod *= v
 		}
 		return prod
 	}
@@ -65,7 +65,7 @@ func main() {
 			newAmounts := lib.PackInt(amounts, amt, ingredBits, idx*ingredBits)
 			newStats := stats
 			for i, sname := range statNames {
-				v := lib.UnpackIntSigned(newStats, statBits, i*statBits)
+				v := lib.UnpackIntSigned[int](newStats, statBits, i*statBits)
 				v += ingrStats[sname] * amt
 				newStats = lib.PackInt(newStats, v, statBits, i*statBits)
 			}
@@ -74,7 +74,7 @@ func main() {
 				newAmounts, newStats = findRecipe(newAmounts, newStats, idx+1, rem-amt, cals)
 			}
 			// Skip the recipe if it doesn't have the right number of calories.
-			if cals > 0 && lib.UnpackIntSigned(newStats, statBits, calsIdx*statBits) != cals {
+			if cals > 0 && lib.UnpackIntSigned[int](newStats, statBits, calsIdx*statBits) != cals {
 				continue
 			}
 			if score := computeScore(newStats); score > topScore {

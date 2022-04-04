@@ -1,19 +1,20 @@
 package lib
 
+import "golang.org/x/exp/constraints"
+
 // FindCombos returns all combinations of the supplied items that sum exactly to target.
-// Initial is a bitfield specifying available items, e.g. if 0x1 is set then items[0]
+// initial is a bitfield specifying available items, e.g. if 0x1 is set then items[0]
 // can be used. Pass 1<<len(items)-1 to use all items.
-func FindCombos(items []int, initial uint64, target int) []uint64 {
-	type set map[uint64]struct{}            // combos of items (specified by index)
-	AssertLessEq(len(items), 64)            // packing into uint64
-	sumRemain := make([]set, target+1)      // combos of remaining items for each sum
-	sumRemain[0] = set{initial: struct{}{}} // base case
+func FindCombos[T constraints.Integer](items []T, initial uint64, target T) []uint64 {
+	AssertLessEq(len(items), 64)                            // packing into uint64
+	sumRemain := make([]map[uint64]struct{}, target+1)      // combos (by index) of remaining items for each sum
+	sumRemain[0] = map[uint64]struct{}{initial: struct{}{}} // base case
 
 	for sum := 1; sum < len(sumRemain); sum++ {
-		rems := make(set)
+		rems := make(map[uint64]struct{})
 		for i, val := range items {
 			// Carry forward any earlier combos where this item was available.
-			if prev := sum - val; prev >= 0 {
+			if prev := T(sum) - val; prev >= 0 {
 				for rem := range sumRemain[prev] {
 					if HasBit(rem, i) {
 						rems[SetBit(rem, i, false)] = struct{}{} // use the item
