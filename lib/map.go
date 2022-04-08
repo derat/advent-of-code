@@ -1,3 +1,6 @@
+// Copyright 2022 Daniel Erat.
+// All rights reserved.
+
 package lib
 
 // MapKeys returns keys from the provided map in an arbitrary order.

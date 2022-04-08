@@ -1,3 +1,6 @@
+// Copyright 2022 Daniel Erat.
+// All rights reserved.
+
 package lib
 
 import "golang.org/x/exp/constraints"

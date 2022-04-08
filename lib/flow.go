@@ -1,3 +1,6 @@
+// Copyright 2022 Daniel Erat.
+// All rights reserved.
+
 package lib
 
 // If returns a if cond is true and b otherwise.
