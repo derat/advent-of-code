@@ -56,6 +56,15 @@ func MapHasValue[K, V comparable](m map[K]V, want V) bool {
 	return false
 }
 
+// InvertMap returns a new map in which m's values map to its keys.
+func InvertMap[K, V comparable](m map[K]V) map[V]K {
+	r := make(map[V]K, len(m))
+	for k, v := range m {
+		r[v] = k
+	}
+	return r
+}
+
 // Set returns a map-to-empty-struct containing keys from m, a map.
 func Set[K comparable, V any](m map[K]V) map[K]struct{} {
 	s := make(map[K]struct{}, len(m))

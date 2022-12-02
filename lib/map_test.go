@@ -30,6 +30,15 @@ func TestMapVals(t *testing.T) {
 	}
 }
 
+func TestInvertMap(t *testing.T) {
+	m := map[string]int{"a": 1, "b": 2, "c": 3}
+	want := map[int]string{1: "a", 2: "b", 3: "c"}
+	got := InvertMap(m)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("InvertMap(%v) = %v; want %v", m, got, want)
+	}
+}
+
 func TestUnion(t *testing.T) {
 	for _, tc := range []struct {
 		a, b, want string
