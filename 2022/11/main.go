@@ -28,7 +28,7 @@ func main() {
 		}
 	}
 	sort.Sort(sort.Reverse(sort.IntSlice(ins)))
-	fmt.Println(ins[0] * ins[1])
+	fmt.Println(int64(ins[0]) * int64(ins[1]))
 
 	// Part 2: Worry level doesn't decrease and 10000 rounds.
 	tests := make([]int, len(monkeys))
@@ -45,7 +45,7 @@ func main() {
 		}
 	}
 	sort.Sort(sort.Reverse(sort.IntSlice(ins)))
-	fmt.Println(ins[0] * ins[1])
+	fmt.Println(int64(ins[0]) * int64(ins[1]))
 }
 
 type monkey struct {
