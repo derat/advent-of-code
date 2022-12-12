@@ -122,6 +122,21 @@ func (b ByteGrid) Count(chars ...byte) int {
 	return b.CountRect(0, 0, b.MaxRow(), b.MaxCol(), chars...)
 }
 
+// Find returns the coordinates of the first occurrence of ch.
+// Positions are checked in ascending (row, column) order.
+// (-1, -1) is returned if the character isn't found.
+func (b ByteGrid) Find(ch byte) (r, c int) {
+	rows, cols := b.Rows(), b.Cols()
+	for r := 0; r < rows; r++ {
+		for c := 0; c < cols; c++ {
+			if b[r][c] == ch {
+				return r, c
+			}
+		}
+	}
+	return -1, -1
+}
+
 // Iter calls f for each coordinate in b.
 func (b ByteGrid) Iter(f func(r, c int)) {
 	b.IterRect(0, 0, b.Rows(), b.Cols(), f)
