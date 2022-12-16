@@ -106,3 +106,17 @@ func AssertLessEq[T constraints.Ordered](a, b T) {
 		panic(fmt.Sprintf("%v > %v", a, b))
 	}
 }
+
+// AssertGreater panics if a <= b.
+func AssertGreater[T constraints.Ordered](a, b T) {
+	if a <= b {
+		panic(fmt.Sprintf("%v <= %v", a, b))
+	}
+}
+
+// AssertGreaterEq panics if a < b.
+func AssertGreaterEq[T constraints.Ordered](a, b T) {
+	if a < b {
+		panic(fmt.Sprintf("%v < %v", a, b))
+	}
+}

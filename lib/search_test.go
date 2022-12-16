@@ -4,6 +4,7 @@
 package lib
 
 import (
+	"math"
 	"reflect"
 	"strings"
 	"testing"
@@ -42,6 +43,32 @@ func TestAStar(t *testing.T) {
 		func(s state) int {
 			return Abs(end[0]-s[0]) + Abs(end[1]-s[1]) // Manhattan distance
 		})
+	if got != want {
+		t.Errorf("AStar() returned %v; want %v", got, want)
+	}
+}
+
+func TestAStar_NegativeCost(t *testing.T) {
+	type edge struct {
+		dst  string
+		cost int
+	}
+	edges := map[string][]edge{
+		"a": []edge{{"b", -1}, {"c", -2}},
+		"b": []edge{{"d", -3}, {"e", -5}},
+		"c": []edge{{"d", -7}, {"e", -11}},
+		"d": []edge{{"f", -13}},
+		"e": []edge{{"f", -17}},
+	}
+	const want = -30 // a -> c -> e -> f
+	got := AStar([]string{"a"},
+		func(s string) bool { return s == "f" },
+		func(s string, next map[string]int) {
+			for _, e := range edges[s] {
+				next[e.dst] = e.cost
+			}
+		},
+		func(s string) int { return math.MinInt })
 	if got != want {
 		t.Errorf("AStar() returned %v; want %v", got, want)
 	}
