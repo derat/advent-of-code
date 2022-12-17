@@ -21,10 +21,11 @@ func main() {
 	}
 
 	const (
-		width = 7
-		xmax  = width - 1
-		rocks = 2022
+		width  = 7
+		rocks  = 2022          // part 1
+		rocks2 = 1000000000000 // part 2
 	)
+
 	chamber := make(region)
 	heights := make([]int, width)
 	var maxHeight int
@@ -38,7 +39,17 @@ func main() {
 		for p := range shape {
 			p.x += pos.x
 			p.y += pos.y
-			if p.x > xmax || lib.MapHasKey(chamber, p) {
+			if p.x >= width || lib.MapHasKey(chamber, p) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// isFull returns true if the specified row is completely filled by rocks.
+	isFull := func(y int) bool {
+		for x := 0; x < width; x++ {
+			if !lib.MapHasKey(chamber, point{x, y}) {
 				return false
 			}
 		}
@@ -46,7 +57,8 @@ func main() {
 	}
 
 	var step int
-	for rock := 0; rock < rocks; rock++ {
+	var startRock, startHeight, loopLen, loopHeight, endRock int
+	for rock := 0; true; rock++ {
 		shape := shapes[rock%len(shapes)]
 
 		// "Each rock appears so that its left edge is two units away from the left wall and its
@@ -84,10 +96,36 @@ func main() {
 				maxHeight = lib.Max(heights...)
 				break
 			}
+		}
 
+		if rock == rocks-1 {
+			fmt.Println(maxHeight) // part 1
+		}
+
+		// TODO: This produces the correct answer with my input but it fails to find a loop in the
+		// example input in a reasonable amount of time. It actually doesn't even find a single full
+		// line, so maybe I was just lucky that this approach works. :-/
+		next := rock + 1
+		switch {
+		case startRock == 0: // looking for start of loop
+			if isFull(maxHeight) {
+				startRock = next
+				startHeight = maxHeight
+			}
+		case loopLen == 0: // looking for end of loop
+			if next%len(shapes) == startRock%len(shapes) && isFull(maxHeight) {
+				loopLen = next - startRock
+				loopHeight = maxHeight - startHeight
+				endRock = next + int((rocks2-int64(startRock))%int64(loopLen))
+			}
+		default: // looking for added post-loop height
+			if next == endRock {
+				loops := (rocks2-int64(startRock))/int64(loopLen) - 1
+				fmt.Println(int64(maxHeight) + loops*int64(loopHeight))
+				return
+			}
 		}
 	}
-	fmt.Println(maxHeight)
 }
 
 type rock struct{}
