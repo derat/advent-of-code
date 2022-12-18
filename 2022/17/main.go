@@ -46,18 +46,11 @@ func main() {
 		return true
 	}
 
-	// isFull returns true if the specified row is completely filled by rocks.
-	isFull := func(y int) bool {
-		for x := 0; x < width; x++ {
-			if !lib.MapHasKey(chamber, point{x, y}) {
-				return false
-			}
-		}
-		return true
-	}
+	seen := make(map[cacheKey]cacheVal)
 
 	var step int
-	var startRock, startHeight, loopLen, loopHeight, endRock int
+	var loopLen, loopHeight, endRock int
+	var loops int64
 	for rock := 0; true; rock++ {
 		shape := shapes[rock%len(shapes)]
 
@@ -102,28 +95,33 @@ func main() {
 			fmt.Println(maxHeight) // part 1
 		}
 
-		// TODO: This produces the correct answer with my input but it fails to find a loop in the
-		// example input in a reasonable amount of time. It actually doesn't even find a single full
-		// line, so maybe I was just lucky that this approach works. :-/
-		next := rock + 1
-		switch {
-		case startRock == 0: // looking for start of loop
-			if isFull(maxHeight) {
-				startRock = next
-				startHeight = maxHeight
+		if endRock == 0 {
+			key := cacheKey{
+				shape: uint8(rock % len(shapes)),
+				gas:   uint16(step % len(seq)),
 			}
-		case loopLen == 0: // looking for end of loop
-			if next%len(shapes) == startRock%len(shapes) && isFull(maxHeight) {
-				loopLen = next - startRock
-				loopHeight = maxHeight - startHeight
-				endRock = next + int((rocks2-int64(startRock))%int64(loopLen))
+			for i := 0; i < len(key.rows) && maxHeight-i >= 0; i++ {
+				y := maxHeight - i
+				for x := 0; x < width; x++ {
+					key.rows[i] <<= 1
+					if lib.MapHasKey(chamber, point{x, y}) {
+						key.rows[i] |= 1
+					}
+				}
 			}
-		default: // looking for added post-loop height
-			if next == endRock {
-				loops := (rocks2-int64(startRock))/int64(loopLen) - 1
-				fmt.Println(int64(maxHeight) + loops*int64(loopHeight))
-				return
+			if start, ok := seen[key]; ok {
+				loopLen = rock - start.rock
+				loopHeight = maxHeight - start.maxHeight
+				loops = (rocks2-int64(start.rock))/int64(loopLen) - 1
+				endRock = rock + int((rocks2-int64(start.rock))%int64(loopLen))
+			} else {
+				seen[key] = cacheVal{rock, maxHeight}
 			}
+		} else if rock == endRock {
+			// TODO: Sigh. The printed height is one more than it should be for both
+			// the example and for my input, hence the subtraction here. No idea why.
+			fmt.Println(int64(maxHeight) + loops*int64(loopHeight) - 1)
+			return
 		}
 	}
 }
@@ -152,4 +150,14 @@ var shapes = []region{
 	// ##
 	// ##
 	{point{0, 1}: r, point{1, 1}: r, point{0, 0}: r, point{1, 0}: r},
+}
+
+type cacheKey struct {
+	shape uint8  // just-seen index into shape
+	gas   uint16 // just seen index into seq
+	rows  [40]uint8
+}
+type cacheVal struct {
+	rock      int // just-seen rock index
+	maxHeight int
 }
