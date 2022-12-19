@@ -101,22 +101,29 @@ func maxGeodes(bp blueprint, min int) int {
 			// obsidian, and geode robots as soon as possible, ignoring that types require
 			// overlapping resources and that we can only build one robot per turn.
 
-			// Ore and obsidian devoted to building robots of different types.
+			// For each robot type, resources allocated to building it.
 			oreOre := s.ore
+			clayOre := s.ore
 			obsOre := s.ore
+			obsClay := s.clay
 			geoOre := s.ore
 			geoObs := s.obs
 
 			var geo int
 			for i := s.min; i < min; i++ {
 				// Spend resources to build first.
-				var madeOre, madeObs, madeGeo int
+				var madeOre, madeClay, madeObs, madeGeo int
 				if oreOre >= bp.oreOre {
 					oreOre -= bp.oreOre
 					madeOre = 1
 				}
-				if obsOre >= bp.obsOre {
+				if clayOre >= bp.clayOre {
+					clayOre -= bp.clayOre
+					madeClay = 1
+				}
+				if obsOre >= bp.obsOre && obsClay >= bp.obsClay {
 					obsOre -= bp.obsOre
+					obsClay -= bp.obsClay
 					madeObs = 1
 				}
 				if geoOre >= bp.geoOre && geoObs >= bp.geoObs {
@@ -127,13 +134,16 @@ func maxGeodes(bp blueprint, min int) int {
 
 				// Get new resources.
 				oreOre += s.robOre
+				clayOre += s.robOre
 				obsOre += s.robOre
+				obsClay += s.robClay
 				geoOre += s.robOre
 				geoObs += s.robObs
 				geo += s.robGeo
 
 				// Add the newly-built robots.
 				s.robOre += madeOre
+				s.robClay += madeClay
 				s.robObs += madeObs
 				s.robGeo += madeGeo
 			}
