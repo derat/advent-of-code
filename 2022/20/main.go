@@ -1,68 +1,76 @@
 package main
 
 import (
-	"container/list"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
 	input := lib.InputInts("2022/20")
-	els := make([]*list.Element, len(input))
-	list := list.New()
-	var zero int // index of zero value
-	for i, n := range input {
-		els[i] = list.PushBack(n)
-		if n == 0 {
-			zero = i
-		}
-	}
+	fmt.Println(computeSum(mix(input, 1)))
 
-	for _, el := range els {
-		n := el.Value.(int)
-		for n > 0 {
-			if el == list.Back() {
-				list.MoveAfter(el, list.Front())
-			} else if el.Next() == list.Back() {
-				list.MoveToFront(el)
-			} else {
-				list.MoveAfter(el, el.Next())
-			}
-			n--
-		}
-		for n < 0 {
-			if el == list.Front() {
-				list.MoveBefore(el, list.Back())
-			} else if el.Prev() == list.Front() {
-				list.MoveToBack(el)
-			} else {
-				list.MoveBefore(el, el.Prev())
-			}
-			n++
-		}
+	input2 := make([]int, len(input))
+	for i, v := range input {
+		input2[i] = v * 811589153
 	}
-
-	var sum int
-	el := els[zero]
-	for i := 0; i <= 3000; i++ {
-		if i == 1000 || i == 2000 || i == 3000 {
-			sum += el.Value.(int)
-		}
-		el = el.Next()
-		if el == nil {
-			el = list.Front()
-		}
-	}
-	fmt.Println(sum)
+	fmt.Println(computeSum(mix(input2, 10)))
 }
 
-func dump(list *list.List) {
-	vals := make([]string, 0, list.Len())
-	for el := list.Front(); el != nil; el = el.Next() {
-		vals = append(vals, strconv.Itoa(el.Value.(int)))
+// mix mixes orig count times.
+func mix(orig []int, count int) []int {
+	mixed := make([]int, len(orig)) // orig indexes in current mixed order
+	for i := range mixed {
+		mixed[i] = i
 	}
-	fmt.Println(strings.Join(vals, ", "))
+
+	for c := 0; c < count; c++ {
+		for i, n := range orig {
+			var src int
+			for ; src < len(mixed); src++ {
+				if mixed[src] == i {
+					break
+				}
+			}
+			lib.AssertLess(src, len(mixed))
+
+			// This is mod len-1 to handle wrapping: when index 0 moves left,
+			// it needs to end up to the left of the len-1 number.
+			dst := (src + n) % (len(mixed) - 1)
+			if dst < 0 {
+				dst += (len(mixed) - 1)
+			}
+
+			if dst < src {
+				copy(mixed[dst+1:], mixed[dst:src])
+				mixed[dst] = i
+			} else if dst > src {
+				copy(mixed[src:], mixed[src+1:dst+1])
+				mixed[dst] = i
+			}
+		}
+	}
+
+	out := make([]int, len(mixed))
+	for i, oi := range mixed {
+		out[i] = orig[oi]
+	}
+	return out
+}
+
+// computeSum returns the sum of the 1000th, 2000th, and 3000th numbers
+// appearing after 0 in vals.
+func computeSum(vals []int) int {
+	for i, v := range vals {
+		if v == 0 {
+			var sum int
+			for j := 0; j <= 3000; j++ {
+				if j == 1000 || j == 2000 || j == 3000 {
+					sum += vals[(i+j)%len(vals)]
+				}
+			}
+			return sum
+		}
+	}
+	panic("0 not found")
 }
