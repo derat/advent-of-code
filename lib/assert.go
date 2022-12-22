@@ -120,3 +120,9 @@ func AssertGreaterEq[T constraints.Ordered](a, b T) {
 		panic(fmt.Sprintf("%v < %v", a, b))
 	}
 }
+
+// AssertInRange panics if v is not between min and max (inclusive).
+func AssertInRange[T constraints.Ordered](v, min, max T) {
+	AssertGreaterEq(v, min)
+	AssertLessEq(v, max)
+}

@@ -50,6 +50,13 @@ func ExtractUints(s string) []int {
 	return vals
 }
 
+// ExtractInt extracts a single integer from s.
+func ExtractInt(s string) int {
+	vs := ExtractInts(s)
+	Assertf(len(vs) == 1, "Got %d ints", len(vs))
+	return vs[0]
+}
+
 // ExtractDigits extracts individual digits from s and returns them as ints.
 func ExtractDigits(s string) []int {
 	var vals []int
