@@ -19,8 +19,8 @@ func main() {
 
 	order := []lib.Dir{lib.North, lib.South, lib.West, lib.East} // starting order to consider moves
 
-	const rounds = 10
-	for round := 0; round < rounds; round++ {
+	const rounds = 10 // part 1
+	for round := 0; true; round++ {
 		// "During the first half of each round, each Elf considers the eight positions adjacent to
 		// themself. If no other Elves are in one of those eight positions, the Elf does not do
 		// anything during this round. Otherwise, the Elf looks in each of four directions in the
@@ -53,25 +53,42 @@ func main() {
 		// begin. Simultaneously, each Elf moves to their proposed destination tile if they were the
 		// only Elf to propose moving to that position. If two or more Elves propose moving to the
 		// same position, none of those Elves move."
+		var moves int
 		for dst, es := range props {
 			if len(es) == 1 {
 				delete(elves, es[0])
 				elves[dst] = struct{}{}
+				moves++
 			}
 		}
-	}
 
-	// "Simulate the Elves' process and find the smallest rectangle that contains the Elves after 10
-	// rounds. How many empty ground tiles does that rectangle contain?"
-	xmin, xmax := math.MaxInt, math.MinInt
-	ymin, ymax := math.MaxInt, math.MinInt
-	for elf := range elves {
-		xmin = lib.Min(xmin, elf.x)
-		xmax = lib.Max(xmax, elf.x)
-		ymin = lib.Min(ymin, elf.y)
-		ymax = lib.Max(ymax, elf.y)
+		// Part 1: "Simulate the Elves' process and find the smallest rectangle that contains the
+		// Elves after 10 rounds. How many empty ground tiles does that rectangle contain?"
+		if round == rounds-1 {
+			xmin, xmax := math.MaxInt, math.MinInt
+			ymin, ymax := math.MaxInt, math.MinInt
+			for elf := range elves {
+				xmin = lib.Min(xmin, elf.x)
+				xmax = lib.Max(xmax, elf.x)
+				ymin = lib.Min(ymin, elf.y)
+				ymax = lib.Max(ymax, elf.y)
+			}
+			fmt.Println((xmax-xmin+1)*(ymax-ymin+1) - len(elves))
+		}
+
+		// Part 2: "Figure out where the Elves need to go. What is the number of the first round
+		// where no Elf moves?"
+		//
+		// This takes less than a thousand rounds with my input and completes in less than 2 seconds
+		// on my not-particularly-fast computer. I'm not sure if I'm missing something -- is there
+		// some faster analytical solution, or was part 2 just trying to mess up people who tracked
+		// positions using a two-dimensional aray rather than a map?
+		if moves == 0 {
+			lib.AssertGreaterEq(round, rounds-1)
+			fmt.Println(round + 1)
+			break
+		}
 	}
-	fmt.Println((xmax-xmin+1)*(ymax-ymin+1) - len(elves))
 }
 
 type point struct{ x, y int }
