@@ -3,11 +3,15 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/derat/advent-of-code/lib"
 )
 
 func main() {
+	// My solution is horrendous enough that I needed to write tests to find the bugs. :-(
+	test()
+
 	pgs := lib.InputParagraphs("2022/22")
 	lib.AssertEq(len(pgs), 2)
 
@@ -120,98 +124,21 @@ func main() {
 		size = grid.Rows() / 3
 	}
 
-	warp := make(map[vec]vec)
-
-	// TODO: I tried a general approach but couldn't get it working.
-	// I ended up just hardcoding the joined edges needed for my input. :-(
-
-	/*
-		warp := make(map[vec]vec)
-		exists := func(p point) bool { return grid.Get(p.r, p.c, ' ') != ' ' }
-		for r := 0; r < grid.Rows(); r++ {
-			for c := 0; c < grid.Cols(); c++ {
-				p := point{r, c}
-				if !exists(p) {
-					continue
-				}
-			NeighborLoop:
-				for _, dir := range []lib.Dir{lib.Up, lib.Down, lib.Left, lib.Right} {
-					if exists(p.step(dir)) || lib.MapHasKey(warp, vec{p, dir}) {
-						continue
-					}
-
-					for _, tdir := range []lib.Dir{dir.Left(), dir.Right()} {
-						for next := p.step(tdir); next.dist(p) <= 2*size && exists(next); next = next.step(tdir) {
-							if exists(next.step(dir)) {
-								dist := next.dist(p)
-								for i := 0; i < dist; i++ {
-									if i < size {
-										next = next.step(dir)
-									} else {
-										next = next.step(tdir)
-									}
-								}
-								ndir := tdir
-								if dist > size {
-									ndir = dir.Reverse()
-								}
-								warp[vec{p, dir}] = vec{next, ndir}
-								warp[vec{next, ndir.Reverse()}] = vec{p, dir.Reverse()}
-								continue NeighborLoop
-							}
-						}
-					}
-				}
-			}
-		}
-	*/
-
-	// TODO: This is disgusting and only works for my input.
-	join := func(a point, as, ad lib.Dir, b point, bs, bd lib.Dir) {
-		for i := 0; i < size; i++ {
-			warp[vec{a, ad}] = vec{b, bd.Reverse()}
-			warp[vec{b, bd}] = vec{a, ad.Reverse()}
-			a = a.step(as)
-			b = b.step(bs)
-		}
-	}
-
-	join(point{0, size}, lib.Right, lib.Up, point{3 * size, 0}, lib.Down, lib.Left)
-	join(point{0, size}, lib.Down, lib.Left, point{3*size - 1, 0}, lib.Up, lib.Left)
-	join(point{2 * size, 0}, lib.Right, lib.Up, point{size, size}, lib.Down, lib.Left)
-	join(point{0, 2 * size}, lib.Right, lib.Up, point{4*size - 1, 0}, lib.Right, lib.Down)
-	join(point{3 * size, size - 1}, lib.Down, lib.Right, point{3*size - 1, size}, lib.Right, lib.Down)
-	join(point{2 * size, 2*size - 1}, lib.Down, lib.Right, point{size - 1, 3*size - 1}, lib.Up, lib.Right)
-	join(point{size - 1, 2 * size}, lib.Right, lib.Down, point{size, 2*size - 1}, lib.Down, lib.Right)
-
-	/* For example input:
-	join(point{size, 3*size - 1}, lib.Down, lib.Right, point{2 * size, 4*size - 1}, lib.Left, lib.Up)
-	join(point{3*size - 1, 2 * size}, lib.Right, lib.Down, point{2*size - 1, size - 1}, lib.Left, lib.Down)
-	join(point{size, size}, lib.Right, lib.Up, point{0, 2 * size}, lib.Down, lib.Left)
-	*/
-
 	move2 := func(r, c int, dir lib.Dir, steps int) (int, int, lib.Dir) {
 		for ; steps > 0; steps-- {
-
-			var nr, nc int
-			var ndir lib.Dir
-			if dst, ok := warp[vec{point{r, c}, dir}]; ok {
-				nr, nc, ndir = dst.p.r, dst.p.c, dst.d
-			} else {
-				nr, nc, ndir = r+dir.DR(), c+dir.DC(), dir
-			}
-
+			nr, nc, ndir := step(grid, size, r, c, dir)
 			ch := grid.Get(nr, nc, ' ')
 			switch ch {
 			case '#':
 				break // stopped by wall
-			case '.', '<', '>', '^', 'v':
+			case ' ':
+				lib.Panicf("Bad move [%v, %v] %c to [%v, %v] %c",
+					r, c, dirChar[dir], nr, nc, dirChar[ndir])
+			default:
 				//grid[r][c] = dirChar[dir]
 				//fmt.Println(grid.Dump())
 				//fmt.Println()
 				r, c, dir = nr, nc, ndir // empty space
-			default:
-				lib.Panicf("Moved to %q at row %d, col %d", ch, nr, nc)
 			}
 		}
 		return r, c, dir
@@ -251,15 +178,85 @@ func main() {
 	fmt.Println(password(r2, c2, dir2))
 }
 
-type point struct{ r, c int }
-
-func (p point) stepn(dir lib.Dir, n int) point { return point{p.r + n*dir.DR(), p.c + n*dir.DC()} }
-func (p point) step(dir lib.Dir) point         { return p.stepn(dir, 1) }
-func (p point) dist(o point) int               { return lib.Abs(p.r-o.r) + lib.Abs(p.c-o.c) }
-
+// vec tracks a point and direction moving around a grid.
+// It is unaware of cube-mapping and just moves around the 2-dimensional grid.
+// It tracks whether it has ever moved to an invalid position outside of a cube face.
 type vec struct {
-	p point
-	d lib.Dir
+	g    lib.ByteGrid
+	r, c int
+	d    lib.Dir
+	ok   bool // moved to invalid position during a forward() call
+}
+
+// Move forward in the current direction by n spaces.
+func (v vec) fore(n int) vec {
+	for i := 0; i < n; i++ {
+		v.r += v.d.DR()
+		v.c += v.d.DC()
+		if v.g.Get(v.r, v.c, ' ') == ' ' {
+			v.ok = false
+		}
+	}
+	return v
+}
+
+// Turn in the specified direction and move n spaces.
+func (v vec) left(n int) vec  { return vec{v.g, v.r, v.c, v.d.Left(), v.ok}.fore(n) }
+func (v vec) right(n int) vec { return vec{v.g, v.r, v.c, v.d.Right(), v.ok}.fore(n) }
+func (v vec) rev(n int) vec   { return vec{v.g, v.r, v.c, v.d.Reverse(), v.ok}.fore(n) }
+
+// step moves one step from [r, c] in the specified direction,
+// wrapping around to different faces of the cube when needed.
+func step(grid lib.ByteGrid, sz, r, c int, dir lib.Dir) (int, int, lib.Dir) {
+	start := vec{grid, r, c, dir, true /* ok */}
+
+	// Simple case: the next face is in front of us.
+	if v := start.fore(1); v.ok {
+		return v.r, v.c, v.d
+	}
+
+	var rs int
+	for ; true; rs++ {
+		if v := start.right(rs + 1); v.r < 0 || v.r/sz != r/sz || v.c < 0 || v.c/sz != c/sz {
+			break
+		}
+	}
+	ls := sz - rs - 1
+
+	// This tedious list of the different paths that we can take to move forward across various
+	// flattened cubes is really gross. I haven't completely convinced myself that it's exhaustive,
+	// and I'm sure that there's a much easier approach. :-(
+	for _, v := range []vec{
+		start.rev(4*sz - 1).rev(0), // bottom, back, top
+
+		start.right(rs + 1).left(1 + rs).right(0),                                            // right, top
+		start.right(rs + 1 + sz + rs).left(sz).rev(0),                                        // right, back, top
+		start.right(rs + 3*sz).left(sz - rs).left(0),                                         // right, back, left, top
+		start.right(rs + 1).right(sz).left(3*sz - 1).right(rs).right(0),                      // right, bottom, back, top
+		start.right(rs + 1).right(2 * sz).left(sz).right(2*sz - 1).left(sz - rs - 1).left(0), // right, bottom, left, back, top
+		start.rev(sz).left(rs + 1 + sz + rs).right(0),                                        // bottom, right, top
+		start.rev(sz).left(rs + 1).right(sz).left(2*sz - 1).right(rs).right(0),               // bottom, right, back, top
+		start.rev(sz).left(rs + 1).right(3*sz - 1).left(2*sz - rs - 1).left(0),               // bottom, right, back, left, top
+		start.rev(2 * sz).left(sz + rs).right(sz + rs).right(0),                              // bottom, back, right, top
+
+		// These are the same as the previous set, but with right/left and ls/rs swapped.
+		start.left(ls + 1).right(1 + ls).left(0),                                             // left, top
+		start.left(ls + 1 + sz + ls).right(sz).rev(0),                                        // left, back, top
+		start.left(ls + 3*sz).right(sz - ls).right(0),                                        // left, back, right, top
+		start.left(ls + 1).left(sz).right(3*sz - 1).left(ls).left(0),                         // left, bottom, back, top
+		start.left(ls + 1).left(2 * sz).right(sz).left(2*sz - 1).right(sz - ls - 1).right(0), // left, bottom, right, back, top
+		start.rev(sz).right(ls + 1 + sz + ls).left(0),                                        // bottom, left, top
+		start.rev(sz).right(ls + 1).left(sz).right(2*sz - 1).left(ls).left(0),                // bottom, left, back, top
+		start.rev(sz).right(ls + 1).left(3*sz - 1).right(2*sz - ls - 1).right(0),             // bottom, left, back, right, top
+		start.rev(2 * sz).right(sz + ls).left(sz + ls).left(0),                               // bottom, back, left, top
+	} {
+		if v.ok {
+			return v.r, v.c, v.d
+		}
+	}
+
+	lib.Panicf("Failed step from [%d, %d]\n", r, c)
+	return r, c, dir // not reached
 }
 
 // "Rows start from 1 at the top and count downward; columns start from 1 at the left and count
@@ -280,4 +277,78 @@ var dirChar = map[lib.Dir]byte{
 	lib.Down:  'v',
 	lib.Left:  '<',
 	lib.Up:    '^',
+}
+
+func test() {
+	grid := lib.NewByteGridString(strings.Join([]string{
+		// 2345678
+		"   111222", // 0
+		"   111222", // 1
+		"   111222", // 2
+		"   333   ", // 3
+		"   333   ", // 4
+		"   333   ", // 5
+		"444555   ", // 6
+		"444555   ", // 7
+		"444555   ", // 8
+		"666      ", // 9
+		"666      ", // 10
+		"666      ", // 11
+	}, "\n"))
+	const size = 3
+
+	for _, tc := range []struct {
+		sr, sc int
+		sd     lib.Dir
+		dr, dc int
+		dd     lib.Dir
+	}{
+		// up from 1: bottom, back, left, top
+		{0, 3, lib.Up, 9, 0, lib.Right},
+		{0, 4, lib.Up, 10, 0, lib.Right},
+		{0, 5, lib.Up, 11, 0, lib.Right},
+		// left from 1: left, back, top
+		{0, 3, lib.Left, 8, 0, lib.Right},
+		{1, 3, lib.Left, 7, 0, lib.Right},
+		{2, 3, lib.Left, 6, 0, lib.Right},
+		// up from 2: left, bottom, right, back, top
+		{0, 6, lib.Up, 11, 0, lib.Up},
+		{0, 7, lib.Up, 11, 1, lib.Up},
+		{0, 8, lib.Up, 11, 2, lib.Up},
+		// right from 2: bottom, right, top
+		{0, 8, lib.Right, 8, 5, lib.Left},
+		{1, 8, lib.Right, 7, 5, lib.Left},
+		{2, 8, lib.Right, 6, 5, lib.Left},
+		// down from 2: right, top
+		{2, 6, lib.Down, 3, 5, lib.Left},
+		{2, 7, lib.Down, 4, 5, lib.Left},
+		{2, 8, lib.Down, 5, 5, lib.Left},
+		// left from 3: left, top
+		{3, 3, lib.Left, 6, 0, lib.Down},
+		{4, 3, lib.Left, 6, 1, lib.Down},
+		{5, 3, lib.Left, 6, 2, lib.Down},
+		// right from 3: left, top (already tested)
+		// up from 4: right, top (already tested)
+		// left from 4: bottom, right, top (already tested)
+		// right from 5: left, back, top (already tested)
+		// down from 5: right, top (already tested)
+		// left from 6: right, bottom, back, top
+		{9, 0, lib.Left, 0, 3, lib.Down},
+		{10, 0, lib.Left, 0, 4, lib.Down},
+		{11, 0, lib.Left, 0, 5, lib.Down},
+		// right from 6: left, top (already tested)
+		// down from 6: bottom, left, back, right, top
+		{11, 0, lib.Down, 0, 6, lib.Down},
+		{11, 1, lib.Down, 0, 7, lib.Down},
+		{11, 2, lib.Down, 0, 8, lib.Down},
+		// TODO: This only tests 8 of the 20 possible paths.
+		// I just focused on the paths needed for my input.
+	} {
+		if r, c, d := step(grid, size, tc.sr, tc.sc, tc.sd); r != tc.dr || c != tc.dc || d != tc.dd {
+			lib.Panicf("[%v, %v] %c = [%v, %v] %c; want [%v, %v] %c",
+				tc.sr, tc.sc, dirChar[tc.sd],
+				r, c, dirChar[d],
+				tc.dr, tc.dc, dirChar[tc.dd])
+		}
+	}
 }
