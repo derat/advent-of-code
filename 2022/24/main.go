@@ -87,6 +87,48 @@ func main() {
 		},
 		func(s state) int { return lib.Abs(exit.r-s.p.r) + lib.Abs(exit.c-s.p.c) },
 	))
+
+	// Part 2: "What is the fewest number of minutes required to reach the goal, go back to the
+	// start, then reach the goal again?"
+	fmt.Println(lib.AStar(
+		[]state2{{enter, 0, false, false}},
+		func(s state2) bool { return s.exit && s.enter && s.p == exit },
+		func(s state2, next map[state2]int) {
+			nt := (s.turn + 1) % cycle
+			bl := blizzards[nt]
+			for _, dir := range []lib.Dir{lib.Up, lib.Down, lib.Left, lib.Right} {
+				np := point{s.p.r + dir.DR(), s.p.c + dir.DC()}
+				valid := np == enter || np == exit ||
+					(np.r >= rmin && np.r <= rmax && np.c >= cmin && np.c <= cmax)
+				if valid && !lib.MapHasKey(bl, np) {
+					ns := state2{
+						p:     np,
+						turn:  nt,
+						exit:  s.exit || np == exit,
+						enter: s.enter || (s.exit && np == enter),
+					}
+					next[ns] = 1
+				}
+			}
+			if !lib.MapHasKey(bl, s.p) {
+				ns := state2{p: s.p, turn: nt, exit: s.exit, enter: s.enter}
+				next[ns] = 1
+			}
+		},
+		func(s state2) int {
+			toExit := lib.Abs(exit.r-s.p.r) + lib.Abs(exit.c-s.p.c)
+			toEnter := lib.Abs(enter.r-s.p.r) + lib.Abs(enter.c-s.p.c)
+			full := lib.Abs(exit.r-enter.r) + lib.Abs(exit.c-enter.c)
+			switch {
+			case s.exit && s.enter:
+				return toExit
+			case s.exit:
+				return toEnter + full
+			default:
+				return toExit + full + full
+			}
+		},
+	))
 }
 
 type point struct{ r, c int }
@@ -94,4 +136,10 @@ type point struct{ r, c int }
 type state struct {
 	p    point
 	turn int // index into blizzards
+}
+
+type state2 struct {
+	p           point
+	turn        int  // index into blizzards
+	exit, enter bool // visited exit, returned to enter
 }
