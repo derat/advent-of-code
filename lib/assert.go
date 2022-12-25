@@ -24,6 +24,13 @@ func Assertf(v bool, s string, args ...any) {
 	}
 }
 
+// AssertNil panics if v is non-nil.
+func AssertNil(v any) {
+	if v != nil {
+		panic(v)
+	}
+}
+
 // Panicf panics with the supplied message.
 func Panicf(s string, args ...any) {
 	Assertf(false, s, args...)
