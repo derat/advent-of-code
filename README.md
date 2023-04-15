@@ -1,6 +1,4 @@
-# advent-of-code
-
-This repository has moved to <https://codeberg.org/derat/advent-of-code>.
+# Moved to <https://codeberg.org/derat/advent-of-code>
 
 ## Copyright
 
